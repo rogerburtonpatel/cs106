@@ -1,0 +1,30 @@
+group is
+  $/basis.cm
+
+  (***** basic infrastructure *****)
+
+  impossible.cm   (* analog of assertion failure *)
+  escapes.sml     (* character escapes for string literals *)
+
+  env.sml         (* environment abstraction *)
+  ioutil.sml      (* convenience functions for I/O *)
+
+  (***** all the languages we'll eventually translate ****)
+
+  languages.sml   (* the languages, their names, mnemonic descriptions *)
+
+
+  (***** ASSEMBLY LANGUAGE and OBJECT CODE ********)
+
+  (* representations of assembly code and object code *)
+
+  object-code.sml  (* virtual object code: internal form and an unparser *)
+  asm.sml          (* SVM assembly language, internal form only *)
+
+
+  (* error monad *)
+
+  error-sig.sml
+  error-module.sml
+
+
