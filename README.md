@@ -6,6 +6,11 @@ are limited, no problem!  You mainly need to know `git clone` to get
 your own copy, `git commit` to save your own work, and `git pull` 
 to get updates.  You can also use these resources:
 
+  - If you're quite new to `git`, I recommend [The Git
+    Parable](https://tom.preston-werner.com/2009/05/19/the-git-parable.html)
+    by Tom Preston-Werner.  This introduction focuses on problems that
+    `git` is meant to solve.
+
   - [Git Magic](http://www-cs-students.stanford.edu/~blynn/gitmagic/)
     by Ben Lynn is a fine tutorial.
 
