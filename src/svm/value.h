@@ -86,10 +86,10 @@ static inline Value mkTableValue(struct VTable_T *table);
 
 typedef struct VMState *VMState;  // for stack trace if projection fails
 
-static inline struct VMBlock *asBlock_    (VMState, Value, const char *file, int line);
-static inline struct VMBlock *asCons_     (VMState, Value, const char *file, int line);
-static inline const char  *asCString_     (VMState, Value, const char *file, int line);
-static inline Number_T        asNumber_   (VMState, Value, const char *file, int line);
+static inline struct VMBlock   *asBlock_  (VMState, Value, const char *file, int line);
+static inline struct VMBlock   *asCons_   (VMState, Value, const char *file, int line);
+static inline const char       *asCString_(VMState, Value, const char *file, int line);
+static inline Number_T          asNumber_ (VMState, Value, const char *file, int line);
 static inline struct VMClosure *asClosure_(VMState, Value, const char *file, int line);
 static inline struct VMFunction *asVMFunction_ 
                                           (VMState, Value, const char *file, int line);
@@ -163,7 +163,9 @@ struct CFunction { // a closure
 
 #include "vmstring.h"
 
+#ifndef GCVALIDATE
 #define GCVALIDATE(E) (E) // in module 11, will replace with actual validation
+#endif
 
 extern _Noreturn void typeerror(VMState state, const char *expected, Value got,
                                 const char *file, int line);
