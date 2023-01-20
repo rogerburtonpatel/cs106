@@ -22,9 +22,11 @@ unsigned STARTING_GLOBALS = 1000;
 void freestatep(VMState *sp) {
     assert(sp && *sp);
     VMState vm = *sp;
+    // TODO FREE ALL LITERALS MANUALLY-- ASK IF NEED TAG
     Seq_free(&(vm->literals));
     Seq_free(&(vm->globals));
 
+    // TODO: Why free invalid ptr?
     free(sp);
 }
 
@@ -45,19 +47,22 @@ VMState newstate(void) {
 }
 
 int literal_slot(VMState state, Value literal) {
-    (void)state; // suppress compiler warnings
-    (void)literal;
-    // Return a slot containing the literal, updating literal pool if needed.
-    // For module 1, you can get away with putting the literal in slot 0
-    // and returning 0.  For module 2, you'll need something slightly
-    // more sophisticated.
-    assert(0);
-    return 1;
+    Value *lit = malloc(sizeof(*lit));
+    lit = &literal;
+    Seq_addlo(state->literals, lit);
+
+    // // Return a slot containing the literal, updating literal pool if needed.
+    // // For module 1, you can get away with putting the literal in slot 0
+    // // and returning 0.  For module 2, you'll need something slightly
+    // // more sophisticated.
+    return 0;
 }
 
 // these are for module 2 and beyond
 
 Value literal_value(VMState state, unsigned index) {
+  // TODO CHECK
+  // return Seq_get
   (void) state; (void) index; // replace with real code
   assert(0);
     return nilValue;
