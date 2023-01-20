@@ -28,20 +28,18 @@ void freestatep(VMState *sp) {
     free(sp);
 }
 
-VMState newstate(struct VMFunction *program) {
-    // allocate, initialize, and return a new state
-    assert(program);
-    struct VMFunction pr = *program;
+VMState newstate(void) {
+
     /* allocation of instruction space has been done! 
      * now, the instructions pointer becomes our 
      * start of program and program counter*/
     
-    VMState vms = malloc(sizeof(*vms));
+    VMState vms   = malloc(sizeof(*vms));
 
-    vms->counter  = pr.instructions;
+    vms->counter  = 0;
     /* registers are static memory */
     vms->literals = Seq_new(STARTING_LITS);
-    vms->globals = Seq_new(STARTING_GLOBALS);
+    vms->globals  = Seq_new(STARTING_GLOBALS);
     
     return vms;
 }
@@ -76,6 +74,7 @@ int literal_count(VMState state) {
 const char *global_name(VMState state, unsigned index) {
   (void) state; (void) index; // replace with real code
   assert(0);
+  return NULL;
 }
 void initialize_global(VMState vm, Value name, Value v) {
   (void) vm; (void) name; (void) v; // replace with real code
