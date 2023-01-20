@@ -29,7 +29,7 @@ DEPS := $(OBJ:.o=.d)
 
 CPPFLAGS += -MMD -MP
 # -Werror
-CFLAGS = -std=c11 -pedantic -Wall -Wextra  -g -I/usr/include -I/usr/sup/cii40/include/cii
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -g -I/usr/include -I/usr/sup/cii40/include/cii
 
 .PHONY: all obj clean
 all: $(EXE)
@@ -77,7 +77,7 @@ $(BIN)/svm-dis: $(OBJ) $(BUILD)/svm-dis.o
 
 
 $(BUILD)/%.o: %.c
-	gcc $(CFLAGS) -MMD -MF $(BUILD)/$*.d -o $@ -c -Wall -Werror -std=c11 $<
+	gcc $(CFLAGS) -MMD -MF $(BUILD)/$*.d -o $@ -c -Wall -std=c11 $<
 
 
 -include $(DEPS)
