@@ -72,3 +72,8 @@ int literal_count(VMState state) {
     return 1;
 
 }
+
+const char *global_name(VMState state, unsigned index) {
+  (void) state; (void) index; // replace with real code
+  assert(0);
+}
