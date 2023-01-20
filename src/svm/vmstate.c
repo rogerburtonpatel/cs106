@@ -10,13 +10,13 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdint.h>
 
 #include "vmstate.h"
 #include "value.h"
 #include "vmheap.h"
 #include "vmheap.h"
 
-// seperately need to free the program!
 void freestatep(VMState *sp) {
     assert(sp && *sp);
     free(*sp);
@@ -78,6 +78,8 @@ uint32_t global_slot(VMState state, Value namev) {
 
 Value literal_value(VMState state, uint32_t index) {
     return state->literals[index];
+    return nilValue;
+
 }
 
 int literal_count(VMState state) {
