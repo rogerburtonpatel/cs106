@@ -17,6 +17,11 @@
 #include "vmheap.h"
 #include "vmheap.h"
 
+
+unsigned STARTING_LITS = 1000;
+unsigned STARTING_GLOBALS = 1000;
+
+// seperately need to free the program!
 void freestatep(VMState *sp) {
     assert(sp && *sp);
     free(*sp);
