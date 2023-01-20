@@ -19,6 +19,8 @@ typedef struct VMState *VMState;
 // ... define the struct type here ...
 
 struct VMState {
+   // curr instruction: stored. 
+   Instruction curr_instruction; 
    // counter-- indexer into instructions array. 
     uint64_t counter;
    // regs
