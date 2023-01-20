@@ -32,24 +32,31 @@ Opcode get_opcode(Instruction word) {
 }
 
 void vmrun(VMState vm, struct VMFunction *fun) {
-    (void)fun;
     // Cache vars from VMState
+    // TODO: CACHE MORE THINGS
     uint32_t counter = vm->counter;
-    Instruction current_instruction = fun->instructions[counter];
-    Opcode op  = get_opcode(current_instruction);
+    Instruction current_instruction;
+    Opcode op;
 
     /* command loop */
-    while(op != Halt) {
-        printf("Opcode: %d\n", op);
-        counter++;
-        /* get next instruction */
-        Instruction current_instruction = fun->instructions[counter];
-        Opcode op           = get_opcode(current_instruction);
-        (void)op;
-    }
-
-
     // Run code from `fun` until it executes a Halt instruction.
     // Then return.
+    while(1) {
+        /* get next instruction */
+        current_instruction = fun->instructions[counter];
+        op                  = get_opcode(current_instruction);
+        printf("Opcode: %d\n", op);
+        
+        switch (op) {
+            case Halt:
+                vm->counter = counter;
+                vm->curr_instruction = current_instruction;
+                return; /* END THE PROGRAM */
+            default:
+                printf("Not implemented!\n");
+                break;
+        }
+        counter++;
+    }
     return;
 }
