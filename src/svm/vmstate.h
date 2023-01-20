@@ -17,8 +17,8 @@ typedef struct VMState *VMState;
 // ... define the struct type here ...
 
 struct VMState {
-   // instructions-- pointer as a program counter
-    Instruction *counter;
+   // counter-- indexer into instructions array. 
+    uint64_t counter;
    // regs
    Value registers[256];
    // literals- read-only
@@ -28,7 +28,7 @@ struct VMState {
    // store is the heap!
 };
 
-VMState newstate(struct VMFunction *program);       // allocate and initialize (to empty)
+VMState newstate(void);       // allocate and initialize (to empty)
 void freestatep(VMState *sp); // deallocate
 
 
