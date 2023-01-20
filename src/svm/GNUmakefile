@@ -7,6 +7,9 @@ UNITS = testfuns vmheap vmrun vmstate vmrun vmstring value iformat \
         printbuf print check-expect testfuns vmerror argparse
 MAINS = svm-test
 
+LDLIBS = -lcii40
+
+LDFLAGS = -L/usr/sup/cii40/lib64
 
 # Module 2 adds the ability to load virtual object code, plus the svm binary
 
@@ -25,8 +28,8 @@ EXE := $(MAINS:%=$(BIN)/%)
 DEPS := $(OBJ:.o=.d)
 
 CPPFLAGS += -MMD -MP
-
-CFLAGS = -std=c11 -pedantic -Wall -Wextra -Werror -g -I/usr/include
+# -Werror
+CFLAGS = -std=c11 -pedantic -Wall -Wextra  -g -I/usr/include -I/usr/sup/cii40/include/cii
 
 .PHONY: all obj clean
 all: $(EXE)
@@ -45,7 +48,7 @@ show:
 svm-test: $(BIN)/svm-test
 
 $(BIN)/svm-test: $(OBJ) $(BUILD)/svm-test.o
-	gcc $(CFLAGS) -o $@ $^ -lm
+	gcc $(CFLAGS) -o $@ $^ -lm $(LDLIBS) $(LDFLAGS)
 
 
 .PHONY: svm
