@@ -9,20 +9,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <stdint.h>
 
 #include "vmstate.h"
 #include "value.h"
 
+
+unsigned STARTING_LITS = 1000;
+unsigned STARTING_GLOBALS = 1000;
+
+// seperately need to free the program!
 void freestatep(VMState *sp) {
     assert(sp && *sp);
     VMState vm = *sp;
-    (void)vm; // suppress compiler warnings
-    assert(0); // must free all memory associated with `vm`
+    Seq_free(&(vm->literals));
+    Seq_free(&(vm->globals));
+
+    free(sp);
 }
 
-VMState newstate(void) {
+VMState newstate(struct VMFunction *program) {
     // allocate, initialize, and return a new state
-    assert(0);
+    assert(program);
+    struct VMFunction pr = *program;
+    /* allocation of instruction space has been done! 
+     * now, the instructions pointer becomes our 
+     * start of program and program counter*/
+    
+    VMState vms = malloc(sizeof(*vms));
+
+    vms->counter  = pr.instructions;
+    /* registers are static memory */
+    vms->literals = Seq_new(STARTING_LITS);
+    vms->globals = Seq_new(STARTING_GLOBALS);
+    
+    return vms;
 }
 
 int literal_slot(VMState state, Value literal) {
@@ -33,6 +54,7 @@ int literal_slot(VMState state, Value literal) {
     // and returning 0.  For module 2, you'll need something slightly
     // more sophisticated.
     assert(0);
+    return 1;
 }
 
 // these are for module 2 and beyond
@@ -40,9 +62,13 @@ int literal_slot(VMState state, Value literal) {
 Value literal_value(VMState state, unsigned index) {
   (void) state; (void) index; // replace with real code
   assert(0);
+    return nilValue;
+
 }
 
 int literal_count(VMState state) {
   (void) state; // replace with real code
   assert(0);
+    return 1;
+
 }

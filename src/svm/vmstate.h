@@ -8,6 +8,7 @@
 #define VMSTATE_INCLUDED
 
 #include <stdint.h>
+#include <seq.h>
 
 #include "value.h"
 
@@ -15,7 +16,19 @@ typedef struct VMState *VMState;
 
 // ... define the struct type here ...
 
-VMState newstate(void);       // allocate and initialize (to empty)
+struct VMState {
+   // instructions-- pointer as a program counter
+    Instruction *counter;
+   // regs
+   Value registers[256];
+   // literals- read-only
+   Seq_T literals;
+   // globals
+   Seq_T globals;
+   // store is the heap!
+};
+
+VMState newstate(struct VMFunction *program);       // allocate and initialize (to empty)
 void freestatep(VMState *sp); // deallocate
 
 int literal_slot(VMState state, Value literal);
