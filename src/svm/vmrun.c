@@ -27,16 +27,17 @@
 
 // uint32_t PC_STEP = sizeof(Instruction);
 
-Opcode get_opcode(Instruction word) {
+/* TODO decoder functions-- maybe move to another file? but static inline-- ask */
+static inline Opcode get_opcode(Instruction word) {
     return word >> 24;
 }
 
 void vmrun(VMState vm, struct VMFunction *fun) {
     // Cache vars from VMState
     // TODO: CACHE MORE THINGS
-    uint32_t counter = vm->counter;
-    Instruction current_instruction;
-    Opcode op;
+    register uint32_t counter = vm->counter;
+    register Instruction current_instruction;
+    register Opcode op;
 
     /* command loop */
     // Run code from `fun` until it executes a Halt instruction.
@@ -52,6 +53,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 vm->counter = counter;
                 vm->curr_instruction = current_instruction;
                 return; /* END THE PROGRAM */
+            case Print:
+
             default:
                 printf("Not implemented!\n");
                 break;
