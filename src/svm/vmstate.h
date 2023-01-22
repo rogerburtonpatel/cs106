@@ -23,6 +23,7 @@
 
 
 typedef struct VMState *VMState;
+#define NUM_REGISTERS 256
 
 
 struct VMState {
@@ -48,7 +49,7 @@ struct VMState {
    // counter-- indexer into instructions array. 
     uint64_t counter;
    // regs
-   Value registers[256];
+   Value registers[NUM_REGISTERS];
    // literals- read-only
    Seq_T literals;
    // globals

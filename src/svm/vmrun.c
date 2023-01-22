@@ -386,12 +386,16 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
             case GetClSlot: {
                 struct VMClosure *cl = 
-                                    AS_CLOSURE(vm, registers[uY(curr_instr)]);
+                                    AS_CLOSURE(vm, registers[uY(curr_instr)]) = 0; // TODO ask abt this-- do we reset each time?
                 registers[uX(curr_instr)] = 
                 cl->captured[(uint32_t)AS_NUMBER(vm, 
                                                     registers[uZ(curr_instr)])];
                 break;
             }
+    Value *v; // For literals
+    vm->registers[0] = mkNumberValue(3); // TODO REMOVE
+    // TODO: ASK ABOUT VALGRIND
+
 
             case SetClSlot: {
                 struct VMClosure *cl = 
