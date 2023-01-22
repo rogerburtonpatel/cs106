@@ -111,8 +111,12 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                                                   ((int64_t)AS_NUMBER(vm, vm->registers[rX]) 
                                                   % (int64_t)AS_NUMBER(vm, vm->registers[rY])));
                 break;
-            case InitConsCell:
-                // struct VMBlock *vmb = malloc(sizeof(*vmb)); // TODO VMALLOC
+            // case InitConsCell: { // TODO ask norman about initialization
+            //     struct VMBlock *vmb = vmalloc_raw(sizeof(*vmb));
+            //     vmb->nslots = 0;
+
+            // }
+            
                 break;
             default:
                 printf("Not implemented!\n");
