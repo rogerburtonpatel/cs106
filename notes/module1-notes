@@ -1,0 +1,8 @@
+# Proud of: 
+Representation of literal pool. 
+Hanson Sequence (C heap) of vmalloc_raw Values (vm heap)
+
+As such, the store for the literals doesn't consume memory reserved for
+the VM, while the values contained within do. I think this abides by the 
+machine abstraction in a pretty good way. 
+
