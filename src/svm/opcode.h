@@ -16,6 +16,8 @@ typedef enum opcode {
                       Println, // R1
                       LoadLiteral, // R1LIT
                       Check, Expect, // R1LIT
+                      Add, Sub, Div, Mult, Mod, // R3
+                      InitConsCell,
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;
