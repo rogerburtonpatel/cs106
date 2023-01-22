@@ -64,7 +64,11 @@ VMState newstate(void) {
 }
 
 int literal_slot(VMState state, Value literal) {
+<<<<<<< HEAD
     VMNEW(Value, *lit, (sizeof(*lit)));
+=======
+    Value *lit = vmalloc_raw(sizeof(*lit));
+>>>>>>> hansonseqs
     *lit = literal;
     Seq_addlo(state->literals, lit);
     return 0;
