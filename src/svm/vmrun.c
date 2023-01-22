@@ -392,10 +392,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                                                     registers[uZ(curr_instr)])];
                 break;
             }
-    Value *v; // For literals
-    vm->registers[0] = mkNumberValue(3); // TODO REMOVE
-    // TODO: ASK ABOUT VALGRIND
-
 
             case SetClSlot: {
                 struct VMClosure *cl = 
