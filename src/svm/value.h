@@ -111,6 +111,9 @@ extern bool eqvalue  (Value v1, Value v2); // vscheme = primitive
 extern bool identical(Value v1, Value v2); // for hashing
 extern bool eqtests  (Value v1, Value v2); // for check-expect
 
+// Roger's functions
+extern bool struct Value falsey(Value v);
+
 ////////////////////////////////////////////////////////////////
 //
 // representations
