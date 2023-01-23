@@ -33,7 +33,7 @@ bool identical(Value v1, Value v2) { // object identity, needed for hashing!
     case CFunction: return  v1.cf == v2.cf;
     case VMClosure: return  v1.hof == v2.hof;
     case LightUserdata: return v1.p == v2.p;
-    default:  assert(0); 
+    default:  assert(0); return false;
     }
 }
 
@@ -71,7 +71,7 @@ uint32_t hashvalue(Value v) {
     case CFunction:     return CFUNHASH;
     case VMClosure:     return CLOHASH;
     case LightUserdata: return (uint32_t) ((uintptr_t) v.p >> 3);
-    default:  assert(0); 
+    default:  assert(0); return 0xDEADBEEF;
     }
 
 }
