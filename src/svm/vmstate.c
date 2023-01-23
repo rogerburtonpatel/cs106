@@ -14,6 +14,7 @@
 #include "vmstate.h"
 #include "value.h"
 #include "vmheap.h"
+#include "vmheap.h"
 
 
 unsigned STARTING_LITS = 64;
@@ -26,10 +27,10 @@ void freestatep(VMState *sp) {
 
     // Because Seq_T holds malloc'ed pointers, all have to be freed
     Seq_T literals = vm->literals;
-    // int literals_len = Seq_length(literals);
-    // for (int i = 0; i < literals_len; ++i) {
-    //     free((Value *)Seq_get(literals, i));
-    // }
+    // // int literals_len = Seq_length(literals);
+    // // for (int i = 0; i < literals_len; ++i) {
+    // //     free((Value *)Seq_get(literals, i));
+    // // }
     Seq_free(&(literals));
 
     Seq_T globals = vm->globals;
@@ -48,7 +49,7 @@ VMState newstate(void) {
      * now, the instructions pointer becomes our 
      * start of program and program counter*/
     
-    VMState vms   = malloc(sizeof(*vms));
+    VMState vms = malloc(sizeof(*vms));
     assert(vms != NULL);
 
     vms->counter  = 0;
@@ -64,11 +65,7 @@ VMState newstate(void) {
 }
 
 int literal_slot(VMState state, Value literal) {
-<<<<<<< HEAD
     VMNEW(Value, *lit, (sizeof(*lit)));
-=======
-    Value *lit = vmalloc_raw(sizeof(*lit));
->>>>>>> hansonseqs
     *lit = literal;
     Seq_addlo(state->literals, lit);
     return 0;
