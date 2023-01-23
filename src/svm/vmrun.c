@@ -323,6 +323,13 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 // return will undo this based on the activation! 
                 break;
+            /* LITS <-> GLOBS <-> REGS */
+            case LoadLiteral:
+                rX = uX(current_instruction);
+                uint16_t idx = uYZ(current_instruction);
+                v = Seq_get(vm->literals, idx);
+                vm->registers[rX] = v;
+                break;
             }
             case Tailcall: {
                 uint8_t r0 = uX(curr_instr);
