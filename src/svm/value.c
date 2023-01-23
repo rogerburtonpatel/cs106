@@ -33,7 +33,7 @@ bool identical(Value v1, Value v2) { // object identity, needed for hashing!
     case CFunction: return  v1.cf == v2.cf;
     case VMClosure: return  v1.hof == v2.hof;
     case LightUserdata: return v1.p == v2.p;
-    default:  assert(0); 
+    default:  assert(0); return false;
     }
 }
 
@@ -71,7 +71,7 @@ uint32_t hashvalue(Value v) {
     case CFunction:     return CFUNHASH;
     case VMClosure:     return CLOHASH;
     case LightUserdata: return (uint32_t) ((uintptr_t) v.p >> 3);
-    default:  assert(0); 
+    default:  assert(0); return 0xDEADBEEF;
     }
 
 }
@@ -90,7 +90,7 @@ bool eqvalue(Value v1, Value v2) { // Will not work for hashing!
     case String:  return v1.s == v2.s;  // all strings assumed interned
     case Table:   return v1.table == v2.table;  // object identity
     case Seq:     return v1.seq == v2.seq;  // object identity
-    case ConsCell: return false;
+    case ConsCell: return false; // TODO ASK why?
     case Emptylist: return true;
     case VMFunction: return false;
     case CFunction: return false;
