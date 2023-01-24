@@ -116,7 +116,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 rX = uX(current_instruction);
                 uint16_t idx = uYZ(current_instruction);
                 v = Seq_get(vm->literals, idx);
-                vm->registers[rX] = v;
+                vm->registers[rX] = *v;
                 break;
             }
             // case InitConsCell: { // TODO ask norman about initialization
@@ -129,8 +129,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case BoolOf:
                 rX = uX(current_instruction);
                 rY = uY(current_instruction);
-                v = vm->registers[rx];
-                vm->registers[rY] = falsey(v);
+                *v = vm->registers[rX];
+                vm->registers[rY] = falsey(*v);
                 break;
             default:
                 printf("Not implemented!\n");
