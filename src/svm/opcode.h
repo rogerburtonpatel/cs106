@@ -19,9 +19,10 @@ typedef enum opcode {
                       GotoVcon, // R1U8
                       IfVconMatch, // U8LIT, not meant to be evaluated
                       Add, Sub, Div, Mult, Mod, // R3
-                      InitConsCell, // TODO
+                      Inc, Dec, Neg, Not,
                       LoadLiteral, // R1LIT
                       BoolOf, // R2
+                      If, Goto, // R1
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;
