@@ -121,7 +121,7 @@ bool eqtests(Value v1, Value v2) { // will not work for hashing!
 
 // Examines returns Value(faslse) if v is Nil or Value(false),
 // Value(true) otherwise
-static inline struct Value falsey(Value v) {
+static inline Value falsey(Value v) {
     Value boolval;
     boolval.tag = bool;
     switch v.tag {
