@@ -112,12 +112,13 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                                                   % (int64_t)AS_NUMBER(vm, vm->registers[rY])));
                 break;
             /* LITS <-> GLOBS <-> REGS */
-            case LoadLiteral:
+            case LoadLiteral: {
                 rX = uX(current_instruction);
                 uint16_t idx = uYZ(current_instruction);
                 v = Seq_get(vm->literals, idx);
                 vm->registers[rX] = v;
                 break;
+            }
             // case InitConsCell: { // TODO ask norman about initialization
             //     struct VMBlock *vmb = vmalloc_raw(sizeof(*vmb));
             //     vmb->nslots = 0;
