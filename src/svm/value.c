@@ -90,7 +90,7 @@ bool eqvalue(Value v1, Value v2) { // Will not work for hashing!
     case String:  return v1.s == v2.s;  // all strings assumed interned
     case Table:   return v1.table == v2.table;  // object identity
     case Seq:     return v1.seq == v2.seq;  // object identity
-    case ConsCell: return false; // TODO ASK why?
+    case ConsCell: return false; 
     case Emptylist: return true;
     case VMFunction: return false;
     case CFunction: return false;

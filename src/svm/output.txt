@@ -1,0 +1,5 @@
+Test: halt
+Test: print $r0; halt
+nil
+Test: check $r0, ...; expect $r0, ...; halt
+The only test passed.
