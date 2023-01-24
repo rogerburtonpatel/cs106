@@ -1,0 +1,88 @@
+$(SML_LIB)/basis/basis.mlb
+
+  
+
+  impossible.mlb
+  escapes.sml     
+
+  env.sml         
+  ioutil.sml      
+
+  
+
+  languages.sml   
+
+
+  
+
+  
+
+  object-code.sml  
+  asm.sml          
+
+
+  
+
+  error-sig.sml
+  error-module.sml
+
+  
+
+  producer-sig.sml
+  producer-functor.sml
+
+
+  asmlex.sml     
+  indentlex.sml  
+  asmparse.sml   
+  assembler.sml  
+
+
+  
+
+  primitives.sml   
+
+  vscheme.sml   
+
+  pp.mlb
+  wpp.mlb
+  ppwrapper.sml
+  wppscheme.sml
+
+  disambiguate.sml  
+
+  sxlex.sml          
+  sx.sml
+  vscheme-parse.sml
+
+
+
+  
+
+
+  knf.sml       
+
+  knembed.sml       
+  knproject.sml
+
+  
+
+
+  anf.sml      
+
+  anembed.sml      
+  antranslate.sml
+  anrename.sml
+
+
+
+  
+
+  asmutil.sml       
+  codegen.sml       
+
+  knrename.sml      
+
+
+  
+  uft.sml

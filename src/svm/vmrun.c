@@ -160,7 +160,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case Goto:
                 rX = uX(current_instruction);
                 counter += 1 + AS_NUMBER(vm, registers[rX]); 
-                continue;
+                continue; // this follows the semantics by adding 1 + for the normal
+                          // counter increment, then adding the goto value, then skipping
+                          // the increment with continue
             default:
                 printf("Not implemented!\n");
                 break;

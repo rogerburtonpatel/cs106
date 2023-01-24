@@ -7,3 +7,10 @@
 - Ask about switch statement variable declaration
 - 3 more instructions, clean up code, opsem, other points, and submit!
 - Depth pts
+
+            // case InitConsCell: {
+            //     struct VMBlock *vmb = vmalloc_raw(sizeof(*vmb));
+            //     vmb->nslots = 0;
+
+            // }
+            // Examines value v in rX and sets rY to falsey(v).
