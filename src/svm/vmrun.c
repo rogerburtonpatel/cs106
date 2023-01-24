@@ -25,20 +25,19 @@
 #include "vmheap.h"
 #include "vmstring.h"
 
+#define shift(x, n) x + n
 
 void vmrun(VMState vm, struct VMFunction *fun) {
     // Cache vars from VMState
-    // TODO: CACHE MORE THINGS
-    register uint32_t counter = vm->counter = 0; // TODO ask abt this-- do we reset each time?
-    register Instruction current_instruction;
-    register Opcode op;
-    register uint8_t rX;
-    register uint8_t rY;
-    register uint8_t rZ;
+    // Would use the register keyword if it did anything 
+    uint32_t counter = vm->counter = 0;
+    Instruction current_instruction;
+    Opcode op;
+    uint8_t rX;
+    uint8_t rY;
+    uint8_t rZ;
+    Value *registers = vm->registers;
     Value *v; // For literals
-    vm->registers[0] = mkNumberValue(3); // TODO REMOVE
-    // TODO: ASK ABOUT VALGRIND
-
 
     /* command loop */
     // Run code from `fun` until it executes a Halt instruction.
@@ -49,7 +48,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
         current_instruction = fun->instructions[counter];
         op                  = opcode(current_instruction);
         
-        // TODO: bring up in code review. what the heck with idx?
         switch (op) {
             /* BASIC */
             case Halt:
@@ -58,49 +56,50 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 return; /* END THE PROGRAM */
             case Print:
                 rX = uX(current_instruction);
-                print("%v\n", rX);
+                print("%v\n", registers[rX]);
                 break;
             case Check:
                 rX = uX(current_instruction);
                 uint16_t idx = uYZ(current_instruction);
                 v = Seq_get(vm->literals, idx);
-                check(vm, AS_CSTRING(vm, *v), vm->registers[rX]);
+                check(vm, AS_CSTRING(vm, *v), registers[rX]);
                 break;
             case Expect:
                 rX = uX(current_instruction);
-                idx = uYZ(current_instruction);
+                idx = uYZ(current_instruction); // REV: idx declaration and usage
                 v = Seq_get(vm->literals, idx);
-                expect(vm, AS_CSTRING(vm, *v), vm->registers[rX]);
+                expect(vm, AS_CSTRING(vm, *v), registers[rX]);
                 break;
             /* ARITH */
             case Add:
                 rX = uX(current_instruction);
                 rY = uY(current_instruction);
                 rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, vm->registers[rX]) 
-                                                  + AS_NUMBER(vm, vm->registers[rY]));
+                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
+                                                  + AS_NUMBER(vm, registers[rY]));
                 break;
             case Sub:
                 rX = uX(current_instruction);
                 rY = uY(current_instruction);
                 rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, vm->registers[rX]) 
-                                                  - AS_NUMBER(vm, vm->registers[rY]));
+                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
+                                                  - AS_NUMBER(vm, registers[rY]));
                 break;
             case Mult:
                 rX = uX(current_instruction);
                 rY = uY(current_instruction);
                 rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, vm->registers[rX]) 
-                                                  * AS_NUMBER(vm, vm->registers[rY]));
+                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
+                                                  * AS_NUMBER(vm, registers[rY]));
                 break;
             case Div:
                 rX = uX(current_instruction);
                 rY = uY(current_instruction);
                 rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, vm->registers[rX]) 
-                                                  / AS_NUMBER(vm, vm->registers[rY]));
+                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
+                                                  / AS_NUMBER(vm, registers[rY]));
                 break;
+
             // Special case: need to cast to int64_t for mod since it's not defined 
             // on Number_T (double), then cast back to Number_T for mkNumberValue. 
             case Mod:
@@ -108,9 +107,29 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 rY = uY(current_instruction);
                 rZ = uZ(current_instruction);
                 vm->registers[rZ] = mkNumberValue((Number_T)
-                                                  ((int64_t)AS_NUMBER(vm, vm->registers[rX]) 
-                                                  % (int64_t)AS_NUMBER(vm, vm->registers[rY])));
+                                                  ((int64_t)AS_NUMBER(vm, registers[rX]) 
+                                                  % (int64_t)AS_NUMBER(vm, registers[rY])));
                 break;
+
+            /* UNARY ARITH- R1 */
+            case Inc:
+                rX = uX(current_instruction);
+                vm->registers[rX] = mkNumberValue(AS_NUMBER(vm, registers[rX]) + 1);
+                break;
+            case Dec:
+                rX = uX(current_instruction);
+                vm->registers[rX] = mkNumberValue(AS_NUMBER(vm, registers[rX]) - 1);
+                break;
+            case Neg:
+                rX = uX(current_instruction);
+                vm->registers[rX] = mkNumberValue(-AS_NUMBER(vm, registers[rX]));
+                break;    
+            // REV: Is this needed in vScheme?   
+            case Not:
+                rX = uX(current_instruction);
+                vm->registers[rX] = mkNumberValue(~(int64_t)AS_NUMBER(vm, registers[rX]));
+                break;       
+                                          
             /* LITS <-> GLOBS <-> REGS */
             case LoadLiteral: {
                 rX = uX(current_instruction);
@@ -119,19 +138,29 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 vm->registers[rX] = *v;
                 break;
             }
-            // case InitConsCell: { // TODO ask norman about initialization
-            //     struct VMBlock *vmb = vmalloc_raw(sizeof(*vmb));
-            //     vmb->nslots = 0;
 
-            // }
-            // Examines value v in rX and sets rY to falsey(v).
+
             /* SPECIAL CASES */
             case BoolOf:
                 rX = uX(current_instruction);
                 rY = uY(current_instruction);
-                *v = vm->registers[rX];
-                vm->registers[rY] = falsey(*v);
+                *v = registers[rX];
+                registers[rY] = falsey(*v);
                 break;
+
+            /* (UN)CONDITIONAL MOVEMENT */
+            case If: 
+                rX = uX(current_instruction);
+                // Check for falseness
+                *v = falsey(registers[rX]);
+                if (!v->b) {
+                    counter++; // If false, skip next instruction. Otherwise, proceed
+                }
+                break;
+            case Goto:
+                rX = uX(current_instruction);
+                counter += 1 + AS_NUMBER(vm, registers[rX]); 
+                continue;
             default:
                 printf("Not implemented!\n");
                 break;
@@ -140,3 +169,4 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     }
     return;
 }
+

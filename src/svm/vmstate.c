@@ -70,7 +70,7 @@ int literal_slot(VMState state, Value literal) {
     Seq_addlo(state->literals, lit);
     return 0;
 }
-  // TODO FOR MODULE 2: CHECK BELOW
+
   // these are for module 2 and beyond
 
 Value literal_value(VMState state, unsigned index) {
