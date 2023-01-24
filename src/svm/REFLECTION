@@ -1,0 +1,97 @@
+Roger Burtonpatel
+Jan 23, 2023
+
+Reflection 1: SVM 
+
+1. Binary builds; tests pass.
+
+2. 
+halt: neither embeds nor projects
+print: neither embeds nor projects
+check: Projects input (line of vScheme code) to C string
+expect: Projects input (line of vScheme code) to C string
+add/sub/... : Embed and project to and from 
+              C Number_T (double) <=> vScheme represention Number Values
+if: neither embeds nor project
+goto: neither embeds nor project
+LoadLiteral: neither embeds nor projects
+
+In all of these, we're assuming that we can project these 32-bit words 
+into valid machine instructions, so we're always projecting languages
+(but not always values).
+
+3. In vmrun.c, in the vmrun() function, we are projecting the 32-bit words
+   that we are given in the instruction stream into valid Virtual Machine
+   instructions (with opcode in operands). We do this by extracting the opcode
+   and switching based on the opcode on vmrun.c:51
+
+4. 
+Parts of Virtual Machine State :: Representation in VMState Struct
+
+Instruction Pointer            :: counter, a uint32_t that indexes into 
+                                  instruction array that lives in VMFunction.
+
+Instruction Stream             :: instructions, a raw array that lives in 
+                                  VMFunction. 
+
+Current Instruction            :: curr_instruction, a member of VMState.
+
+Registers                      :: registers, a raw array of size 256 that holds
+                                  Values. This lives directly in VMState i.e.
+                                  it is NOT sepearetly allocated on the heap.
+                                
+Literal Pool                   :: literals, a Hanson Seq_T of Value pointers. 
+                                  These Values pointers are allocated using the
+                                  vmheap, so that the literals themselves
+                                  consume VM memory, while the Seq_T is 
+                                  allocated on the C heap so that their
+                                  store does not. 
+
+Global-variable table          :: globals, a Hanson Seq_T of Value pointers. 
+                                  These Values pointers are allocated using the
+                                  vmheap, so that the globals themselves
+                                  consume VM memory, while the Seq_T is 
+                                  allocated on the C heap so that their
+                                  store does not. NOTE: I may change this to
+                                  a Table_T when we get to globals if I find
+                                  that more efficient in my representaion. 
+
+5. 
+Copy a value from one VM register to another:
+
+                                    X, Y ∈ dom R
+--------------------------------------------------------------------------------------------
+⟨I1 • SET_REG(X, Y) ⋅ I2, R, L, G, σ⟩ → ⟨I1 ⋅ SET_REG(X, Y) • I2, R, L, G, σ{R(Y) ↦ σR(X)}⟩
+
+
+6. Cached variables:
+
+The program counter is cached in a uint32_t called counter. This counter
+is incremented after every instruction exectures, so it is essential it be 
+fast to access. 
+
+The current instruction is cached in an Instruction called current_instruction.
+This variable is also accessed (in fact multiple times) every loop, so having
+it in a C register is also essential. 
+
+The opcode of a given instruction is cached in an Opcode called op. This value
+is examined each time the switch statement executes, and is therefore accessed
+with every loop (sensing a theme here). Because of frequent access, storing it 
+in a local variable to cache it seems wise. 
+
+The register indices rX, rY, and rZ are all stored in uint8_t's with the same
+names. Since nearly every instruction uses at least one register, holding these
+to perform fast aritmatic, and therefore maintain a speedy virtual ALU, seems 
+prudent as long as they don't get in the way of other caching. TODO remove or
+not after code review. 
+
+The beginning of the registers array is stored in a Value pointer called 
+registers. This saves a dereference and struct member access
+(from vm->registers) every time the registers are referenced. Since all but
+the goto instruction do so, I think saving this slow dereference will help 
+speed up access. 
+
+Finally, a value pointer is stored in the variable v. Since every literal 
+access requires pulling from a Seq_T of pointers, pulling out this variable
+to have fast access seems like a good move. TODO ask about changing in code
+review. 

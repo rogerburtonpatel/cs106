@@ -47,7 +47,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
         /* get next instruction */
         current_instruction = fun->instructions[counter];
         op                  = opcode(current_instruction);
-        
+
         switch (op) {
             /* BASIC */
             case Halt:
@@ -96,8 +96,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 rX = uX(current_instruction);
                 rY = uY(current_instruction);
                 rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
-                                                  / AS_NUMBER(vm, registers[rY]));
+                vm->registers[rZ] = mkNumberValue((int64_t)AS_NUMBER(vm, registers[rX]) 
+                                                  / (int64_t)AS_NUMBER(vm, registers[rY]));
                 break;
 
             // Special case: need to cast to int64_t for mod since it's not defined 
