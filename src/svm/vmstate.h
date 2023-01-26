@@ -8,38 +8,15 @@
 #define VMSTATE_INCLUDED
 
 #include <stdint.h>
-<<<<<<< HEAD
-// #include <seq.h>
-
-=======
-#include "stable.h"
+// #include "stmmable.h"
 #include "name.h"
->>>>>>> da1190e7047633d4137734220ee270e23150acb6
 #include "value.h"
 #include "vtable.h"
 
 
-#define MAX_LITERALS 4096
-#define MAX_GLOBALS  4096
-
 typedef struct VMState *VMState;
-#define NUM_REGISTERS 256
 
-
-struct VMState {
-
-  Instruction *instructions;
-  uint64_t counter;
-  Value registers[NUM_REGISTERS];
-  Value literals[MAX_LITERALS];
-  uint32_t num_literals;
-
-  char *global_names[MAX_GLOBALS];
-  Value globals    [MAX_GLOBALS];
-  uint32_t num_globals;
-
-   // store is the vmheap
-};
+// ... define the struct type here ...
 
 VMState newstate(void);       // allocate and initialize (to empty)
 void freestatep(VMState *sp); // deallocate
