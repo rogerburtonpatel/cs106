@@ -56,7 +56,7 @@ bool Vmstring_eqlong(VMString a, VMString b) {
 }
 
 static uint32_t seed = 0x00beef00;
-  // note vulnerability to DoS attack: https://stackoverflow.com/questions/9241230
+// note vulnerability to DoS attack: https://stackoverflow.com/questions/9241230
 
 uint32_t Vmstring_hash_bytes(const char *str, size_t l) {
   // straight outta Lua
