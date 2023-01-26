@@ -8,7 +8,11 @@
 #define VMSTATE_INCLUDED
 
 #include <stdint.h>
+#include "stable.h"
+#include "name.h"
 #include "value.h"
+#include "vtable.h"
+
 
 typedef struct VMState *VMState;
 
@@ -18,7 +22,7 @@ VMState newstate(void);       // allocate and initialize (to empty)
 void freestatep(VMState *sp); // deallocate
 
 
-// The remaining functions won't be needed until module 2, but 
+// The remaining functions won't be needed until module 2, but
 // they are worth thinking about now---and possibly writing.
 
 int literal_slot(VMState state, Value literal);
