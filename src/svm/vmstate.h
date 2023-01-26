@@ -15,7 +15,6 @@
 
 
 typedef struct VMState *VMState;
-#define NUM_REGISTERS 256
 
 
 struct VMState {
