@@ -11,8 +11,13 @@
 typedef enum opcode { 
                       Halt, // R0
                       Print, // R1
+                      Println, // R1
+                      LoadLiteral, // R1LIT
                       Check, Expect, // R1LIT
                       Unimp, // stand-in for opcodes not yet implemented
+                      Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;
+
+int isgetglobal(Opcode code); // update this for your SVM, in instructions.c
 
 #endif
