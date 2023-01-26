@@ -83,6 +83,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case Printu:
                 print("%U", (unsigned)AS_NUMBER(vm, registers[uX(curr_instr)]));
                 break;
+            }
             case Printl:
                 print("%v", literal_value(vm, uYZ(curr_instr)));
                 break;
