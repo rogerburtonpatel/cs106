@@ -7,9 +7,9 @@ UNITS = testfuns vmheap vmrun vmstate vmrun vmstring value iformat \
         printbuf print check-expect testfuns vmerror
 MAINS = svm-test
 
-LDLIBS = -lcii40
+# LDLIBS = -lcii40
 
-LDFLAGS = -L/usr/sup/cii40/lib64
+# LDFLAGS = -L/usr/sup/cii40/lib64
 
 OBJ := $(UNITS:%=$(BUILD)/%.o)
 MOBJ := $(MAINS:%=$(BUILD)/%.o)
@@ -20,7 +20,9 @@ DEPS := $(OBJ:.o=.d)
 
 CPPFLAGS += -MMD -MP
 # -Werror
-CFLAGS = -std=c11 -pedantic -Wall -Wextra -g -I/usr/include -I/usr/sup/cii40/include/cii
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -g -I/usr/include 
+
+# -I/usr/sup/cii40/include/cii
 
 .PHONY: all obj clean
 all: $(EXE)
@@ -39,7 +41,9 @@ show:
 svm-test: $(BIN)/svm-test
 
 $(BIN)/svm-test: $(OBJ) $(BUILD)/svm-test.o
-	gcc $(CFLAGS) -o $@ $^ -lm $(LDLIBS) $(LDFLAGS)
+	gcc $(CFLAGS) -o $@ $^ -lm 
+	
+# $(LDLIBS) $(LDFLAGS)
 
 
 
