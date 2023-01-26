@@ -113,7 +113,7 @@ extern bool identical(Value v1, Value v2); // for hashing
 extern bool eqtests  (Value v1, Value v2); // for check-expect
 
 // Roger's functions
-extern Value falsey(Value v);
+extern bool falsey(Value v);
 
 ////////////////////////////////////////////////////////////////
 //

@@ -119,22 +119,18 @@ bool eqtests(Value v1, Value v2) { // will not work for hashing!
   }
 }
 
-// Examines returns Value(faslse) if v is Nil or Value(false),
-// Value(true) otherwise
-inline Value falsey(Value v) {
-    Value boolval;
-    boolval.tag = Boolean;
-    switch (boolval.tag) {
+// returns false if v is nilValue or Value(false), true otherwise
+inline bool falsey(Value v) {
+    // Value boolval;
+    // boolval.tag = Boolean;
+    switch (v.tag) {
         case Nil: 
-            boolval.b = false;
-            break;
+            return false;
         case Boolean:
-            boolval = v; // Handles true and false case
-            break;
+            return v.b;
         default:
-            boolval.b = true;
+            return true;
     }
-    return boolval;
 }
 
 /////////////////////////
