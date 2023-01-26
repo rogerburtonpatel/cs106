@@ -1,5 +1,7 @@
 - Div is floating, idiv is not 
 If you want a rant on the topic, ask me. re: parsing. Maybe?
+- ask about casting to StringBuffer with bogus
+- depth pts mod 1!
 
 
 
