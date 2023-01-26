@@ -1,0 +1,8 @@
+Instructions that get or set global variables also use the literal form, 
+but they work with the global-variable table, not with the literal pool. 
+The loader needs a mapping from the name of each global variable to its 
+slot number. (The slot number then determines the location via the mapping G 
+described in module 1. If you want to specify the operational semantics of 
+these forms, you can earn a depth point.
+
+^^ Ask about or read answer. 
