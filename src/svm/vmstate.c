@@ -16,30 +16,9 @@
 #include "vmheap.h"
 #include "vmheap.h"
 
-
-unsigned STARTING_LITS = 64;
-unsigned STARTING_GLOBALS = 64;
-
 // seperately need to free the program!
 void freestatep(VMState *sp) {
     assert(sp && *sp);
-    VMState vm = *sp;
-
-    // Because Seq_T holds malloc'ed pointers, all have to be freed
-    Seq_T literals = vm->literals;
-    // // int literals_len = Seq_length(literals);
-    // // for (int i = 0; i < literals_len; ++i) {
-    // //     free((Value *)Seq_get(literals, i));
-    // // }
-    Seq_free(&(literals));
-
-    Seq_T globals = vm->globals;
-    int globals_len = Seq_length(globals);
-    for (int i = 0; i < globals_len; ++i) {
-        free((Value *)Seq_get(globals, i));
-    }
-    Seq_free(&(globals));
-
     free(*sp);
 }
 
@@ -53,32 +32,34 @@ VMState newstate(void) {
     assert(vms != NULL);
 
     vms->counter  = 0;
+    vms->num_literals = vms->num_globals = 0;
     
     /* registers are static memory-- we'll just init them to nils */
     for (int i = 0; i < NUM_REGISTERS; ++i) {
         vms->registers[i] = nilValue;
     }
-    vms->literals = Seq_new(STARTING_LITS);
-    vms->globals  = Seq_new(STARTING_GLOBALS);
-    
+    for (int i = 0; i < MAX_GLOBALS; ++i) {
+        vms->globals[i] = nilValue;
+    }
+        
     return vms;
 }
 
 int literal_slot(VMState state, Value literal) {
     VMNEW(Value, *lit, (sizeof(*lit)));
     *lit = literal;
-    Seq_addlo(state->literals, lit);
-    return 0;
+    state->literals[state->num_literals] = literal;
+    return state->num_literals++;
 }
 
   // these are for module 2 and beyond
 
-Value literal_value(VMState state, unsigned index) {
-    return *(Value *)Seq_get(state->literals, index);
+Value literal_value(VMState state, uint32_t index) {
+    return state->literals[index];
 }
 
 int literal_count(VMState state) {
-    return Seq_length(state->literals);
+    return state->num_literals;
 }
 
 const char *global_name(VMState state, unsigned index) {

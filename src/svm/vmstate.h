@@ -17,7 +17,6 @@
 typedef struct VMState *VMState;
 #define NUM_REGISTERS 256
 
-// ... define the struct type here ...
 
 struct VMState {
    // curr instruction: stored. 

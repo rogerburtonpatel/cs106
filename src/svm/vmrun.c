@@ -25,144 +25,120 @@
 #include "vmheap.h"
 #include "vmstring.h"
 
-#define shift(x, n) x + n
-
 void vmrun(VMState vm, struct VMFunction *fun) {
-    // Cache vars from VMState
-    // Would use the register keyword if it did anything 
     uint32_t counter = vm->counter = 0;
-    Instruction current_instruction;
-    Opcode op;
-    uint8_t rX;
-    uint8_t rY;
-    uint8_t rZ;
-    Value *registers = vm->registers;
-    Value *v; // For literals
+    Instruction *instructions = vm->instructions = fun->instructions;
+    Instruction curr_instr;
 
-    /* command loop */
-    // Run code from `fun` until it executes a Halt instruction.
-    // Then return.
+    Value *registers = vm->registers;
+    Value v;
 
     while(1) {
-        /* get next instruction */
-        current_instruction = fun->instructions[counter];
-        op                  = opcode(current_instruction);
-
-        switch (op) {
+        curr_instr = instructions[counter];
+        switch (opcode(curr_instr)) {
             /* BASIC */
             case Halt:
+                /* I'm ok with having a counter variable external to the vmstate
+                   and storing it when we Halt, because it saves a dereference
+                   every time, and we only Halt once. */
                 vm->counter = counter;
-                vm->curr_instruction = current_instruction;
-                return; /* END THE PROGRAM */
+                return;
             case Print:
-                rX = uX(current_instruction);
-                print("%v\n", registers[rX]);
+                print("%v\n", registers[uX(curr_instr)]);
                 break;
-            case Check:
-                rX = uX(current_instruction);
-                uint16_t idx = uYZ(current_instruction);
-                v = Seq_get(vm->literals, idx);
-                check(vm, AS_CSTRING(vm, *v), registers[rX]);
+            case Check: {
+                v = literal_value(vm, uYZ(curr_instr));
+                check(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
                 break;
-            case Expect:
-                rX = uX(current_instruction);
-                idx = uYZ(current_instruction); // REV: idx declaration and usage
-                v = Seq_get(vm->literals, idx);
-                expect(vm, AS_CSTRING(vm, *v), registers[rX]);
+            }
+            case Expect: {
+                v = literal_value(vm, uYZ(curr_instr));
+                expect(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
                 break;
+            }
             /* ARITH */
             case Add:
-                rX = uX(current_instruction);
-                rY = uY(current_instruction);
-                rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
-                                                  + AS_NUMBER(vm, registers[rY]));
+                vm->registers[uZ(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) 
+                                  + AS_NUMBER(vm, registers[uY(curr_instr)]));
+                                                            
                 break;
             case Sub:
-                rX = uX(current_instruction);
-                rY = uY(current_instruction);
-                rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
-                                                  - AS_NUMBER(vm, registers[rY]));
+                vm->registers[uZ(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) 
+                                  - AS_NUMBER(vm, registers[uY(curr_instr)]));
                 break;
             case Mult:
-                rX = uX(current_instruction);
-                rY = uY(current_instruction);
-                rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue(AS_NUMBER(vm, registers[rX]) 
-                                                  * AS_NUMBER(vm, registers[rY]));
-                break;
-            case Div:
-                rX = uX(current_instruction);
-                rY = uY(current_instruction);
-                rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue((int64_t)AS_NUMBER(vm, registers[rX]) 
-                                                  / (int64_t)AS_NUMBER(vm, registers[rY]));
+                vm->registers[uZ(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) 
+                                  * AS_NUMBER(vm, registers[uY(curr_instr)]));
                 break;
 
-            // Special case: need to cast to int64_t for mod since it's not defined 
-            // on Number_T (double), then cast back to Number_T for mkNumberValue. 
+            // Special case: need to cast to int64_t for div && mod since they
+            // have different behavior/are not defined on Number_T (double), 
+            // then cast back to Number_T for mkNumberValue. 
+            case Div:
+                vm->registers[uZ(curr_instr)] = 
+                    mkNumberValue((int64_t)AS_NUMBER(vm, 
+                                                    registers[uX(curr_instr)]) 
+                                / (int64_t)AS_NUMBER(vm, 
+                                                    registers[uY(curr_instr)]));
+                break;
+
+
             case Mod:
-                rX = uX(current_instruction);
-                rY = uY(current_instruction);
-                rZ = uZ(current_instruction);
-                vm->registers[rZ] = mkNumberValue((Number_T)
-                                                  ((int64_t)AS_NUMBER(vm, registers[rX]) 
-                                                  % (int64_t)AS_NUMBER(vm, registers[rY])));
+                vm->registers[uZ(curr_instr)] = 
+                    mkNumberValue((int64_t)AS_NUMBER(vm, 
+                                                    registers[uX(curr_instr)]) 
+                                % (int64_t)AS_NUMBER(vm, 
+                                                    registers[uY(curr_instr)]));
                 break;
 
             /* UNARY ARITH- R1 */
             case Inc:
-                rX = uX(current_instruction);
-                vm->registers[rX] = mkNumberValue(AS_NUMBER(vm, registers[rX]) + 1);
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) + 1);
                 break;
             case Dec:
-                rX = uX(current_instruction);
-                vm->registers[rX] = mkNumberValue(AS_NUMBER(vm, registers[rX]) - 1);
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) - 1);
                 break;
             case Neg:
-                rX = uX(current_instruction);
-                vm->registers[rX] = mkNumberValue(-AS_NUMBER(vm, registers[rX]));
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(-AS_NUMBER(vm, registers[uX(curr_instr)]));
                 break;    
             // REV: Is this needed in vScheme?   
             case Not:
-                rX = uX(current_instruction);
-                vm->registers[rX] = mkNumberValue(~(int64_t)AS_NUMBER(vm, registers[rX]));
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(~(int64_t)AS_NUMBER(
+                                                vm, registers[uX(curr_instr)]));
                 break;       
                                           
             /* LITS <-> GLOBS <-> REGS */
-            case LoadLiteral: {
-                rX = uX(current_instruction);
-                uint16_t idx = uYZ(current_instruction);
-                v = Seq_get(vm->literals, idx);
-                vm->registers[rX] = *v;
+            case LoadLiteral: 
+                vm->registers[uX(curr_instr)] = vm->literals[uYZ(curr_instr)];
                 break;
-            }
 
 
             /* SPECIAL CASES */
             case BoolOf:
-                rX = uX(current_instruction);
-                rY = uY(current_instruction);
-                *v = registers[rX];
-                registers[rY] = falsey(*v);
+                v.tag = Boolean;
+                v.b = falsey(registers[uX(curr_instr)]);
+                registers[uY(curr_instr)] = v;
                 break;
 
             /* (UN)CONDITIONAL MOVEMENT */
             case If: 
-                rX = uX(current_instruction);
-                // Check for falseness
-                *v = falsey(registers[rX]);
-                if (!v->b) {
-                    counter++; // If false, skip next instruction. Otherwise, proceed
+                bool v_false = falsey(registers[uX(curr_instr)]);
+                if (!v_false) {
+                    counter++; // If false, skip next instruction.
                 }
                 break;
             case Goto:
-                rX = uX(current_instruction);
-                counter += 1 + AS_NUMBER(vm, registers[rX]); 
-                continue; // this follows the semantics by adding 1 + for the normal
-                          // counter increment, then adding the goto value, then skipping
-                          // the increment with continue
+                counter += 1 + AS_NUMBER(vm, registers[uX(curr_instr)]); 
+                continue; // follows the semantics by adding 1 + for the normal
+                          // counter increment, then adding the goto value, 
+                          // then skipping the increment with continue
             default:
                 printf("Not implemented!\n");
                 break;

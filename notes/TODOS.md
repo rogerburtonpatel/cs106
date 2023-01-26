@@ -1,12 +1,7 @@
-- Ask about code style- contracts, etc. 
-- Ask about opsem! how to review?
-- Ask if point 9 is by the time module 2 is turned in or released: turned in
-- Ask about learning outcome 3
-- Ask why cons cells can't be equal (value.c:93)
-- Ask about counter resetting (vmrun.c:32)
-- Ask about switch statement variable declaration
-- 3 more instructions, clean up code, opsem, other points, and submit!
-- Depth pts
+- Div is floating, idiv is not 
+If you want a rant on the topic, ask me. re: parsing. Maybe?
+
+
 
             // case InitConsCell: {
             //     struct VMBlock *vmb = vmalloc_raw(sizeof(*vmb));
@@ -14,3 +9,14 @@
 
             // }
             // Examines value v in rX and sets rY to falsey(v).
+
+        // check that there are a positive num instructions
+        // boolean interpretation from AS_BOOL
+        // goto
+        // catch div 0
+        // cache instructions pointer
+        // counter as uint32_t
+        // remove reg vars
+        // global names and values as sep lists-- genius
+
+        
