@@ -8,6 +8,8 @@
 #define VMSTATE_INCLUDED
 
 #include <stdint.h>
+#include <seq.h>
+
 #include "value.h"
 #include "vtable.h"
 
@@ -25,8 +27,7 @@ struct VMState {
    // regs
    Value registers[NUM_REGISTERS];
    // literals- read-only
-   Seq_T literals;
-   // globals
+   Seq_T literals;   // globals
    Seq_T globals;
    // store is the heap!
 };
