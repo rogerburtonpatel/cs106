@@ -13,6 +13,8 @@
 #include "vmstack.h"
 #include "vtable.h"
 
+#define MAX_LITERALS 4096
+#define MAX_GLOBALS  4096
 
 typedef struct VMState *VMState;
 
@@ -34,7 +36,7 @@ VMState newstate(void);       // allocate and initialize (to empty)
 void freestatep(VMState *sp); // deallocate
 
 
-// The remaining functions won't be needed until module 2, but
+// The remaining functions won't be needed until module 2, but 
 // they are worth thinking about now---and possibly writing.
 
 int literal_slot(VMState state, Value literal);
