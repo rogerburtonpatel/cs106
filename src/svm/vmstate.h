@@ -8,21 +8,37 @@
 #define VMSTATE_INCLUDED
 
 #include <stdint.h>
-// #include "stmmable.h"
-#include "name.h"
-#include "value.h"
-#include "vtable.h"
+// #include <seq.h>
 
+#include "value.h"
+
+#define MAX_LITERALS 4096
+#define MAX_GLOBALS  4096
 
 typedef struct VMState *VMState;
+#define NUM_REGISTERS 256
 
-// ... define the struct type here ...
+
+struct VMState {
+
+  Instruction *instructions;
+  uint64_t counter;
+  Value registers[NUM_REGISTERS];
+  Value literals[MAX_LITERALS];
+  uint32_t num_literals;
+
+  char *global_names[MAX_GLOBALS];
+  Value globals    [MAX_GLOBALS];
+  uint32_t num_globals;
+
+   // store is the vmheap
+};
 
 VMState newstate(void);       // allocate and initialize (to empty)
 void freestatep(VMState *sp); // deallocate
 
 
-// The remaining functions won't be needed until module 2, but
+// The remaining functions won't be needed until module 2, but 
 // they are worth thinking about now---and possibly writing.
 
 int literal_slot(VMState state, Value literal);
