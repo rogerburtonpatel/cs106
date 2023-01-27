@@ -8,11 +8,7 @@
 #define VMSTATE_INCLUDED
 
 #include <stdint.h>
-<<<<<<< HEAD
-#include <seq.h>
-=======
 // #include <seq.h>
->>>>>>> newstate
 
 #include "value.h"
 
@@ -24,18 +20,6 @@ typedef struct VMState *VMState;
 
 
 struct VMState {
-<<<<<<< HEAD
-   // curr instruction: stored. 
-   Instruction curr_instruction; 
-   // counter-- indexer into instructions array. 
-    uint64_t counter;
-   // regs
-   Value registers[NUM_REGISTERS];
-   // literals- read-only
-   Seq_T literals;   // globals
-   Seq_T globals;
-   // store is the heap!
-=======
 
   Instruction *instructions;
   uint64_t counter;
@@ -48,7 +32,6 @@ struct VMState {
   uint32_t num_globals;
 
    // store is the vmheap
->>>>>>> newstate
 };
 
 VMState newstate(void);       // allocate and initialize (to empty)

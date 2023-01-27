@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#define Add Unimp             // blatant cheat for demo
+// #define Add Unimp             // blatant cheat for demo
 #define ConsInstruction Unimp2 // blatant cheat for demo
 
 #include "vmstate.h"  // for demo, must come first.  Thanks, gcc!
