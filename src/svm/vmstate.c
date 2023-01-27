@@ -23,7 +23,6 @@ void freestatep(VMState *sp) {
 }
 
 VMState newstate(void) {
-
     /* allocation of instruction space has been done! 
      * now, the instructions pointer becomes our 
      * start of program and program counter*/
