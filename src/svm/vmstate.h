@@ -27,8 +27,7 @@ struct VMState {
    // regs
    Value registers[NUM_REGISTERS];
    // literals- read-only
-   Seq_T literals;
-   // globals
+   Seq_T literals;   // globals
    Seq_T globals;
    // store is the heap!
 };
