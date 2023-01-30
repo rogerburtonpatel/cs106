@@ -28,7 +28,7 @@ struct VMState {
   Value literals[MAX_LITERALS];
   uint16_t num_literals;
 
-  char *global_names[MAX_GLOBALS];
+  Name global_names[MAX_GLOBALS];
   Value globals    [MAX_GLOBALS];
   uint16_t num_globals;
 
