@@ -26,11 +26,11 @@ struct VMState {
   uint64_t counter;
   Value registers[NUM_REGISTERS];
   Value literals[MAX_LITERALS];
-  uint32_t num_literals;
+  uint16_t num_literals;
 
   char *global_names[MAX_GLOBALS];
   Value globals    [MAX_GLOBALS];
-  uint32_t num_globals;
+  uint16_t num_globals;
 
    // store is the vmheap
 };
