@@ -114,7 +114,9 @@ static Instruction get_instruction(VMState vm, FILE *vofile, unsigned *maxregp) 
     return inst;
 
 }
+
 /* reads count lines and returns a VMFunction* with count read instructions */
+// TODO need to free the function
 static struct VMFunction *loadfun(VMState vm, int arity, int count, FILE *vofile) {
     // Extra instruction space for Halt sentinel --------------------v
     struct VMFunction *function = malloc(sizeof(*function) + 
