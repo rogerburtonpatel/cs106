@@ -13,7 +13,7 @@ MAINS = svm-test
 
 # Module 2 adds the ability to load virtual object code, plus the svm binary
 
-UNITS += loader iparsers tokens name itable instructions svmdebug disasm vtable
+UNITS += loader iparsers tokens name itable instructions svmdebug disasm
 MAINS += svm svm-loader-instructions
 
 
