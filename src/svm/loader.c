@@ -71,15 +71,52 @@ static Instruction get_instruction(VMState vm, FILE *vofile, unsigned *maxregp);
   // May overwrite `buffer` and `bufsize` by calling `getline`.
 
 static Instruction get_instruction(VMState vm, FILE *vofile, unsigned *maxregp) {
-  (void) vm; (void) vofile; (void) maxregp; // replace with real code  
-  (void) parse_instruction; // replace with real code
-  assert(0);
-}
+    static Name dotloadname, functionname;
+    dotloadname = strtoname(".load");
+    functionname = strtoname("function");
 
+    if (getline (&buffer, &bufsize, vofile) < 0) {
+        assert(false);
+    }
+
+    Tokens alltokens = tokens(buffer);
+    Tokens remaining = alltokens;
+    Instruction inst;
+
+    Name n;
+
+    n = tokens_get_name(&remaining, buffer);
+    if (n == dotloadname) {
+        // read a function -- may consume many more lines!
+        uint32_t reg, arity, length;
+        reg = tokens_get_int(&remaining, buffer);
+        n = tokens_get_name(&remaining, buffer);
+        assert(n == functionname);
+
+        arity = tokens_get_int(&remaining, buffer);
+        length = tokens_get_int(&remaining, buffer);
+        
+        struct VMFunction *function = loadfun(vm, arity, length, vofile);
+        
+        uint32_t idx = literal_slot(vm, mkVMFunctionValue(function));
+
+        inst = eR1U16(LoadLiteral, reg, idx);
+    } else {
+        inst = parse_instruction(vm, n, remaining, maxregp);
+    }
+
+    if (buffer != NULL) {
+        free(buffer);
+        buffer = NULL;
+    }
+
+    free_tokens(&alltokens);
+    return inst;
+
+}
+/* reads count lines and returns a VMFunction* with count read instructions */
 static struct VMFunction *loadfun(VMState vm, int arity, int count, FILE *vofile) {
-  (void) vm; (void) arity; (void) count; (void) vofile; // replace with real code
-  (void) get_instruction; // replace with real code
-  assert(0);
+    
 }
 
 
@@ -142,7 +179,7 @@ struct VMFunction *loadmodule(VMState vm, FILE *vofile) {
 static Instruction
 parse_instruction(VMState vm, Name opcode, Tokens operands, unsigned *maxregp) {
   instruction_info *info = itable_entry(opcode);
-  if (info) {
+  if (info != NULL) {
     return info->parser(vm, info->opcode, operands, maxregp);
   } else {
     fprintf(stderr, "No opcode for %s.\n", nametostr(opcode));
