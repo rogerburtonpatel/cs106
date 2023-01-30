@@ -23,7 +23,7 @@ typedef struct VMState *VMState;
 struct VMState {
 
   Instruction *instructions;
-  uint64_t counter;
+  uint32_t counter;
   Value registers[NUM_REGISTERS];
   Value literals[MAX_LITERALS];
   uint16_t num_literals;
