@@ -62,11 +62,19 @@ int literal_slot(VMState state, Value literal) {
     state->literals[state->num_literals] = literal;
     return state->num_literals++;
 }
-
+// From Norman. I wrote using strcmp with VMString extraction, but this is 
+// just much better. 
 uint32_t global_slot(VMState state, Value name) {
-    (void)state;
-    (void)name;
-    assert(0);
+    Name n = strtoname(AS_CSTRING(state, name));
+    int slot;
+    for (slot = 0; slot < state->num_globals; slot++) {
+      if (state->global_names[slot] == n)
+        return slot;
+    }
+    slot = state->num_globals++;
+    assert(slot < MAX_GLOBALS);
+    state->global_names[slot] = n;
+    return slot;
 }
 
 Value literal_value(VMState state, uint32_t index) {
@@ -78,9 +86,8 @@ int literal_count(VMState state) {
 }
 
 const char *global_name(VMState state, unsigned index) {
-  (void) state; (void) index; // replace with real code
-  assert(0);
-  return NULL;
+    assert(index < MAX_GLOBALS); // probably unecessary but catches loader bugs
+    return nametostr(state->global_names[index]);
 }
 void initialize_global(VMState vm, Value name, Value v) {
   (void) vm; (void) name; (void) v; // replace with real code
