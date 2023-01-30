@@ -20,6 +20,23 @@ instruction_info instructions[] = {
   { "loadliteral", LoadLiteral, parseR1LIT, "rX := LIT" },
   { "check", Check, parseR1LIT, "check LIT, rX" },
   { "expect", Expect, parseR1LIT, "expect LIT, rX" },
+
+  { "add",  Add,  parseR3, "add rX rY rZ" },
+  { "sub",  Sub,  parseR3, "sub rX rY rZ" },
+  { "mult", Mult, parseR3, "mult rX rY rZ" },
+  { "div",  Div,  parseR3, "div rX rY rZ" },
+  { "idiv", IDiv, parseR3, "idiv rX rY rZ" },
+  { "mod",  Mod,  parseR3, "mod rX rY rZ" },
+
+  { "inc", Inc, parseR1, "inc rX" },
+  { "dec", Dec, parseR1, "dec rX" },
+  { "neg", Neg, parseR1, "neg rX" },
+  { "not", Not, parseR1, "not rX" },
+
+  {"boolof", BoolOf, parseR2, "boolof rX rY" },
+
+  {"if",   If,   parseR1,    "if rX" },
+  {"goto", Goto, parseR0I24, "goto offset" },
 };
 
 int number_of_instructions = sizeof(instructions) / sizeof(instructions[0]);
