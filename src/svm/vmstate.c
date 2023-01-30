@@ -45,7 +45,7 @@ VMState newstate(void) {
 }
 
 
-// TODO For next time: test and see if allocation is necessary. I suspect not
+// For next time: test and see if allocation is necessary. I suspect not
 
 // also, linear search is fine here, since we're dealing with a max n of ~65k:
 // This isn't enough to benefit from constant vs. linear time in a way 
