@@ -102,27 +102,27 @@ static void initnames(void) {
 
 /* Encode load literal instruction */
 Instruction parseR1LIT(VMState vm, Opcode opcode, Tokens operands, unsigned *maxreg) {
-  initnames(); // before comparing names, you must call this function
-  uint8_t reg = tokens_get_byte(&operands, NULL);
-  Value litv = get_literal(&operands, NULL);
-  int litslot = literal_slot(vm, litv);
-  assert(litslot == (uint16_t) litslot);
-  assert(operands == NULL);
-  SEE(reg);
-  return eR1U16(opcode, reg, litslot);
+    initnames(); // before comparing names, you must call this function
+    uint8_t reg = tokens_get_byte(&operands, NULL);
+    Value litv = get_literal(&operands, NULL);
+    uint32_t litslot = literal_slot(vm, litv);
+    assert(litslot == (uint16_t) litslot);
+    assert(operands == NULL);
+    SEE(reg);
+    return eR1U16(opcode, reg, litslot);
 }
 
 /* Encode global variable declaration instruction */
 Instruction parseR1GLO(VMState vm, Opcode opcode, Tokens operands, unsigned *maxreg) {
-  initnames();
-  uint8_t reg = tokens_get_byte(&operands, NULL);
-  Value globalname = get_literal(&operands, NULL);
-  uint32_t globalslot = global_slot(vm, globalname);
-  assert(globalslot == (uint16_t) globalslot);
-  assert(operands == NULL);
-  Instruction instruction = eR1U16(opcode, reg, globalslot);
-  SEE(reg);
-  return instruction;
+    initnames();
+    uint8_t reg = tokens_get_byte(&operands, NULL);
+    Value globalname = get_literal(&operands, NULL);
+    uint32_t globalslot = global_slot(vm, globalname);
+    assert(globalslot == (uint16_t) globalslot);
+    assert(operands == NULL);
+    Instruction instruction = eR1U16(opcode, reg, globalslot);
+    SEE(reg);
+    return instruction;
 }
 
 /* Get Literal Value from the token stream and return corresponding Value */
