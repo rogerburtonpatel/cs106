@@ -15,9 +15,9 @@ typedef enum opcode {
                       Print, // R1
                       Println, // R1
                       Check, Expect, // R1LIT
-                      Add, Sub, Div, Mult, Mod, // R3
-                      Inc, Dec, Neg, Not,
                       LoadLiteral, // R1LIT
+                      Add, Sub, Div, IDiv, Mult, Mod, // R3
+                      Inc, Dec, Neg, Not,
                       BoolOf, // R2
                       If, Goto, // R1
                       Unimp, // stand-in for opcodes not yet implemented

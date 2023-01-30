@@ -44,6 +44,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 vm->counter = counter;
                 return;
             case Print:
+                print("%v", registers[uX(curr_instr)]);
+                break;
+            case Println:
                 print("%v\n", registers[uX(curr_instr)]);
                 break;
             case Check: {
@@ -56,42 +59,48 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 expect(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
                 break;
             }
-            /* ARITH */
+            /* ARITH- R3 */
             case Add:
-                vm->registers[uZ(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) 
-                                  + AS_NUMBER(vm, registers[uY(curr_instr)]));
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
+                                  + AS_NUMBER(vm, registers[uZ(curr_instr)]));
                                                             
                 break;
             case Sub:
-                vm->registers[uZ(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) 
-                                  - AS_NUMBER(vm, registers[uY(curr_instr)]));
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
+                                  - AS_NUMBER(vm, registers[uZ(curr_instr)]));
                 break;
             case Mult:
-                vm->registers[uZ(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) 
-                                  * AS_NUMBER(vm, registers[uY(curr_instr)]));
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
+                                  * AS_NUMBER(vm, registers[uZ(curr_instr)]));
                 break;
 
-            // Special case: need to cast to int64_t for div && mod since they
+            case Div:
+                vm->registers[uX(curr_instr)] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
+                                  / AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                break;
+
+            // Special case: need to cast to int64_t for idiv && mod since they
             // have different behavior/are not defined on Number_T (double), 
             // then cast back to Number_T for mkNumberValue. 
-            case Div:
-                vm->registers[uZ(curr_instr)] = 
+
+            case IDiv:
+                vm->registers[uX(curr_instr)] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
-                                                    registers[uX(curr_instr)]) 
+                                                    registers[uY(curr_instr)]) 
                                 / (int64_t)AS_NUMBER(vm, 
-                                                    registers[uY(curr_instr)]));
+                                                    registers[uZ(curr_instr)]));
                 break;
 
-
             case Mod:
-                vm->registers[uZ(curr_instr)] = 
+                vm->registers[uX(curr_instr)] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
-                                                    registers[uX(curr_instr)]) 
+                                                    registers[uY(curr_instr)]) 
                                 % (int64_t)AS_NUMBER(vm, 
-                                                    registers[uY(curr_instr)]));
+                                                    registers[uZ(curr_instr)]));
                 break;
 
             /* UNARY ARITH- R1 */
@@ -135,7 +144,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
                 break;
             case Goto:
-                counter += 1 + AS_NUMBER(vm, registers[uX(curr_instr)]); 
+                counter += 1 + AS_NUMBER(vm, registers[iXYZ(curr_instr)]); 
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
                           // then skipping the increment with continue
