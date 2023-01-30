@@ -26,10 +26,15 @@
 #include "vmstring.h"
 
 void vmrun(VMState vm, struct VMFunction *fun) {
+    
+    if (fun->size < 1) {
+        return;
+    }
+
     uint32_t counter = vm->counter = 0;
     Instruction *instructions = vm->instructions = fun->instructions;
     Instruction curr_instr;
-
+    
     Value *registers = vm->registers;
     Value v;
 
@@ -77,32 +82,45 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                                   * AS_NUMBER(vm, registers[uZ(curr_instr)]));
                 break;
 
-            case Div:
+            case Div: {
+                uint8_t rZ = uZ(curr_instr);
+                Number_T d = AS_NUMBER(vm, registers[rZ]);
+                if (d == 0) {
+                    runerror(vm, "division by zero");
+                }
                 vm->registers[uX(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
-                                  / AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) / d);
                 break;
-
+            }
             // Special case: need to cast to int64_t for idiv && mod since they
             // have different behavior/are not defined on Number_T (double), 
             // then cast back to Number_T for mkNumberValue. 
 
-            case IDiv:
+            case IDiv: {
+                uint8_t rZ = uZ(curr_instr);
+                Number_T d = (int64_t)AS_NUMBER(vm, registers[rZ]);
+                if (d == 0) {
+                    runerror(vm, "division by zero");
+                }
                 vm->registers[uX(curr_instr)] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
                                                     registers[uY(curr_instr)]) 
-                                / (int64_t)AS_NUMBER(vm, 
-                                                    registers[uZ(curr_instr)]));
+                                            / d);
                 break;
-
-            case Mod:
+            }
+            case Mod: {
+                uint8_t rZ = uZ(curr_instr);
+                // coersion
+                int64_t d = AS_NUMBER(vm, registers[rZ]);
+                if (d == 0) {
+                    runerror(vm, "division by zero");
+                }
                 vm->registers[uX(curr_instr)] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
                                                     registers[uY(curr_instr)]) 
-                                % (int64_t)AS_NUMBER(vm, 
-                                                    registers[uZ(curr_instr)]));
+                                            % d);
                 break;
-
+            }
             /* UNARY ARITH- R1 */
             case Inc:
                 vm->registers[uX(curr_instr)] = 
