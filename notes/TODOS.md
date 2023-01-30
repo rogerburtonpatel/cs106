@@ -21,4 +21,57 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
         // remove reg vars
         // global names and values as sep lists-- genius
 
-        
+
+// TODO ask about \n vmrun.c:47
+
+// TODO see if needed, or should be on VMHeap... svm.c:33
+
+vmstate.c:48
+
+I recommend that your loader call svmdebug_value("unparse") to see if unparsing 
+is requested, and if so, have get_instruction call printasm on every 
+instruction that the loader reads.
+
+The mapping defined by 
+R
+ is injective: different numbers designate different locations. In math, whenever 
+i
+≠
+j
+ then 
+R
+[
+i
+]
+≠
+R
+[
+j
+]
+. Likewise for 
+G
+ and globals.
+
+The literal pool 
+L
+ need not be injective; it is possible for two different indices 
+i
+ and 
+j
+ to refer to the same literal. In math, it is possible for 
+L
+[
+i
+]
+=
+L
+[
+j
+]
+ even when 
+i
+≠
+j
+.
+
+but what about not wanting duplicate literals?
