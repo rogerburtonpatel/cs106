@@ -116,7 +116,21 @@ static Instruction get_instruction(VMState vm, FILE *vofile, unsigned *maxregp) 
 }
 /* reads count lines and returns a VMFunction* with count read instructions */
 static struct VMFunction *loadfun(VMState vm, int arity, int count, FILE *vofile) {
-    
+    // Extra instruction space for Halt sentinel --------------------v
+    struct VMFunction *function = malloc(sizeof(*function) + 
+                                        (sizeof(Instruction) * (count + 1)));
+    *function = (struct VMFunction) {.arity = arity, .size = count};
+
+    unsigned maxregp = 0;
+    // This iteration obtains *maxregp, the largest-number register mentioned
+    for (int i = 0; i < count; ++i) {
+        Instruction inst = get_instruction(vm, vofile, &maxregp);
+        function->instructions[i] = inst;
+    }
+    function->instructions[count] = Halt;
+
+    function->nregs = maxregp + 1;
+    return function;
 }
 
 

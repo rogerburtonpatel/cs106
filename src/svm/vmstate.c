@@ -44,9 +44,21 @@ VMState newstate(void) {
     return vms;
 }
 
+
+// TODO For next time: test and see if allocation is necessary. I suspect not
+
+// also, linear search is fine here, since we're dealing with a max n of ~65k:
+// This isn't enough to benefit from constant vs. linear time in a way 
+// perceptable to humans. 
 int literal_slot(VMState state, Value literal) {
     VMNEW(Value, *lit, (sizeof(*lit)));
     *lit = literal;
+    Value *literals = state->literals;
+    for (int i = 0; i < state->num_literals, ++i) {
+        if (identical(literals[i], literal)) {
+            return i;
+        }
+    }
     state->literals[state->num_literals] = literal;
     return state->num_literals++;
 }
