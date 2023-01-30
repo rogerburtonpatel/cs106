@@ -51,7 +51,11 @@ int literal_slot(VMState state, Value literal) {
     return state->num_literals++;
 }
 
-  // these are for module 2 and beyond
+uint32_t global_slot(VMState state, Value name) {
+    (void)state;
+    (void)name;
+    assert(0);
+}
 
 Value literal_value(VMState state, uint32_t index) {
     return state->literals[index];

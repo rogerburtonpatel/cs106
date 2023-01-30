@@ -44,7 +44,7 @@ void freestatep(VMState *sp); // deallocate
 int literal_slot(VMState state, Value literal);
   // return any index of literal in `literals`, adding if needed
 
-int global_slot(VMState state, Value name);
+uint32_t global_slot(VMState state, Value name);
   // return the unique index of `name` in `globals`, adding if needed.
   // The `name` parameter must be a VM string or the result is
   // a checked run-time error.
