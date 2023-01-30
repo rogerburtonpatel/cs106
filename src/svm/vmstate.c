@@ -54,7 +54,7 @@ int literal_slot(VMState state, Value literal) {
     VMNEW(Value, *lit, (sizeof(*lit)));
     *lit = literal;
     Value *literals = state->literals;
-    for (int i = 0; i < state->num_literals, ++i) {
+    for (int i = 0; i < state->num_literals; ++i) {
         if (identical(literals[i], literal)) {
             return i;
         }
