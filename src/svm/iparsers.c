@@ -129,9 +129,9 @@ Instruction parseR1GLO(VMState vm, Opcode opcode, Tokens operands, unsigned *max
 static Value get_literal(Tokens *litp, const char *input) {
 
     int tokenType = first_token_type(*litp);
-    Name name = tokens_get_name(litp, input);
 
     if (tokenType == TNAME) {
+        Name name = tokens_get_name(litp, input);
         if (name == truename) {
             return mkBooleanValue(true);
         } else if (name == falsename) {
