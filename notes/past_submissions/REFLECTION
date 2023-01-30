@@ -1,0 +1,166 @@
+Roger Burtonpatel
+Jan 23, 2023
+
+Reflection 1: SVM 
+
+1. Binary builds; tests pass.
+
+2. 
+halt: neither embeds nor projects
+print: neither embeds nor projects
+check: Projects input (line of vScheme code) to C string
+expect: Projects input (line of vScheme code) to C string
+add/sub/... : Embed and project to and from 
+              C Number_T (double) <=> vScheme represention Number Values
+if: neither embeds nor projects
+goto: neither embeds nor projects NOTE: I incorrectly use the AS_NUMBER 
+      projection macro in my submitted implementation of goto because I
+      forgot we don't pull the jump amount from a Value in a register, 
+      but rather from the XYZ field of an instruction. So, MY goto projects
+      from vScheme value to C Number_T, but this is wrong and will be changed.
+
+LoadLiteral: neither embeds nor projects 
+
+In all of these, we're assuming that we can project these 32-bit words 
+into valid machine instructions, so we're always projecting languages
+(but not always values).
+
+3. In vmrun.c, in the vmrun() function, we are projecting the 32-bit words
+   that we are given in the instruction stream into valid Virtual Machine
+   instructions (with opcode in operands). We do this by extracting the opcode
+   and switching based on the opcode on vmrun.c:51. If we fail in our projection
+   (i.e. no valid opcode) we fail on vmrun.c:166-168 with the default keyword 
+   guarding us. 
+
+4. 
+Parts of Virtual Machine State :: Representation in VMState Struct
+
+Instruction Pointer            :: counter, a uint32_t that indexes into 
+                                  instruction array that lives in VMFunction.
+
+Instruction Stream             :: instructions, a raw array that lives in 
+                                  VMFunction. 
+
+Current Instruction            :: curr_instruction, a member of VMState.
+
+Registers                      :: registers, a raw array of size 256 that holds
+                                  Values. This lives directly in VMState i.e.
+                                  it is NOT sepearetly allocated on the heap.
+                                
+Literal Pool                   :: literals, a Hanson Seq_T of Value pointers. 
+                                  These Values pointers are allocated using the
+                                  vmheap, so that the literals themselves
+                                  consume VM memory, while the Seq_T is 
+                                  allocated on the C heap so that their
+                                  store does not. 
+
+Global-variable table          :: globals, a Hanson Seq_T of Value pointers. 
+                                  These Values pointers are allocated using the
+                                  vmheap, so that the globals themselves
+                                  consume VM memory, while the Seq_T is 
+                                  allocated on the C heap so that their
+                                  store does not. NOTE: I may change this to
+                                  a Table_T when we get to globals if I find
+                                  that more efficient in my representaion. 
+
+(after code review, I'm considering changing the representation of globals and
+literals to be more static, since their addressable space is limited to 2^16.) 
+
+5. 
+Copy a value from one VM register to another:
+
+                                    X, Y ∈ dom R
+--------------------------------------------------------------------------------------------
+⟨I1 • SET_REG(X, Y) ⋅ I2, R, L, G, σ⟩ → ⟨I1 ⋅ SET_REG(X, Y) • I2, R, L, G, σ{R(Y) ↦ σR(X)}⟩
+
+
+6. Cached variables:
+
+Note: Code reivew made me realize I wanted to change a few of these. Changes are described
+below. 
+
+The program counter is cached in a uint32_t called counter. This counter
+is incremented after every instruction exectures, so it is essential it be 
+fast to access. 
+
+The current instruction is cached in an Instruction called current_instruction.
+This variable is also accessed (in fact multiple times) every loop, so having
+it in a C register is also essential. 
+
+The opcode of a given instruction is cached in an Opcode called op. This value
+is examined each time the switch statement executes, and is therefore accessed
+with every loop (sensing a theme here). Because of frequent access, storing it 
+in a local variable to cache it seems wise. 
+
+The register indices rX, rY, and rZ are all stored in uint8_t's with the same
+names. Since nearly every instruction uses at least one register, holding these
+to perform fast aritmatic, and therefore maintain a speedy virtual ALU, seems 
+prudent as long as they don't get in the way of other caching. After code review,
+I'll probably remove these entirely and just call uX, uY, uZ within the subscript
+[] to bypass local variables. 
+
+The beginning of the registers array is stored in a Value pointer called 
+registers. This saves a dereference and struct member access
+(from vm->registers) every time the registers are referenced. Since all but
+the goto instruction do so, I think saving this slow dereference will help 
+speed up access. 
+
+Finally, a value pointer is stored in the variable v. Since every literal 
+access requires pulling from a Seq_T of pointers, pulling out this variable
+to have fast access seemed like a good move. After code review, I'm going to
+remove this in favor of caching the instruction head pointer, which is also
+accessed constantly. 
+
+7. 
+For implementing Python:
+
+               Boolean: useful 
+               Number : useful
+               String : useful 
+               
+               Emptylist : useful. This would be helpful for representing empty Python Lists,
+                                   which have special properties: they evaluate to false, call
+                                   errors when popped from, and are the base case for many 
+                                   recursive algorithms, among other traits. Having this type
+                                   would make many function calls and evaluations simple, since 
+                                   they could type-check with this Value to begin. 
+
+               ConsCell  : not useful. Since python lists are represented under the hood as 
+                                       ArrayLists, this would likely not be helpful. Python 
+                                       doesn't have a built-in Linked List type, which would
+                                       mirror the form of a cons list. It would be wiser to 
+                                       implement other primitive values before this one. 
+            
+
+               VMFunction : useful
+               VMClosure  : useful
+
+               Block       : useful
+               Seq,        : useful
+               Table,      : useful
+
+               CFunction     : possibly useful, depending on version + language support for C
+               LightUserdata : possibly useful
+
+8. 
+Looking at vmheap.h/c:
+I think this would be helpful in implementing Matlab, Python, and JavaScript. 
+
+For Matlab, having access to large pages of memory to hold huge arrays 
+without the need for manual user allocation would be a blessing. Furthermore,
+garbage collection (eventually) will be a critical part of keeping the memory
+usage of Matlab programs, which can often allocate Gigabytes of data at a time,
+down by freeing potentially huge variables that go out of scope. 
+
+11. 
+I used ChatGPT to explain, with a concrete example, how scoping
+works in C switch statements. This is something I wasn't familiar with,
+and I wanted a quick answer with a good visual rather than trawling through
+legacy documentation. I copied and edited the scoped portions of ChatGPT's 
+switch statement into my code. Since I wanted to have multiple instances of 
+the same local variable, I explicitly asked the generator to give me this 
+(in a C switch statment) alongside an explanation. A screenshot of the interaction
+exists here: https://www.yogile.com/w3vup1q59k7/21t/share/?vsc=d4ee7befa
+(free photo sharing website. If link expires I can send on Slack.)
+
+Thanks for your help on this assignment!
