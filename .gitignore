@@ -60,3 +60,5 @@
 /bin/vscheme.opt
 /bin/uft.old
 callgrind.out.*
+/src/svm/legacy
+a.out
