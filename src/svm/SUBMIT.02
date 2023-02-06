@@ -2,49 +2,96 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - I wasn't sure about the efficiency tradeoff for literals and globals
+    that Norman proposed (storing them and searching for them linearly), so
+    I did independant research. While I came to the same conclusion, I'm 
+    glad it was closer to my own, and that I can defend my decision 
+    independantly. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - I'd like to hear about use of VMNEW: Since Values are stored in registers
+    and the literal and global maps are now just Value arrays as well, is there
+    any point in using the vmheap? I'm still using VMNEW for literals, but I 
+    see this might not be necessary. On the flipside, an implementation that 
+    doesn't use the vmheap at all makes me question if it is lacking in 
+    something. I'd like to hear about vmheap use down the line.  
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+  - I would like to hear about commenting, specifically in the loader code in 
+    loader.c:get_instruction. 
+    I lost a lot of my work through a git mishap and had to build a lot of the 
+    code again in a rush, with lots of help from incredibly gracious teammates. 
+    Having not gone through the full development process of the function 
+    independantly, there are parts I'm less sure on. This led me to want to
+    comment up EVERYTHING, but I knew I pitfell into that with a lot of the
+    code in module one. 
+    Specifically I'd like to hear how to comment on code like that: 
+    I know code should be self-documenting, but sometimes notes for you,
+    the implementer are really helpful. If you have them, I want to hear what 
+    heuristics you use for codebases or complex functions to create meaningful 
+    comments that help you when re-reading the code. 
+    If this is something that can only be decided independantly, 
+    I'd like to hear that, too. Thank you. 
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - loader.c:get_instruction. All lines were shared by Stephanie; I edited 
+    some. 
+  - iparsers.c:get_literal, lines 135-149 were shared by Stephanie and Vivian.
+
+    Enormous thank you to both of them for sharing after I lost my iparsers
+    code and was falling behind. 
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
+  - I changed quite a lot. 
 
+  Who helped: Matt, Stephanie, Vivian, Norman, Jasper
+
+  vmstate.h:28-33; literal and global representation changed from Seq_T -> array
+                    and struct now holds instruction start pointer. 
+                    Also removed comments that were 
+                    'an object lesson in "how not to comment."'
+
+  vmstate.c:36-42; corresponding implementations changed. 
+
+  vmrun.c:33-40, 43-166; Cached variables changed: no register uint8_t's, 
+  now including a cached instruction stream. In whole switch statement, 
+  register values were now manually extracted without variable assignment. 
+  The cached value was changed from a pointer to a static variable. 
+
+  value.h:115; return value of falsey() is now bool per Norman's suggestion.
+  value.c:114-125; corresponding implementation changed. 
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - Yes
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - I would like to see more debug infrastructure. I want to learn 
+    to think using debug-first principles. Seeing more code 
+    written with that kind of thoughtfullness would help. 
 
 Again supposing you are not selected to present, who in your group is
 willing to serve on the review panel?
 
-  - 
+  - Of me, Vivian, and Stephanie: I would be willing; I would have to ask them
+    if they would as well. 
