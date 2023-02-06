@@ -1,166 +1,153 @@
-Roger Burtonpatel
-Jan 23, 2023
+Project points:
 
-Reflection 1: SVM 
+1. Submitted
+2. Submitted
+3. Language: Python
 
-1. Binary builds; tests pass.
+Literal types:
 
-2. 
-halt: neither embeds nor projects
-print: neither embeds nor projects
-check: Projects input (line of vScheme code) to C string
-expect: Projects input (line of vScheme code) to C string
-add/sub/... : Embed and project to and from 
-              C Number_T (double) <=> vScheme represention Number Values
-if: neither embeds nor projects
-goto: neither embeds nor projects NOTE: I incorrectly use the AS_NUMBER 
-      projection macro in my submitted implementation of goto because I
-      forgot we don't pull the jump amount from a Value in a register, 
-      but rather from the XYZ field of an instruction. So, MY goto projects
-      from vScheme value to C Number_T, but this is wrong and will be changed.
+String Literals:
+    Could be expressed as <literal> in virtual object code. 
+Numeric Literals:
+    SOME could be expressed as <literal> in virtual object code using various
+    numeric types. But Python uses BigNums, and we might need multiple 
+    instructions to code for these depending on implementation. Certainly,
+    we would need a new instruction that describes the behavior of how to 
+    allocate for and read in bignums (if using an array, for example).
+Boolean Literals:
+    Could be expressed as <literal> in virtual object code using true | false. 
+Special Literals: ("None")
+    Could be expressed as <literal> in virtual object code using nil.
+Literal Collections:
+    Could not be expressed as <literal> in virtual object code, since 
+    lists, sets, dicts, tuples, etc. can be instantiated with members, and
+    no <literal> describes a container along with its (potentially numerous)
+    contents. Multiple instructions may be needed to allocate a container
+    and fill its contents. 
 
-LoadLiteral: neither embeds nor projects 
+4.  If you were able to compile Python to virtual object code, then 
+    I could reuse the loader: I believe that each type could be encoded, if
+    perhaps in multiple instructions, with a single line that can be 
+    tokenized and parsed into a single 32-bit machine word. I would have to
+    expand the instruction table significantly, but could keep its general
+    form.
 
-In all of these, we're assuming that we can project these 32-bit words 
-into valid machine instructions, so we're always projecting languages
-(but not always values).
+5. Properties my implementation has: 
+    - There is no wasted space
+    - Implementing literal_slot was quick and easy
 
-3. In vmrun.c, in the vmrun() function, we are projecting the 32-bit words
-   that we are given in the instruction stream into valid Virtual Machine
-   instructions (with opcode in operands). We do this by extracting the opcode
-   and switching based on the opcode on vmrun.c:51. If we fail in our projection
-   (i.e. no valid opcode) we fail on vmrun.c:166-168 with the default keyword 
-   guarding us. 
+    This was something I thought a lot about. Norman's use of a hard-coded
+    array had me thinking about tradeoffs, and I went seeking some answers. 
+    This video https://youtu.be/o4-zpAI7qBc unlocked some new ideas. The idea
+    is that Big-O describes behavior as input sizes approach infinity; for 
+    small inputs, it really isn't the foremost factor in determining runtime. 
+    Even though literal_slot is an O(n) algorithm in my implementation 
+    and other implementations have the potential for O(1) with a table,
+    for an input size of 65k or less, I think the overhead of allocating
+    a hash table, hashing values, and resolving collisions would be 
+    unnoticablly faster (if at all) from a linear search. Futhermore,
+    linear storage is much easier to implement, debug, and garbage-collect. 
 
-4. 
-Parts of Virtual Machine State :: Representation in VMState Struct
+    As such, I implemented my literal pool (and global lookup structure) as 
+    linear C arrays, and perform a search to avoid duplicates. I decided
+    I'm more worried about my table filling up with redundant values 
+    than having to wait to search for them, especially since common literals 
+    (0, 1, #t, #f, '(), and so forth) would likely be placed very early on 
+    in the array, making search time especially fast. 
 
-Instruction Pointer            :: counter, a uint32_t that indexes into 
-                                  instruction array that lives in VMFunction.
+6. In iparsers.c:get_literal, on line 123, the parser extracts the token
+   type. On lines 125-148, the parser makes a decision based on the type;
+   in the if-else tree, the parser is choosing which literal form it thinks
+   it's been given. For example, on lines 127, 129, 131, 133, and 135, 
+   the parser is recognizing a name and potentially choosing a Value 
+   representation for booleans, nil, emptylist, and string. 
+   On lines 144-148, the parser is deciding it has found a Number. 
 
-Instruction Stream             :: instructions, a raw array that lives in 
-                                  VMFunction. 
-
-Current Instruction            :: curr_instruction, a member of VMState.
-
-Registers                      :: registers, a raw array of size 256 that holds
-                                  Values. This lives directly in VMState i.e.
-                                  it is NOT sepearetly allocated on the heap.
-                                
-Literal Pool                   :: literals, a Hanson Seq_T of Value pointers. 
-                                  These Values pointers are allocated using the
-                                  vmheap, so that the literals themselves
-                                  consume VM memory, while the Seq_T is 
-                                  allocated on the C heap so that their
-                                  store does not. 
-
-Global-variable table          :: globals, a Hanson Seq_T of Value pointers. 
-                                  These Values pointers are allocated using the
-                                  vmheap, so that the globals themselves
-                                  consume VM memory, while the Seq_T is 
-                                  allocated on the C heap so that their
-                                  store does not. NOTE: I may change this to
-                                  a Table_T when we get to globals if I find
-                                  that more efficient in my representaion. 
-
-(after code review, I'm considering changing the representation of globals and
-literals to be more static, since their addressable space is limited to 2^16.) 
-
-5. 
-Copy a value from one VM register to another:
-
-                                    X, Y ∈ dom R
---------------------------------------------------------------------------------------------
-⟨I1 • SET_REG(X, Y) ⋅ I2, R, L, G, σ⟩ → ⟨I1 ⋅ SET_REG(X, Y) • I2, R, L, G, σ{R(Y) ↦ σR(X)}⟩
-
-
-6. Cached variables:
-
-Note: Code reivew made me realize I wanted to change a few of these. Changes are described
-below. 
-
-The program counter is cached in a uint32_t called counter. This counter
-is incremented after every instruction exectures, so it is essential it be 
-fast to access. 
-
-The current instruction is cached in an Instruction called current_instruction.
-This variable is also accessed (in fact multiple times) every loop, so having
-it in a C register is also essential. 
-
-The opcode of a given instruction is cached in an Opcode called op. This value
-is examined each time the switch statement executes, and is therefore accessed
-with every loop (sensing a theme here). Because of frequent access, storing it 
-in a local variable to cache it seems wise. 
-
-The register indices rX, rY, and rZ are all stored in uint8_t's with the same
-names. Since nearly every instruction uses at least one register, holding these
-to perform fast aritmatic, and therefore maintain a speedy virtual ALU, seems 
-prudent as long as they don't get in the way of other caching. After code review,
-I'll probably remove these entirely and just call uX, uY, uZ within the subscript
-[] to bypass local variables. 
-
-The beginning of the registers array is stored in a Value pointer called 
-registers. This saves a dereference and struct member access
-(from vm->registers) every time the registers are referenced. Since all but
-the goto instruction do so, I think saving this slow dereference will help 
-speed up access. 
-
-Finally, a value pointer is stored in the variable v. Since every literal 
-access requires pulling from a Seq_T of pointers, pulling out this variable
-to have fast access seemed like a good move. After code review, I'm going to
-remove this in favor of caching the instruction head pointer, which is also
-accessed constantly. 
 
 7. 
-For implementing Python:
+In virtual machine code, every instruction must be of the same length in terms
+of number of bits; e.g. an instruction that only uses one register must still
+have the excess bits besides the opcode and register address. In the virtual
+object code, only the used registers need be specified on a line. For example,
+"not 1" is a valid line in virtual object code, but a virtual machine
+instruction must contain 
+[opcode not] + [register 1] + [16 junk bits]. 
 
-               Boolean: useful 
-               Number : useful
-               String : useful 
-               
-               Emptylist : useful. This would be helpful for representing empty Python Lists,
-                                   which have special properties: they evaluate to false, call
-                                   errors when popped from, and are the base case for many 
-                                   recursive algorithms, among other traits. Having this type
-                                   would make many function calls and evaluations simple, since 
-                                   they could type-check with this Value to begin. 
+8. All 6 forms of literal can be embedded from vo code to Values. On lines 
+   128, 130, 132, 134, 142, 145, and 148, we demonstrate the ability to embed
+   the tokens obtained from the machine code (the tokens being generated in
+   loader.c). Note that we can't STORE the Values without the vmstate, but we
+   can embed the object code to Value types just fine without it. 
+   Effectively, on iparsers.c:99, we complete embedding of a .vo <literal>
+   to a Value, and on iparsers.c:100, we store that literal, which needs the
+   vmstate. So, their embedding and storage is distinct, and embedding does
+   not require the state. 
 
-               ConsCell  : not useful. Since python lists are represented under the hood as 
-                                       ArrayLists, this would likely not be helpful. Python 
-                                       doesn't have a built-in Linked List type, which would
-                                       mirror the form of a cons list. It would be wiser to 
-                                       implement other primitive values before this one. 
-            
+9. The LoadLiteral instruction could not be projected without a vmstate, 
+   since we need to call literal_slot (which requires the state) in order
+   to comfortably seat the literal at load time. Similarly, Check and Expect
+   also use parseR1LIT, which calls literal_slot; ergo, these need vmstate. 
+   When I add instructions GetGlobal and SetGlobal, they will also need the 
+   state for global_slot. All others can be projected to virtual object code 
+   without the vmstate. The thing they have in common is that the only operate
+   on registers, and don't need direct access to the literal pool to be formed.
 
-               VMFunction : useful
-               VMClosure  : useful
+10. 
+loader.c:101 and iparsers.c:100 are calls to literal_slot, which will return
+the slot of the requested literal, updating the pool as needed. The
+(potentially) updated pool L', is guaranteed to contain the literal v at 
+returned location v. This is enforced on lines vmstate.c:57-62, which return the
+slot of the literal if it exists or create a new slot and return its location.
+Therefore, in the 'next-state' literal pool L', 
+the value v is (nondeterministically) guaranteed to be in the literal pool L'
+at location k: 
+L'(k) = v. 
 
-               Block       : useful
-               Seq,        : useful
-               Table,      : useful
+Similarly, updating the literal pool can never alter values other than the one
+being added; as such, L ⊆ L'. This is also enforced on lines vmstate.c:57-62, 
+which can only write to the num_literals'th position, and this is guaranteed
+by the invariant to never hold a valid literal before it is written to.
+As such, the literal pool can only grow between state transitions through calls
+to literal_slot, and we can assert that in all such transitions that L ⊆ L'.
 
-               CFunction     : possibly useful, depending on version + language support for C
-               LightUserdata : possibly useful
+Depth pt. 11:
 
-8. 
-Looking at vmheap.h/c:
-I think this would be helpful in implementing Matlab, Python, and JavaScript. 
+I used ChatGPT to generate an if-else tree from a switch statement (since I was
+switching on a pointer). This tree is found in iparsers.c:125-148. 
+To effectively prompt it (I wanted nothing changed except to go from switch 
+to if-else), I asked ChatGPT to 
+"change the following code block in C from a switch statement to an if-else
+ tree, changing nothing except the conditional logic"
 
-For Matlab, having access to large pages of memory to hold huge arrays 
-without the need for manual user allocation would be a blessing. Furthermore,
-garbage collection (eventually) will be a critical part of keeping the memory
-usage of Matlab programs, which can often allocate Gigabytes of data at a time,
-down by freeing potentially huge variables that go out of scope. 
+And it did so very well: the tree was valid, compiled, and produced the correct
+result. However, it was badly indented. To effectively prompt good indentation,
+I asked:
+"give me the same code, but with the body of each for loop and if, else if, 
+or else statement indented by four space characters, with nesting."
+(I wanted to be very specific so it got it right!)
 
-11. 
-I used ChatGPT to explain, with a concrete example, how scoping
-works in C switch statements. This is something I wasn't familiar with,
-and I wanted a quick answer with a good visual rather than trawling through
-legacy documentation. I copied and edited the scoped portions of ChatGPT's 
-switch statement into my code. Since I wanted to have multiple instances of 
-the same local variable, I explicitly asked the generator to give me this 
-(in a C switch statment) alongside an explanation. A screenshot of the interaction
-exists here: https://www.yogile.com/w3vup1q59k7/21t/share/?vsc=d4ee7befa
-(free photo sharing website. If link expires I can send on Slack.)
+It gave me a very good tree, with only one issue: the function body
+was indented by two spaces! I asked it:
 
-Thanks for your help on this assignment!
+"give me the exact same code, but change the indentation of this function's
+body to be four space characters from the margin."
+
+It gave me the exact desired output. One thing it did well was chaining commands
+referencing each other and honoring the invariant of never changing any of the
+items I asked it not to touch. 
+
+
+Depth pt. 13:
+
+In order to take in string literals, we would need to add a function
+
+const char *tokens_get_string(Tokens *p, const char *original); 
+
+With the contract:
+
+tokens_get_string accepts a tokenized C string from the token stream and 
+returns the literal C string. 
+
+This would assume that strings were able to be tokenized by the tokens()
+function; however, this change would not affect the interface. 
+

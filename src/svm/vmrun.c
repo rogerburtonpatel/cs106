@@ -66,18 +66,18 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             }
             /* ARITH- R3 */
             case Add:
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
                                   + AS_NUMBER(vm, registers[uZ(curr_instr)]));
                                                             
                 break;
             case Sub:
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
                                   - AS_NUMBER(vm, registers[uZ(curr_instr)]));
                 break;
             case Mult:
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
                                   * AS_NUMBER(vm, registers[uZ(curr_instr)]));
                 break;
@@ -88,7 +88,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) / d);
                 break;
             }
@@ -102,7 +102,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
                                                     registers[uY(curr_instr)]) 
                                             / d);
@@ -115,7 +115,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
                                                     registers[uY(curr_instr)]) 
                                             % d);
@@ -123,35 +123,35 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             }
             /* UNARY ARITH- R1 */
             case Inc:
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) + 1);
                 break;
             case Dec:
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) - 1);
                 break;
             case Neg:
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(-AS_NUMBER(vm, registers[uX(curr_instr)]));
                 break;    
             // REV: Is this needed in vScheme?   
             case Not:
-                vm->registers[uX(curr_instr)] = 
+                registers[uX(curr_instr)] = 
                     mkNumberValue(~(int64_t)AS_NUMBER(
                                                 vm, registers[uX(curr_instr)]));
                 break;       
                                           
             /* LITS <-> GLOBS <-> REGS */
             case LoadLiteral: 
-                vm->registers[uX(curr_instr)] = vm->literals[uYZ(curr_instr)];
+                registers[uX(curr_instr)] = vm->literals[uYZ(curr_instr)];
                 break;
 
 
             /* SPECIAL CASES */
             case BoolOf:
                 v.tag = Boolean;
-                v.b = falsey(registers[uX(curr_instr)]);
-                registers[uY(curr_instr)] = v;
+                v.b = falsey(registers[uY(curr_instr)]);
+                registers[uX(curr_instr)] = v;
                 break;
 
             /* (UN)CONDITIONAL MOVEMENT */
