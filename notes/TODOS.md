@@ -9,9 +9,9 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
             // Examines value v in rX and sets rY to falsey(v).
 
 
-// TODO ask about \n vmrun.c:47
-
 // TODO see if needed, or should be on VMHeap... svm.c:33
+
+// add move instruction and short-circuit boolean logic
 
 vmstate.c:48
 
@@ -73,4 +73,7 @@ I can't hold them all in my head at once."
 'The comments on struct VMState could serve as an object lesson in 
 "how not to comment."'
 
-
+R: "Why is it called ld, if it's not a full loader?"
+NR: "I don't know... some people were discussing it being a loader in the 70s..."
+R: "Yeah, makes sense. I figured if anyone would've been there it would be you"
+NR: "No, I was out playing touch football"
