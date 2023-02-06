@@ -66,9 +66,9 @@ all: $(BUILD)/model-state.o
 all: $(BUILD)/model-run.o
 
 $(BUILD)/model-state.o: model/vmstate.c model/vmstate.h
-	gcc -c $(CFLAGS) -Imodel -I. -o $@ model/vmstate.c
+	gcc -c -DMODEL $(CFLAGS) -Imodel -I. -o $@ model/vmstate.c
 $(BUILD)/model-run.o: model/vmrun.c model/vmstate.h
-	gcc -c $(CFLAGS) -Imodel -I. -o $@ model/vmrun.c
+	gcc -c -DMODEL $(CFLAGS) -Imodel -I. -o $@ model/vmrun.c
 
 
 
