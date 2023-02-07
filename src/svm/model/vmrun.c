@@ -6,12 +6,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-<<<<<<< HEAD
-// #define Add Unimp             // blatant cheat for demo
-#define ConsInstruction Unimp2 // blatant cheat for demo
-
-=======
->>>>>>> 63e6c3855b52f99dd51a35e2186f3b114dd8bbd8
 #include "vmstate.h"  // for demo, must come first.  Thanks, gcc!
 #include "check-expect.h"
 #include "disasm.h"
