@@ -23,6 +23,9 @@ typedef enum opcode {
                       Add, Sub, Div, IDiv, Mult, Mod, // R3
                       Inc, Dec, Neg, Not,
                       BoolOf, // R2
+                      RegAssign, // R2
+                      Swap, // R2
+                      PlusImm, // R2
                       If, Goto, // R1
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
