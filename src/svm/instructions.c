@@ -21,11 +21,11 @@ instruction_info instructions[] = {
   { "check", Check, parseR1LIT, "check LIT, rX" },
   { "expect", Expect, parseR1LIT, "expect LIT, rX" },
 
-  { "add",  Add,  parseR3, "add rX rY rZ" },
-  { "sub",  Sub,  parseR3, "sub rX rY rZ" },
-  { "mult", Mult, parseR3, "mult rX rY rZ" },
-  { "div",  Div,  parseR3, "div rX rY rZ" },
-  { "idiv", IDiv, parseR3, "idiv rX rY rZ" },
+  { "+",  Add,  parseR3, "add rX rY rZ" },
+  { "-",  Sub,  parseR3, "sub rX rY rZ" },
+  { "*", Mult, parseR3, "mult rX rY rZ" },
+  { "/",  Div,  parseR3, "div rX rY rZ" },
+  { "//", IDiv, parseR3, "idiv rX rY rZ" },
   { "mod",  Mod,  parseR3, "mod rX rY rZ" },
 
   { "inc", Inc, parseR1, "inc rX" },
@@ -34,6 +34,9 @@ instruction_info instructions[] = {
   { "not", Not, parseR1, "not rX" },
 
   {"boolof", BoolOf, parseR2, "boolof rX rY" },
+  {"=", RegAssign, parseR2, "rX := rY"},
+  {"swap", Swap, parseR2, "rX, rY := rY, rX"},
+  {"+imm", PlusImm, parseR2U8, "rX := rY + IMM"},
 
   {"if",   If,   parseR1,    "if rX" },
   {"goto", Goto, parseR0I24, "goto offset" },
