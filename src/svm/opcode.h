@@ -23,6 +23,7 @@ typedef enum opcode {
                       Cons, // R3
                       Inc, Dec, Neg, Not, // R1
                       BoolOf, // R2
+<<<<<<< HEAD
                       Car, Cdr,  // R2
                       Hash, // R2
                       IsFunction, IsNumber, IsSymbol, IsPair, // R2 
@@ -32,6 +33,11 @@ typedef enum opcode {
                       Call, // R3
                       Tailcall, // R2
                       MkClosure, SetClSlot, GetClSlot, // R2
+=======
+                      RegAssign, // R2
+                      Swap, // R2
+                      PlusImm, // R2
+>>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
                       If, Goto, // R1
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
