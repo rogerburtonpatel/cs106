@@ -26,12 +26,20 @@ instruction_info instructions[] = {
   { "expect", Expect, parseR1LIT, "expect LIT, rX" },
   { "check-assert", CheckAssert, parseR1LIT, "check-assert LIT, rX" },
 
+<<<<<<< HEAD
   { "+",  Add,  parseR3, "+ rX rY rZ" },
   { "-",  Sub,  parseR3, "- rX rY rZ" },
   { "*", Mult, parseR3, "* rX rY rZ" },
   { "/",  Div,  parseR3, "/ rX rY rZ" },
   { "//", IDiv, parseR3, "// rX rY rZ" },
   { "idiv", IDiv, parseR3, "// rX rY rZ" },
+=======
+  { "+",  Add,  parseR3, "add rX rY rZ" },
+  { "-",  Sub,  parseR3, "sub rX rY rZ" },
+  { "*", Mult, parseR3, "mult rX rY rZ" },
+  { "/",  Div,  parseR3, "div rX rY rZ" },
+  { "//", IDiv, parseR3, "idiv rX rY rZ" },
+>>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
   { "mod",  Mod,  parseR3, "mod rX rY rZ" },
   { ">",  Gt,  parseR3, "> rX rY rZ" },
   { "<",  Lt,  parseR3, "< rX rY rZ" },
@@ -45,6 +53,7 @@ instruction_info instructions[] = {
   { "neg", Neg, parseR1, "neg rX" },
   { "not", Not, parseR1, "not rX" },
 
+<<<<<<< HEAD
   {"boolOf", BoolOf, parseR2, "boolof rX rY" },
   {"car", Car, parseR2, "rX := car rY"},
   {"cdr", Cdr, parseR2, "rX := cdr rY"},
@@ -69,6 +78,12 @@ instruction_info instructions[] = {
   {"mkclosure", MkClosure, parseR3, "rX := mkclosure rY rZ"},
   {"setclslot", SetClSlot, parseR3, "rX := setclslot rY rZ"},
   {"getclslot", GetClSlot, parseR3, "rX := getclslot rY rZ"},
+=======
+  {"boolof", BoolOf, parseR2, "boolof rX rY" },
+  {"=", RegAssign, parseR2, "rX := rY"},
+  {"swap", Swap, parseR2, "rX, rY := rY, rX"},
+  {"+imm", PlusImm, parseR2U8, "rX := rY + IMM"},
+>>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
 
   {"if",   If,   parseR1,    "if rX" },
   {"goto", Goto, parseR0I24, "goto XYZ" },

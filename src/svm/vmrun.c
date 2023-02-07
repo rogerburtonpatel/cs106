@@ -267,7 +267,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = v;
                 break;
             
+<<<<<<< HEAD
             case RegCopy:
+=======
+            case RegAssign:
+>>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
                 registers[uX(curr_instr)] = registers[uY(curr_instr)];
                 break;
 
@@ -276,11 +280,14 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = registers[uY(curr_instr)];
                 registers[uY(curr_instr)] = v;
                 break;
+<<<<<<< HEAD
             
             case Hash:
                 registers[uX(curr_instr)] = 
                             mkNumberValue(hashvalue(registers[uY(curr_instr)]));
                 break;
+=======
+>>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
 
             case PlusImm:
                 registers[uX(curr_instr)] = mkNumberValue(
