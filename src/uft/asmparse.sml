@@ -98,6 +98,16 @@ struct
   fun token t = sat (P.eq t) one >> succeed () (* parse any token *)
   val eol = token L.EOL
 
+  fun lit_of_token l = 
+    case l of L.INT n => SOME (O.INT n)
+            | L.NAME "true" => SOME (O.BOOL true)
+            | L.NAME "false" => SOME (O.BOOL false)
+            | L.NAME "emptylist" => SOME (O.EMPTYLIST)
+            | L.NAME "nil" => SOME (O.NIL)
+            | L.STRING s => SOME (O.STRING s)
+            | _ => NONE
+
+  val literal = P.maybe lit_of_token one
 
   (* turn any single-token string into a parser for that token *)
   fun the "\n" = eol
@@ -177,13 +187,14 @@ struct
     <|> eR1 "neg"  <$> (the "neg" >> reg) 
     <|> eR1 "not"  <$> (the "not" >> reg) 
     
-    <|> eR2 "boolOf" <$> reg <~> the ":=" <~> the "boolOf" <*> reg
+    <|> eR2 "boolOf" <$> reg <~> the ":=" <~> the "(bool)" <*> reg
+    <|> eR2 "=" <$> reg <~> the ":=" <*> reg
 
     <|> eR3 "+imm" <$> reg <~> the ":=" <*> reg <~> the "+" <*> (offset_code <$>! int)
     <|> eR3 "+imm" <$> reg <~> the ":=" <*>
                        reg <~> the "-" <*> ((offset_code o ~) <$>! int)
                                            (* the ~ is ML's unary minus (negation) *)
-    (* <|> eRL "loadliteral" <$> reg <~> the ":=" <*>  *)
+    <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
     <|> P.check
         (swap <$> reg <~> the "," <*> reg <~> the ":=" <*> reg <~> the "," <*> reg)
     (* cases added above *)    
@@ -269,6 +280,7 @@ struct
         spaceSep ["neg", reg x]
     | unparse1 (A.OBJECT_CODE (O.REGS ("not", [x]))) =
         spaceSep ["not", reg x]
+    
 
     | unparse1 (A.OBJECT_CODE (O.REGS ("swap", [x, y]))) =
         spaceSep [reg x, ",", reg y, ":=", reg y, ",", reg x]
@@ -279,6 +291,10 @@ struct
             else
                 spaceSep [reg x, ":=", reg y, "+",  int n]
         end
+    | unparse1 (A.OBJECT_CODE (O.REGS ("boolOf", [x, y]))) =
+        spaceSep [reg x, ":=", "(bool)", reg y]
+    | unparse1 (A.OBJECT_CODE (O.REGS ("=", [x, y]))) =
+      spaceSep [reg x, ":=", reg y]
     | unparse1 (A.OBJECT_CODE (O.REGS ("print", [x]))) =
       spaceSep ["print", reg x]
     | unparse1 (A.OBJECT_CODE (O.REGS ("println", [x]))) =
@@ -295,8 +311,6 @@ struct
       spaceSep ["goto", s]
     | unparse1 (A.IF_GOTO_LABEL (x, s)) =
       spaceSep ["if-goto", reg x, s]
-    | unparse1 (A.OBJECT_CODE (O.REGS("boolOf", [x, y]))) =
-      spaceSep ["boolOf", reg x, reg y]
     | unparse1 _ = "an unknown assembly-code instruction"
 
 
