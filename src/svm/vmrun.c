@@ -147,12 +147,29 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
 
 
-            /* SPECIAL CASES */
+            /* R2 */
             case BoolOf:
                 v.tag = Boolean;
                 v.b = falsey(registers[uY(curr_instr)]);
                 registers[uX(curr_instr)] = v;
                 break;
+            
+            case RegAssign:
+                registers[uX(curr_instr)] = registers[uY(curr_instr)];
+                break;
+
+            case Swap:
+                v = registers[uX(curr_instr)];
+                registers[uX(curr_instr)] = registers[uY(curr_instr)];
+                registers[uY(curr_instr)] = v;
+                break;
+
+            case PlusImm:
+                registers[uX(curr_instr)] = mkNumberValue(
+                            AS_NUMBER(vm, registers[uY(curr_instr)]) 
+                            + uZ(curr_instr));
+                break;
+            
 
             /* (UN)CONDITIONAL MOVEMENT */
             case If: 
