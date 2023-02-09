@@ -16,6 +16,8 @@ instruction_info instructions[] = {
   { "print", Print, parseR1, "print rX" },
   { "println", Println, parseR1, "println rX" },
   { "loadliteral", LoadLiteral, parseR1LIT, "rX := LIT" },
+  { "loadglobal", LoadGlobal, parseR1GLO, "rX := _G[glo]" },
+  { "setglobal", SetGlobal, parseR1GLO, "_G[glo] := rX" },
   { "check", Check, parseR1LIT, "check LIT, rX" },
   { "expect", Expect, parseR1LIT, "expect LIT, rX" },
 
