@@ -20,6 +20,8 @@ typedef enum opcode {
                       Add, Sub, Div, Mult, Mod, // R3
                       Inc, Dec, Neg, Not,
                       LoadLiteral, // R1LIT
+                      LoadGlobal, // R1GLO
+                      SetGlobal, // R1GLO
                       Add, Sub, Div, IDiv, Mult, Mod, // R3
                       Inc, Dec, Neg, Not,
                       BoolOf, // R2

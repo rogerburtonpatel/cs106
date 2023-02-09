@@ -1,0 +1,108 @@
+1. 
+(f >=> g) a = E err, when f a = E err
+(f >=> g) a = g b, when f a = OK b
+
+2.   val commaSep : 'a producer -> 'a list producer
+       = fn p => curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
+
+       also on asmparse.sml:205
+
+3. 
+FORM          |        ASM           | OBJECT CODE
+<binop>       |   r3 := r4 - r5      |   - 3 4 5
+loadliteral   |   r1 := "churchnums" | loadliteral 1 string 10 99 104 117 114 \
+                                                       99 104 110 117 109 115
+
+For binop, in ASM it's clear we're adding values of registers, and what the 
+lvalues and rvalues are. In object code, we presume we're using registers,
+but a naive user might not know this, and be unsure which of 3, 4, 5 represent 
+literals, if any. They certainly won't know for certain without looking at the 
+source documentation what the order of the values is in the subtraction. 
+
+For loadliteral (which goes well over 80 chars without the line break), this is
+trivial: glance-reading od-style strings is not humanly feasible. Also, the 
+first value being the length of the string is extremely hidden within the 
+implementation, and a naive user (see: myself, more than once) might erroneously
+interpret it as a character in the string sequence. 
+
+4. 
+I'd like to argue that these can both be accomplished by a single design: 
+with a little overhead, we can made it extremely easy to add instructions, 
+for both parsinga and unparsing, to the UFT. In one_line_instr at 
+asmparse.sml:178, we can easily add simple formats for our grammar. If the 
+grammar remains small and easy to read/write (one of our goals), adding these
+instruction formats for parsing is similarly simple. 
+
+In addition, unparsing from the formats in unparse1 at asmparse.sml:272-onwards 
+is similarly simple. Once the case nesting has been figured out (I went right 
+from class to modularizing the repetitive code), it is simple and legible to add 
+instructions and understand which instructions are defined. 
+
+It could also, for sake of argument, be claimed that having a simple assembly
+language leads to a more complex parser in the sense that you need to do
+more multi-token reading (asmparse.sml:180-185), losing the single-token-at-
+a-time purity of LL(1). But because of the power of SML pattern matching, and 
+the fact that instructions are always on one line, the longer lines on 
+asmparse.sml:180-185 lend themselves to be read by a human as legible 
+instruction parser generators. Ergo, I think the argument that a simple grammar
+increases the complexity of the UFT is true, but weak. 
+
+5. Submitted. 
+
+6. At grammar.md:10, the grammar defines an instruction that needs to be read 
+   by a parser that can accept a register, ":=", and <reg> <binop> <reg>.
+   In order to fully process this instruction and distinguish it from 
+   reg := reg, (of the form <reg> := <rvalue>), the program needs to read in 
+   the following binary operator in addition to the previous input. I think this
+   choice point between reg := <rvalue> and reg := <rvalue> <binop> <rvalue> is 
+   more legible with the multi-token reading strategy exhibited in 
+   asmparse.sml:180-185, I think. 
+
+7. 
+If you run: 
+echo 'r1 := "literal string example!!!! hahaha"' | uft vs-vs
+
+, the parser and 
+unparser will be run in sequence to produce, 
+
+r1 := "literal string example!!!! hahaha" 
+
+, which is identical to the input. We can even get idenpotency: 
+
+echo 'r1 := "literal string example!!!! hahaha"' | uft vs-vs | uft vs-vs
+
+, adding pipes ad infinitum. Triple-pass check! (or something like that...)
+
+8. 
+- Parsing concrete assembly syntax to abstract syntax is a projection: 
+  we lose comments, whitespace, some syntactic nuances. We can also fail 
+  by erroring out while reading invalid tokens. We can also embed from abstract
+  to concrete syntax; because abstract syntax can only be generated from valid
+  input, embedding it to concrete syntax can never fail. Because abstract 
+  syntax has fewer forms than concrete (e.g. no comments), the relationship is
+                     --embed-->
+  abstract syntax                 concrete syntax
+                    <--project--
+
+- From asmparse.sml:178-201, we project by creating parsers for turning 
+  concrete syntax to abstract. 
+  In "the" (asmparse.sml:115-119), we turn single-string tokens into parsers, 
+  which also aid in the projection. When we call parse in uft.sml, 
+  we're actually putting the projection into place, eliminating whitespace
+  (including comments) at asmlex.sml:118-119. 
+
+  We embed when we unparse: in unparse at asmparse.sml:334-341 and in unparse1,
+  we're pulling our abstract forms and creating concrete syntax. That said, 
+  there are mismatch forms to fill out the case statements: while I'm pretty
+  sure these can't ever be hit using vs-vs, they do indicate possiblity of 
+  failure, probably because the embedding functions aren't complete yet 
+  (we need the full language set to create this.)
+
+- Projection failure is manifested through the error mondad: when we check 
+  valididty (baked into our parser combinators <$>, <*>, etc.), we can error
+  out at the end when we find the whole parsing sequence has resulted in an 
+  error due to a problem in one of the subsequences. 
+
+Thanks so much! 
+
+

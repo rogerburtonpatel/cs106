@@ -145,7 +145,14 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case LoadLiteral: 
                 registers[uX(curr_instr)] = vm->literals[uYZ(curr_instr)];
                 break;
+            
+            case LoadGlobal:
+                registers[uX(curr_instr)] = vm->globals[uYZ(curr_instr)];
+                break;
 
+            case SetGlobal:
+                vm->globals[uYZ(curr_instr)] = registers[uX(curr_instr)];
+                break;
 
             /* R2 */
             case BoolOf:
