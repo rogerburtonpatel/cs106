@@ -17,6 +17,9 @@ UNITS += loader iparsers tokens name itable instructions svmdebug disasm
 MAINS += svm svm-loader-instructions
 
 
+MAINS += svm-dis
+
+
 OBJ := $(UNITS:%=$(BUILD)/%.o)
 MOBJ := $(MAINS:%=$(BUILD)/%.o)
 
@@ -70,6 +73,9 @@ $(BUILD)/model-state.o: model/vmstate.c model/vmstate.h
 $(BUILD)/model-run.o: model/vmrun.c model/vmstate.h
 	gcc -c -DMODEL $(CFLAGS) -Imodel -I. -o $@ model/vmrun.c
 
+
+$(BIN)/svm-dis: $(OBJ) $(BUILD)/svm-dis.o
+	gcc $(CFLAGS) -o $@ $^ -lm
 
 
 
