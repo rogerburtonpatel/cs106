@@ -101,7 +101,9 @@ struct
   fun lit_of_token l = 
     case l of L.INT n => SOME (O.INT n)
             | L.NAME "true" => SOME (O.BOOL true)
+            | L.NAME "#t" => SOME (O.BOOL true)
             | L.NAME "false" => SOME (O.BOOL false)
+            | L.NAME "#f" => SOME (O.BOOL false)
             | L.NAME "emptylist" => SOME (O.EMPTYLIST)
             | L.NAME "nil" => SOME (O.NIL)
             | L.STRING s => SOME (O.STRING s)
@@ -183,11 +185,11 @@ struct
     <|> eR1 "print" <$> (the "print" >> reg)
 
     <|> eR1 "inc"  <$> (the "inc" >> reg)
-    <|> eR1 "dec"  <$> (the "dec" >> reg) 
-    <|> eR1 "neg"  <$> (the "neg" >> reg) 
-    <|> eR1 "not"  <$> (the "not" >> reg) 
+    <|> eR1 "dec"  <$> (the "dec" >> reg)
+    <|> eR1 "neg"  <$> (the "neg" >> reg)
+    <|> eR1 "not"  <$> (the "not" >> reg)
     
-    <|> eR2 "boolOf" <$> reg <~> the ":=" <~> the "(bool)" <*> reg
+    <|> eR2 "boolOf" <$> reg <~> the ":=" <~> the "boolOf" <*> reg
     <|> eR2 "=" <$> reg <~> the ":=" <*> reg
 
     <|> eR3 "+imm" <$> reg <~> the ":=" <*> reg <~> the "+" <*> (offset_code <$>! int)
@@ -198,6 +200,11 @@ struct
     <|> P.check
         (swap <$> reg <~> the "," <*> reg <~> the ":=" <*> reg <~> the "," <*> reg)
     (* cases added above *)    
+
+
+   fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
+  (* `commaSep p` returns a parser that parser a sequence
+      of zero or more p's separated by commas *)
     
 
 
@@ -250,61 +257,72 @@ struct
   fun reg r = "r" ^ int r
   val spaceSep = String.concatWith " "
 
-  fun get_lit_string lit = 
+
+  fun unparse_lit lit = 
     case lit of O.INT n  => int n
               | O.REAL r => Real.toString r
-              | O.STRING s => s
+              | O.STRING s => "\034" ^ s ^ "\034"
               | O.BOOL true => "#t"
               | O.BOOL false => "#f"
               | O.EMPTYLIST => "'()"
               | O.NIL => "nil"
 
-  fun unparse1 (A.OBJECT_CODE (O.REGS ("+", [x, y, z]))) =
-        spaceSep [reg x, ":=", reg y, "+", reg z]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("-", [x, y, z]))) =
-        spaceSep [reg x, ":=", reg y, "-", reg z]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("*", [x, y, z]))) =
-        spaceSep [reg x, ":=", reg y, "*", reg z]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("/", [x, y, z]))) =
-        spaceSep [reg x, ":=", reg y, "/", reg z]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("//", [x, y, z]))) =
-        spaceSep [reg x, ":=", reg y, "//", reg z]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("mod", [x, y, z]))) =
-        spaceSep [reg x, ":=", reg y, "mod", reg z]
+(* factor out binops/unops if you can. also factor out object code wrapper *)
 
-    | unparse1 (A.OBJECT_CODE (O.REGS ("inc", [x]))) =
-        spaceSep ["inc", reg x]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("dec", [x]))) =
-        spaceSep ["dec", reg x]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("neg", [x]))) =
-        spaceSep ["neg", reg x]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("not", [x]))) =
-        spaceSep ["not", reg x]
-    
+  fun unparse1 (A.OBJECT_CODE (rs)) = 
+      (case rs 
+        of (O.REGS (opAndRegs)) =>
+          (case opAndRegs 
+            of ("+", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "+", reg z]
+            | ("-", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "-", reg z]
+            | ("*", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "*", reg z]
+            | ("/", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "/", reg z]
+            | ("//", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "//", reg z]
+            | ("mod", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "mod", reg z]
+            | ("inc", [x]) =>
+              spaceSep ["inc", reg x]
+            | ("dec", [x]) =>
+              spaceSep ["dec", reg x]
+            | ("neg", [x]) =>
+              spaceSep ["neg", reg x]
+            | ("not", [x]) =>
+              spaceSep ["neg", reg x]   
 
-    | unparse1 (A.OBJECT_CODE (O.REGS ("swap", [x, y]))) =
-        spaceSep [reg x, ",", reg y, ":=", reg y, ",", reg x]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("+imm", [x, y, z]))) =
-        let val n = z - 128
-        in  if n < 0 then
-                spaceSep [reg x, ":=", reg y, "-",  int (~n)]
-            else
-                spaceSep [reg x, ":=", reg y, "+",  int n]
-        end
-    | unparse1 (A.OBJECT_CODE (O.REGS ("boolOf", [x, y]))) =
-        spaceSep [reg x, ":=", "(bool)", reg y]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("=", [x, y]))) =
-      spaceSep [reg x, ":=", reg y]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("print", [x]))) =
-      spaceSep ["print", reg x]
-    | unparse1 (A.OBJECT_CODE (O.REGS ("println", [x]))) =
-      spaceSep ["println", reg x]
-    | unparse1 (A.OBJECT_CODE (O.REGSLIT ("loadliteral", [x], l))) =
-      spaceSep [reg x, ":=", get_lit_string l]
-    | unparse1 (A.OBJECT_CODE (O.REGSLIT("check", [x], l))) = 
-      spaceSep ["check", get_lit_string l, reg x]
-    | unparse1 (A.OBJECT_CODE (O.REGSLIT("expect", [x], l))) = 
-      spaceSep ["expect", get_lit_string l, reg x]
+            | ("swap", [x, y]) =>
+              spaceSep [reg x, ",", reg y, ":=", reg y, ",", reg x] 
+            | ("+imm", [x, y, z]) =>
+                let val n = z - 128
+                in  if n < 0 then
+                        spaceSep [reg x, ":=", reg y, "-",  int (~n)]
+                    else
+                        spaceSep [reg x, ":=", reg y, "+",  int n]
+                end                  
+            | ("boolOf", [x, y]) =>
+                spaceSep [reg x, ":=", "boolOf", reg y]
+            | ("=", [x, y]) =>
+                spaceSep [reg x, ":=", reg y]
+            | ("print", [x]) =>
+              spaceSep ["print", reg x]
+            | ("println", [x]) =>
+              spaceSep ["println", reg x]
+            | _ => "an unknown register-based assembly-code instruction")
+
+        | (O.REGSLIT (regAndLit)) =>
+          (case regAndLit 
+          of ("loadliteral", [x], l) =>
+            spaceSep [reg x, ":=", unparse_lit l]
+          | ("check", [x], l) => 
+            spaceSep ["check", unparse_lit l, reg x]
+          | ("expect", [x], l) => 
+          spaceSep ["expect", unparse_lit l, reg x]
+          | _ => "an unknown register-literal based assembly-code instruction")
+        | _ => "an unknown assembly-code instruction")
     | unparse1 (A.DEFLABEL s) =
       spaceSep ["deflabel", s]
     | unparse1 (A.GOTO_LABEL s) =
@@ -313,20 +331,18 @@ struct
       spaceSep ["if-goto", reg x, s]
     | unparse1 _ = "an unknown assembly-code instruction"
 
-
   fun unparse ((A.LOADFUNC (r, k, body))::instrs) = 
-        spaceSep (List.map (curry (op ^) "\n\t") 
-                            (unparse body)) :: unparse instrs
+        spaceSep [".load", reg r, int k] :: (List.map (curry (op ^) "\n\t") 
+                            (unparse body)) @ ["end"] @ unparse instrs
+
     | unparse ((A.OBJECT_CODE (O.LOADFUNC (r, k, body)))::instrs) = 
-        spaceSep (List.map (curry (op ^) "\n\t") 
-                      (unparse (List.map A.OBJECT_CODE body))) :: unparse instrs
-    | unparse []      = [""]
-    | unparse instrs  = map unparse1 instrs
+                unparse (A.LOADFUNC (r, k, List.map A.OBJECT_CODE body)::instrs)
+    | unparse []           = []
+    | unparse (i::instrs)  = unparse1 i :: unparse instrs
 
 
-  val unparse : AssemblyCode.instr list -> string list
-    = map unparse1  (* not good enough in presence of LOADFUNC *)
+  (* val unparse : AssemblyCode.instr list -> string list
+    = map unparse1 *) (* not good enough in presence of LOADFUNC *)
         (* Note: When unparsed, the body of LOADFUNC should be indented *)
-
 
 end

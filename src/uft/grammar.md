@@ -7,11 +7,15 @@
 <lvalue>  ::= <reg> 
 <rvalue>  ::= <reg> | <k>
 <instr>   ::= <reg> := <rvalue>
-           |  <reg> := <rvalue> <binop> <rvalue>
+           |  <reg> := <reg> <binop> <reg>
+           | <reg> := <oneregop> <reg>
            | check <string-literal> <reg>
-           |  <unop> <reg>
-           |  print <reg>
+           | expect <string-literal> <reg>
+           | <unop> <reg>
+           | print <reg>
+           | println <reg>
+           | printu <reg>
            | if <reg>
            | goto <string-literal>
-           |  halt
+           | halt
 

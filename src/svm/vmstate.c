@@ -45,9 +45,8 @@ VMState newstate(void) {
 }
 
 
-// For next time: test and see if allocation is necessary. I suspect not
 
-// also, linear search is fine here, since we're dealing with a max n of ~65k:
+// also, linear search is fine here, since we're dealing with a max name of ~65k:
 // This isn't enough to benefit from constant vs. linear time in a way 
 // perceptable to humans. 
 int literal_slot(VMState state, Value literal) {
@@ -64,16 +63,16 @@ int literal_slot(VMState state, Value literal) {
 }
 // From Norman. I wrote using strcmp with VMString extraction, but this is 
 // just much better. 
-uint32_t global_slot(VMState state, Value name) {
-    Name n = strtoname(AS_CSTRING(state, name));
+uint32_t global_slot(VMState state, Value namev) {
+    Name name = strtoname(AS_CSTRING(state, namev));
     int slot;
     for (slot = 0; slot < state->num_globals; slot++) {
-      if (state->global_names[slot] == n)
+      if (state->global_names[slot] == name)
         return slot;
     }
     slot = state->num_globals++;
     assert(slot < MAX_GLOBALS);
-    state->global_names[slot] = n;
+    state->global_names[slot] = name;
     return slot;
 }
 

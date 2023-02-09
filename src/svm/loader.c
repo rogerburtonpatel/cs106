@@ -83,15 +83,15 @@ static Instruction get_instruction(VMState vm, FILE *vofile, unsigned *maxregp) 
     Tokens remaining = alltokens;
     Instruction inst;
 
-    Name n;
+    Name name;
 
-    n = tokens_get_name(&remaining, buffer);
-    if (n == dotloadname) {
+    name = tokens_get_name(&remaining, buffer);
+    if (name == dotloadname) {
         // read a function -- may consume many more lines!
         uint32_t reg, arity, length;
         reg = tokens_get_int(&remaining, buffer);
-        n = tokens_get_name(&remaining, buffer);
-        assert(n == functionname);
+        name = tokens_get_name(&remaining, buffer);
+        assert(name == functionname);
 
         arity = tokens_get_int(&remaining, buffer);
         length = tokens_get_int(&remaining, buffer);
@@ -102,7 +102,7 @@ static Instruction get_instruction(VMState vm, FILE *vofile, unsigned *maxregp) 
 
         inst = eR1U16(LoadLiteral, reg, idx);
     } else {
-        inst = parse_instruction(vm, n, remaining, maxregp);
+        inst = parse_instruction(vm, name, remaining, maxregp);
     }
 
     if (buffer != NULL) {
@@ -170,11 +170,11 @@ struct VMFunction *loadmodule(VMState vm, FILE *vofile) {
   Tokens tokens_left = alltokens;
 
   // parse the tokens; expecting ".load module <count>"
-  Name n;
-  n = tokens_get_name(&tokens_left, buffer); // removes token from tokens_left
-  assert(n == dotloadname);
-  n = tokens_get_name(&tokens_left, buffer);
-  assert(n == modulename);
+  Name name;
+  name = tokens_get_name(&tokens_left, buffer); // removes token from tokens_left
+  assert(name == dotloadname);
+  name = tokens_get_name(&tokens_left, buffer);
+  assert(name == modulename);
   uint32_t count = tokens_get_int(&tokens_left, buffer);
   assert(tokens_left == NULL); // that must be the last token
 
@@ -198,7 +198,7 @@ parse_instruction(VMState vm, Name opcode, Tokens operands, unsigned *maxregp) {
   if (info != NULL) {
     return info->parser(vm, info->opcode, operands, maxregp);
   } else {
-    fprintf(stderr, "No opcode for %s.\n", nametostr(opcode));
+    fprintf(stderr, "No opcode for %s.\name", nametostr(opcode));
     saw_a_bad_opcode = true;
     return 0;
   }
