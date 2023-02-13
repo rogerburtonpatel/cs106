@@ -197,6 +197,7 @@ struct
                        reg <~> the "-" <*> ((offset_code o ~) <$>! int)
                                            (* the ~ is ML's unary minus (negation) *)
     <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
+    (* <|> the "deflabel" >> string *)
     <|> P.check
         (swap <$> reg <~> the "," <*> reg <~> the ":=" <*> reg <~> the "," <*> reg)
     (* cases added above *)    

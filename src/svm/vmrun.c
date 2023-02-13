@@ -146,6 +146,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = vm->literals[uYZ(curr_instr)];
                 break;
             
+            // TODO ASK ABOUT LOADING GLOBALS
             case LoadGlobal:
                 registers[uX(curr_instr)] = vm->globals[uYZ(curr_instr)];
                 break;
