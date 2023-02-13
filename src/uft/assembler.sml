@@ -36,5 +36,62 @@ struct
     end
 
   (* In lab, define `fold`, `lift`, `labelEnv`, `labelElim`, and `translate` here *)
+  val position : A.instr -> int = 
+    fn i => 
+    (case i of A.DEFLABEL _ => 0
+             | A.IF_GOTO_LABEL _ => 2
+             | _ => 1)
 
+  (* right-fold, analogous to foldr *)
+  fun fold f a instrs = 
+        let fun fold_with_pos f a [] n      = a
+              | fold_with_pos f a (i::is) n = 
+                let val total = n + position i
+                  in f (total, i, fold_with_pos f a is total)
+                end
+          in fold_with_pos f a instrs 0
+        end
+
+  val fail = Error.ERROR
+
+
+  (* fun lift g = 
+    fn (a, b, c) => 
+    (case c of Error.ERROR msg => c
+             | (Error.OK x) => g (a, b, x)) *)
+
+  fun lift g (a, b, Error.ERROR msg) = Error.ERROR msg
+    | lift g (a, b, Error.OK c) = g (a, b, c)
+
+   val _ = lift : ('a * 'b * 'c -> 'c error) -> ('a * 'b * 'c error -> 'c error)
+
+  fun labelEnv is = 
+    let fun g (n, A.DEFLABEL label, envir) = 
+                  if (E.binds (envir, label))
+                  then Error.ERROR (label ^ "already exists")
+                  else Error.OK (E.bind (label, n, envir))
+         |  g (_, _, envir) = Error.OK envir
+        in fold (lift g) (Error.OK E.empty) is 
+      end
+
+
+    fun labelElim is envir = 
+
+    fun translate instrs = labelElim instrs (labelEnv instrs)
+
+
+    (* val labelElim :
+      AssemblyCode.instr list -> int Env.env ->
+      ObjectCode.instr list Error.error
+
+    val translate : 
+      AssemblyCode.instr list -> ObjectCode.instr list Error.error *)
+
+
+  (* val lift : ('a * 'b * 'c -> 'c error) -> ('a * 'b * 'c error -> 'c error)
+    = fn g => fn (a, b, c) =>
+      (case c
+        of Error.ERROR _ => c
+         | Error.OK x      => g (a, b, x)) *)
+      
 end
