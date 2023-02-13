@@ -2350,7 +2350,7 @@ val primitiveBasis =
                      , "(define negated (n) (- 0 n))"
                      , "(define mod (m n) (- m (* n (idiv m n))))"
                      , "(define gcd (m n) (if (= n 0) m (gcd n (mod m n))))"
-                     , "(define lcm (m n) (if (= m 0) 0 (* m (/ n (gcd m n)))))"
+                     , "(define lcm (m n) (if (= m 0) 0 (* m (idiv n (gcd m n)))))"
                      , ";  predefined uScheme functions S151e "
                      , "(define list4 (x y z a)         (cons x (list3 y z a)))"
                      ,
