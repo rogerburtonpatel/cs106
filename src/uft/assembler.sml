@@ -84,7 +84,6 @@ val _ = fold : (int * AssemblyCode.instr * 'a -> 'a) -> 'a -> AssemblyCode.instr
                     Error.ERROR (label ^ "not defined in environment")
       end
 
-    (* TODO: Clean this up *)
     fun labelElim instrs envir = 
         let fun g (n, asminstr, objinstrs) =
               (case asminstr
@@ -92,7 +91,7 @@ val _ = fold : (int * AssemblyCode.instr * 'a -> 'a) -> 'a -> AssemblyCode.instr
                  | (A.DEFLABEL label)      => objinstrs 
                  | (A.OBJECT_CODE code)    => (curry op ::) code <$> objinstrs
                  | (A.IF_GOTO_LABEL (r, label)) => 
-                    (curry op ::) (O.REGS("if", [r])) 
+                    (curry op ::) (O.REGS("if", [r]))
                     <$> mkGoto(n, envir, label, objinstrs)
                  | (A.LOADFUNC (r, i, instrs))  =>
                     (case translate instrs
@@ -108,7 +107,6 @@ val _ = fold : (int * AssemblyCode.instr * 'a -> 'a) -> 'a -> AssemblyCode.instr
       AssemblyCode.instr list -> int Env.env ->
       ObjectCode.instr list Error.error
 
-    (* TODO: Play with and understand this. *)
     fun translate instrs = (labelEnv >=> labelElim instrs) instrs
 
     val _ = translate : 

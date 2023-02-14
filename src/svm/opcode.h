@@ -12,16 +12,20 @@ typedef enum opcode {
                       Halt, // R0
                       Print, // R1
                       Println, // R1
+                      Printu, // R1
+                      Error, // R1
                       Check, Expect, // R1LIT
                       LoadLiteral, // R1LIT
                       LoadGlobal, // R1GLO
                       SetGlobal, // R1GLO
-                      Add, Sub, Div, IDiv, Mult, Mod, // R3
+                      Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, // R3
+                      Cons, // R3
                       Inc, Dec, Neg, Not,
                       BoolOf, // R2
-                      RegAssign, // R2
-                      Swap, // R2
-                      PlusImm, // R2
+                      Car, Cdr,  // R2
+                      IsFunction, IsNumber, IsSymbol, IsPair, // R2 
+                      IsBoolean, IsNull, IsNil, // R2
+                      RegAssign, Swap, PlusImm, // R2
                       If, Goto, // R1
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
