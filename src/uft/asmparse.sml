@@ -182,8 +182,9 @@ struct
     <|> eR3 "*"     <$> reg <~> the ":=" <*> reg <~> the "*" <*> reg
     <|> eR3 "/"     <$> reg <~> the ":=" <*> reg <~> the "/" <*> reg
     <|> eR3 "//"    <$> reg <~> the ":=" <*> reg <~> the "//" <*> reg
+    <|> eR3 "mod"   <$> reg <~> the ":=" <*> reg <~> the "mod" <*> reg
     <|> eR1 "print" <$> (the "print" >> reg)
-
+(* TODO ADD REST OF INSTRS *)
     <|> eR1 "inc"  <$> (the "inc" >> reg)
     <|> eR1 "dec"  <$> (the "dec" >> reg)
     <|> eR1 "neg"  <$> (the "neg" >> reg)
@@ -312,8 +313,8 @@ struct
               spaceSep ["print", reg x]
             | ("println", [x]) =>
               spaceSep ["println", reg x]
-            | _ => "an unknown register-based assembly-code instruction")
-
+            | _ => 
+              "an unknown register-based assembly-code instruction") 
         | (O.REGSLIT (regAndLit)) =>
           (case regAndLit 
           of ("loadliteral", [x], l) =>

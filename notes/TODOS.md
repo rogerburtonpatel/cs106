@@ -7,9 +7,12 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
 
             // }
 
-Globals
 Cons cells
 Ask about setting globals to literals
+
+Add <:> operator : curry op cons + <$>
+
+Ask about literal after @: can we have it, bc we use regs?
 
 // add move instruction and short-circuit boolean logic
 

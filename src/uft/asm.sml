@@ -10,9 +10,6 @@ structure AssemblyCode = struct
   datatype instr
     = OBJECT_CODE of ObjectCode.instr                   (* an object-code instruction *)
     | LOADFUNC    of ObjectCode.reg * int * instr list  (* body is assembly code *)
-    | BINOP         of ObjectCode.reg * ObjectCode.reg * ObjectCode.reg
-    | UNOP          of ObjectCode.reg
-    | TWOREGOP      of ObjectCode.reg * ObjectCode.reg
     | DEFLABEL      of string
     | GOTO_LABEL    of string
     | IF_GOTO_LABEL of ObjectCode.reg * string
