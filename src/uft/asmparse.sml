@@ -125,6 +125,13 @@ struct
   fun regs operator operands = A.OBJECT_CODE (O.REGS (operator, operands))
      (* curried instruction builder *)
   fun regslit operator regs lit = A.OBJECT_CODE (O.REGSLIT (operator, regs, lit))
+  fun regsglob operator r1 name = A.OBJECT_CODE (O.REGSTR (operator, r1, name))
+  (* This could be better, I know *)
+  fun setglob operator name r1 = regsglob operator r1 name
+
+  fun labeler operator label = A.DEFLABEL (label)
+  fun gotoer operator label  = A.GOTO_LABEL (label)
+  fun ifgotoer operator r1 label  = A.IF_GOTO_LABEL (r1, label)
 
   fun eR0 operator          = regs operator []
   fun eR1 operator r1       = regs operator [r1]
@@ -132,6 +139,7 @@ struct
   fun eR3 operator r1 r2 r3 = regs operator [r1, r2, r3]
 
   fun eRL operator r1 lit   = regslit operator [r1] lit
+
 
 
   (***** Example parser for you to extend *****)
@@ -175,34 +183,63 @@ struct
 
   (* Example parser: reads an instruction /without/ reading end of line *)
 
+  (* these help make the code more legible, I think. *)
+  fun oneParser    name = eR1 name <$> (the name >> reg)
+  fun binopParser  name = eR3 name <$> reg <~> the ":=" <*> reg <~> the name <*> reg
+  fun unopParser   name = eR2 name <$> reg <~> the ":=" <~> the name <*> reg
+
   val one_line_instr : A.instr parser
      =  the "@" >> regs <$> name <*> many int  (* "passthrough" syntax *)
-    <|> eR3 "+"     <$> reg <~> the ":=" <*> reg <~> the "+" <*> reg
-    <|> eR3 "-"     <$> reg <~> the ":=" <*> reg <~> the "-" <*> reg
-    <|> eR3 "*"     <$> reg <~> the ":=" <*> reg <~> the "*" <*> reg
-    <|> eR3 "/"     <$> reg <~> the ":=" <*> reg <~> the "/" <*> reg
-    <|> eR3 "//"    <$> reg <~> the ":=" <*> reg <~> the "//" <*> reg
-    <|> eR3 "mod"   <$> reg <~> the ":=" <*> reg <~> the "mod" <*> reg
-    <|> eR1 "print" <$> (the "print" >> reg)
-(* TODO ADD REST OF INSTRS *)
-    <|> eR1 "inc"  <$> (the "inc" >> reg)
-    <|> eR1 "dec"  <$> (the "dec" >> reg)
-    <|> eR1 "neg"  <$> (the "neg" >> reg)
-    <|> eR1 "not"  <$> (the "not" >> reg)
-    
-    <|> eR2 "boolOf" <$> reg <~> the ":=" <~> the "boolOf" <*> reg
-    <|> eR2 "=" <$> reg <~> the ":=" <*> reg
-
     <|> eR3 "+imm" <$> reg <~> the ":=" <*> reg <~> the "+" <*> (offset_code <$>! int)
     <|> eR3 "+imm" <$> reg <~> the ":=" <*>
                        reg <~> the "-" <*> ((offset_code o ~) <$>! int)
                                            (* the ~ is ML's unary minus (negation) *)
-    <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
-    (* <|> the "deflabel" >> string *)
     <|> P.check
         (swap <$> reg <~> the "," <*> reg <~> the ":=" <*> reg <~> the "," <*> reg)
-    (* cases added above *)    
 
+    <|> binopParser "+"
+    <|> binopParser "-"
+    <|> binopParser "*"
+    <|> binopParser "/"
+    <|> binopParser "//"
+    <|> binopParser "mod"
+
+    <|> binopParser "cons"
+    <|> binopParser ">"
+    <|> binopParser "<"
+
+    <|> oneParser "print"
+    <|> oneParser "println"
+    <|> oneParser "printu"
+    <|> oneParser "error"
+    <|> regsglob "loadglobal" <$> reg <~> the ":=" 
+                              <~> the "_G" <~> the "[" <*> string <~> the "]"
+    <|> setglob "setglobal"   <$> (the "_G" >> the "[" >> string)
+                              <~> the "]" <~> the ":=" <*> reg
+                            
+    <|> oneParser "inc"
+    <|> oneParser "dec"
+    <|> oneParser "neg"
+    <|> oneParser "not"
+    <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
+    <|> succeed (eR0 "halt") <~> the "halt"
+    <|> labeler "deflabel" <$> (the "deflabel" >> string)
+    <|> gotoer "goto" <$> (the "goto" >> string)
+    <|> ifgotoer "if-goto" <$> (the "if" >> reg) <*> (the "goto" >> string)
+    
+    <|> unopParser "boolOf"
+    <|> unopParser "function?"
+    <|> unopParser "pair?"
+    <|> unopParser "symbol?"
+    <|> unopParser "number?"
+    <|> unopParser "boolean?"
+    <|> unopParser "null?"
+    <|> unopParser "nil?"
+    <|> unopParser "car"
+    <|> unopParser "cdr"
+    <|> unopParser "hash"
+
+    <|> eR2 "=" <$> reg <~> the ":=" <*> reg
 
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence
@@ -216,10 +253,9 @@ struct
       Designing syntax so each one terminates with `eol` is recommended. *)
 
    fun loadfunc (reg, arity) body = A.LOADFUNC (reg, arity, body)
-   val loadfunStart : (int * int) parser = (* fill in with (reg * arity) parser *)
-         P.pzero <~> eol
-   val loadfunEnd : unit parser =
-         P.pzero <~> eol
+   val loadfunStart : (int * int) parser = P.pzero <~> eol
+   (* (the ".load" >> reg) <*> int *)
+   val loadfunEnd : unit parser = the "end" <~> eol
 
    (* grammar :   <instruction> ::= <one_line_instruction> EOL
                                  | <loadfunStart> {<instruction>} <loadfunEnd> *)
@@ -259,11 +295,12 @@ struct
   fun reg r = "r" ^ int r
   val spaceSep = String.concatWith " "
 
+  fun stringify s = "\034" ^ s ^ "\034"
 
   fun unparse_lit lit = 
     case lit of O.INT n  => int n
               | O.REAL r => Real.toString r
-              | O.STRING s => "\034" ^ s ^ "\034"
+              | O.STRING s => stringify s
               | O.BOOL true => "#t"
               | O.BOOL false => "#f"
               | O.EMPTYLIST => "'()"
@@ -294,8 +331,35 @@ struct
             | ("neg", [x]) =>
               spaceSep ["neg", reg x]
             | ("not", [x]) =>
-              spaceSep ["neg", reg x]   
-
+              spaceSep ["not", reg x]
+            | ("cons", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "cons", reg z]   
+            | ("hash", [x, y]) =>
+              spaceSep [reg x, ":=", "hash", reg y] 
+            | ("function?", [x, y]) => 
+              spaceSep [reg x, ":=", "function?", reg y]
+            | ("cdr", [x, y]) => 
+              spaceSep [reg x, ":=", "cdr", reg y]
+            | ("pair?", [x, y]) => 
+              spaceSep [reg x, ":=", "pair?", reg y]
+            | ("car", [x, y]) => 
+              spaceSep [reg x, ":=", "car", reg y]
+            | (">", [x, y, z]) => 
+              spaceSep [reg x, ":=", reg y, ">", reg z]
+            | ("<", [x, y, z]) => 
+              spaceSep [reg x, ":=", reg y, "<", reg z]
+            | ("symbol?", [x, y]) => 
+              spaceSep [reg x, ":=", "symbol?", reg y]
+            | ("cons", [x, y]) => 
+              spaceSep [reg x, ":=", "cons", reg y]
+            | ("number?", [x, y]) => 
+              spaceSep [reg x, ":=", "number?", reg y]
+            | ("boolean?", [x, y]) => 
+              spaceSep [reg x, ":=", "boolean?", reg y]
+            | ("null?", [x, y]) => 
+              spaceSep [reg x, ":=", "null?", reg y]
+            | ("nil?", [x, y]) => 
+              spaceSep [reg x, ":=", "nil?", reg y]
             | ("swap", [x, y]) =>
               spaceSep [reg x, ",", reg y, ":=", reg y, ",", reg x] 
             | ("+imm", [x, y, z]) =>
@@ -313,6 +377,9 @@ struct
               spaceSep ["print", reg x]
             | ("println", [x]) =>
               spaceSep ["println", reg x]
+            | ("printu", [x]) =>
+              spaceSep ["printu", reg x]
+            | ("halt", []) => "halt"
             | _ => 
               "an unknown register-based assembly-code instruction") 
         | (O.REGSLIT (regAndLit)) =>
@@ -324,17 +391,25 @@ struct
           | ("expect", [x], l) => 
           spaceSep ["expect", unparse_lit l, reg x]
           | _ => "an unknown register-literal based assembly-code instruction")
+
+        | (O.REGSTR (regAndStr)) =>
+          (case regAndStr
+          of ("loadglobal", x, name) =>
+            spaceSep [reg x, ":=", "_G[", stringify name, "]"]
+          | ("setglobal", x, name) =>
+            spaceSep ["_G[", stringify name, "]", ":=", reg x]
+          | _ => "an unknown register-string based assembly-code instruction")
         | _ => "an unknown assembly-code instruction")
     | unparse1 (A.DEFLABEL s) =
-      spaceSep ["deflabel", s]
+      spaceSep ["deflabel", stringify s]
     | unparse1 (A.GOTO_LABEL s) =
-      spaceSep ["goto", s]
+      spaceSep ["goto", stringify s]
     | unparse1 (A.IF_GOTO_LABEL (x, s)) =
-      spaceSep ["if-goto", reg x, s]
+      spaceSep ["if", reg x, "goto", stringify s]
     | unparse1 _ = "an unknown assembly-code instruction"
 
   fun unparse ((A.LOADFUNC (r, k, body))::instrs) = 
-        spaceSep [".load", reg r, int k] :: (List.map (curry (op ^) "\n\t") 
+        spaceSep [".load", reg r, int k] :: (List.map (curry (op ^) "\n  ") 
                             (unparse body)) @ ["end"] @ unparse instrs
 
     | unparse ((A.OBJECT_CODE (O.LOADFUNC (r, k, body)))::instrs) = 

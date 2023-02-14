@@ -2,49 +2,71 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - Simplifying one_line_instr to eliminate many lines of repetitive code. 
+    Because of this (and a handy python script), I was able to implement 
+    parsing and unparsing for every scheme primitive in between the times 
+    I submitted, which made me glad I'd at least done something decent with 
+    modularity to make up for last week's presentation. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - After an unprecedentedly stressful weekend, I've run out of time and wasn't 
+    able to finish loadfunStart and some of the steps after. 
+    I'm submitting now to show the work I have done, and will work
+    tomorrow morning as well. I'd like help on that function, which I imagine
+    is quite simple but my brain just isn't clicking on how to use combinators
+    to make an (int * int) parser. 
+
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+  - Parsing of globals: I felt I had to add a REGSTR to object-code.sml to 
+    get a register + string parser that wouldn't recognize other literals
+    (using REGSLIT would have been too permissive and allowed nonsense like 
+    r1 := _G[#t]). Was this necessary, or was there a way to coerce REGSLIT/
+    another constructor to do the job while ensuring that the global name 
+    was a string? 
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - Stephanie and Vivian helped me with asmparse.sml:192: +imm needed to be 
+    BEFORE the "+" operator, which I had trouble debugging alone! 
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
+  - I changed the nightmarish unparse1 body to use cases, and removed the tab
+    character to favor two spaces. I'd like to have used the indent-based parser
+    this time around, but it was a bit of a tough weekend. I'm looking to get 
+    it up this week. 
 
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - Not this time
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - Function parsing (the part I didn't get to) and a review of how people 
+    did globals. 
 
 Again supposing you are not selected to present, who in your group is
 willing to serve on the review panel?
 
-  - 
+  - N/A
+
+Thanks for your help this week!

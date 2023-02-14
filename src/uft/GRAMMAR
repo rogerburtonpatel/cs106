@@ -2,8 +2,9 @@
 <reg>     ::= rNN, where NN is any decimal number from 0-255
 <k>       ::= <decimal-literal> | <string-literal> | <boolean-literal> | <null> | <emptylist>
 <relop>   ::= != | == | < | > | <= | >=
-<binop>   ::= + | - | * | / | idiv | and | or | mod
-<unop>    ::= - | ~ | ++ | -- | boolOf 
+<binop>   ::= + | - | * | / | idiv | and | or | mod | cons | < | >
+<unop>    ::= - | ~ | ++ | -- | boolOf | function? | pair? | symbol? | number? 
+                | boolean? | null? | nil? | car | cdr | hash
 <rvalue>  ::= <reg> | <k>
 <instr>   ::= <reg> := <rvalue>
                      | <reg> <binop> <reg>
@@ -13,6 +14,10 @@
            | @ <obj-instr>
            | <unop> <reg>
            | print <reg>
+           | println <reg>
+           | printu <reg>
+           | error <reg>
+           | .load <reg> <nargs>
            | println <reg>
            | printu <reg>
            | if <reg> goto <string-literal>
