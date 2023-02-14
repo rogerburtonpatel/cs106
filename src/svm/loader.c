@@ -198,7 +198,7 @@ parse_instruction(VMState vm, Name opcode, Tokens operands, unsigned *maxregp) {
   if (info != NULL) {
     return info->parser(vm, info->opcode, operands, maxregp);
   } else {
-    fprintf(stderr, "No opcode for %s.\name", nametostr(opcode));
+    fprintf(stderr, "No opcode for %s.\n", nametostr(opcode));
     saw_a_bad_opcode = true;
     return 0;
   }
