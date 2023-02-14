@@ -67,6 +67,7 @@ struct
     | instr (O.GOTO offset) = concatSp ["goto", int offset]
     | instr (O.REGINT (opr, r1, r2, offset)) =
                concatSp [opr, int r1, int r2, int offset]
+    | instr (O.REGSTR (opr, r, s))   = concatSp [opr, int r, s]
     | instr (O.LOADFUNC _) = Impossible.impossible "LOADFUNC reached instr"
     | instr (O.GOTO_VCON (r, n)) = concatSp ["goto-vcon", int r, int n]
     | instr (O.JUMP_TABLE_ENTRY (arity, offset, con)) =
