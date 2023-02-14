@@ -54,6 +54,7 @@ struct
 
   val fail = Error.ERROR
 
+val _ = fold : (int * AssemblyCode.instr * 'a -> 'a) -> 'a -> AssemblyCode.instr list -> 'a
 
   (* fun lift g = 
     fn (a, b, c) => 
@@ -74,24 +75,43 @@ struct
         in fold (lift g) (Error.OK E.empty) is 
       end
 
+  val _ = labelEnv : AssemblyCode.instr list -> int Env.env error
 
-    fun labelElim is envir = 
+    fun mkGoto (n, envir, label, objinstrs) =
+      let val ost = (E.find(label, envir) - n)
+      in (curry op ::) (O.GOTO ost) <$> objinstrs
+        handle (E.NotFound x) => 
+                    Error.ERROR (label ^ "not defined in environment")
+      end
 
-    fun translate instrs = labelElim instrs (labelEnv instrs)
+    (* TODO: Clean this up *)
+    fun labelElim instrs envir = 
+        let fun g (n, asminstr, objinstrs) =
+              (case asminstr
+                of (A.GOTO_LABEL label)    => mkGoto(n, envir, label, objinstrs)
+                 | (A.DEFLABEL label)      => objinstrs 
+                 | (A.OBJECT_CODE code)    => (curry op ::) code <$> objinstrs
+                 | (A.IF_GOTO_LABEL (r, label)) => 
+                    (curry op ::) (O.REGS("if", [r])) 
+                    <$> mkGoto(n, envir, label, objinstrs)
+                 | (A.LOADFUNC (r, i, instrs))  =>
+                    (case translate instrs
+                      of Error.ERROR objs => Error.ERROR objs
+                      |  Error.OK objs    => 
+                        (curry op ::) (O.LOADFUNC (r, i, objs)) <$> objinstrs
+                    )
+              )
+      in fold g (succeed []) instrs
+      end
 
-
-    (* val labelElim :
+   val _ = labelElim :
       AssemblyCode.instr list -> int Env.env ->
       ObjectCode.instr list Error.error
 
-    val translate : 
-      AssemblyCode.instr list -> ObjectCode.instr list Error.error *)
+    (* TODO: Play with and understand this. *)
+    fun translate instrs = (labelEnv >=> labelElim instrs) instrs
 
-
-  (* val lift : ('a * 'b * 'c -> 'c error) -> ('a * 'b * 'c error -> 'c error)
-    = fn g => fn (a, b, c) =>
-      (case c
-        of Error.ERROR _ => c
-         | Error.OK x      => g (a, b, x)) *)
+    val _ = translate : 
+      AssemblyCode.instr list -> ObjectCode.instr list Error.error
       
 end
