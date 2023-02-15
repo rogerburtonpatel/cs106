@@ -1,0 +1,202 @@
+1. To claim this point, do two things:
+
+   In assembly.sml, point to a line of code you have written that passes a 
+   message to Error.ERROR. Explain in source-language terms what error the code 
+   reports.
+
+   Give an example of an analogous error that could occur in a C program or an 
+   ML program, that a compiler would be able to detect. A description in 
+   informal English is enough; the example need not show source code. 
+   And the analogy need not involve labels per se.
+
+
+    - In assembler.sml:72-73, if a label is found that already has been 
+    deflabeled, we inform the user that's the case by passing such a 
+    message to Error.ERROR. In source-language terms, if a label is 
+    alreadyu bound by the label environment when we encounter it,
+    we error out. 
+    - If we defined 
+        int foo(char bar) {
+            return 1;
+        }
+        and 
+        int foo(char bar) {
+            return 0;
+        }
+    , the C compiler would get mad at us: the function's name already exists
+    in what we'd probably call Phi, the function environment. This would 
+    accumulate an error, which the compiler would eventually return with
+    others. 
+
+2. To claim this point, tell us where in your allsyntax.vs the examples can be 
+   found. “Right at the beginning” would be a good and sufficient answer 
+   (if accurate).
+
+    Right at the top!
+
+3. To claim this point, show us the instruction, and identify the lines of code   
+   in your one_line_instr function in your asmparse.sml 
+   that are intended to parse the instruction.
+
+    For me, this was "inc r2." In asmparse.sml:225, we see the use of 
+    <|> oneParser "inc", telling that one_line_instr is able to parse
+    (if everything before fails) the inc instruction using oneParser.
+    oneParser is found at asmparse.sml:190, and in this case calls 
+    eR1 "inc" <$> (the "inc" >> reg)
+
+    which tells us that we call eR1 with "inc" and monadically apply that 
+    (with 'succeed map' or <$>) the parser which takes in the word "inc", 
+    discards the result, and parses a register, returning it. 
+
+    Assuming the parsing combinators succeed (i.e. parsing is successful), 
+    eR1, at asmparse.sml:140, calls regs with the registers and "inc" operator.
+
+    regs, at asmparse.sml:129, finally constructs the instruction as an abstract
+    A.OBJECT_CODE type with the internal O.REGS type, and finally our command
+    is parsed. 
+
+4. To claim this point, give us the line numbers of the start and end of the 
+   first (and possibly only) function loaded in your loadfun.vs file. 
+   And explain how your parser in asmparse.sml is intended to handle those lines.
+
+
+   Lines 1-4 in loadfun.vs are the loading of the function: 
+   Lines asmparse.sml:260-262 and 273 work as such:
+   loadfunStart parses the ".load", register number, and arity of the function.
+   We then parse 'many instructions' (273): the body of the function;  
+   loadfun.vs:2-4.
+   Then loadfunEnd parses the "end" token. We can discard this. 
+   The start and body are now parsed, and the results of the parsing are passed
+   to loadfun, which constructs the A.LOADFUNC needed to represent the function
+   in the abstract syntax. 
+
+5. 
+    To claim this point,
+
+    Identify a part of your assembly-language parser that did not 
+    work initially.
+
+    Identify the line in your test file (allsyntax.vs, loadfun.vs, or other) 
+    that contains an input that exposed the fault.
+
+    Say what you tried to diagnose or correct the fault and whether your 
+    efforts were successful.
+
+   If everything you wrote worked on the first try, you cannot claim this point.
+
+   Oh goodness. I was trying to do @ loadliteral 1 2, and I was BANGING MY HEAD
+   on the table when it would give the same "unregognized" error. I tried
+   again and again: new combinators, wrappers, parentheses, even changing
+   the location of the line. Nothing. I failed to realize until I read through
+   every function all the way up that "@" only takes many regs, and can't
+   recognize literal-based instructions. Perhaps it could be expanded to do
+   so, but as of now that's not the case. So while I thought "@" at
+   asmparse.sml:195 wasn't working, it was really that my offending line
+   (now removed) was giving me trouble because of a lack of understanding. 
+   In a way, I'm glad it happened, though: I got to explore the functions
+   in detail, and it helped me understand the overall structure of the 
+   parsing code much better. 
+
+6. This point can be claimed only if you submitted the working round-trip.vs 
+   that you wrote in step 21 above. To claim the point, identify the entry in 
+   the instruction table that contains the relevant unparsing template.
+
+   I'm submitting round-trip.vs using a token, as discussed. 
+   Thank you for the flexibility. 
+   At asmparse.sml:381, 383, 391, the unparser recognizes each of these forms
+   and successfully unparses the abstract syntax back into concrete assembly.
+
+7. To claim this point, tell us where in your allsyntax.vs the examples can be 
+   found. “At the end” would be a good and sufficient answer (if accurate).
+
+   I'm resubmitting an updated allsyntax.vs using a token, as discussed. 
+   Thank you again! 
+
+   At the end. 
+
+8. The candidates for embedding and projection in asmparse.sml are the 
+   “unparser,” which is understood to mean function AsmParse.unparse, 
+   and the “parser,” which is understood to mean a suitable Kleisli 
+   composition of AsmParse.parse with map AsmLex.tokenize and Error.list 
+   (as in uft.sml). To claim this point,
+
+    Say whether the parser and unparser constitute an embedding/projection pair.
+
+    If they are such a pair, which is the embedding and which is the projection?
+
+    Say how you know the answers to the previous two questions.
+
+
+    They are an embedding/projection pair. 
+
+    Unparsing is the projection, and parsing is the embedding. 
+
+    Embedding defines a translation from a simpler language to a more complex
+    one: such a translation cannot fail, assuming the unparser is correct.
+    Abstract VS syntax is less complex than concrete assembly syntax: 
+    it has no comments, no notion of whitespace,
+    and contains only instructions and labels in order, with no syntactic
+    oddities. Embedding it to assembly cannot fail, because every representation
+    within it is a direct, simplified analog to assembly code. 
+
+    Projection  defines a translation from a more complex language to a simpler
+    one: such a translation can fail, because the simpler language can fail
+    to recognize an aspect of the more complex language. As we parse, we 
+    recognize the possibility of an error: a complete parser for virtual
+    assembly language can still encounter bad tokens, like ill-formed 
+    instructions, multi-defined labels, or nonsensically large numbers 
+    (until bignums, hehe). These are meant to error out our parser, or it would
+    be a crummy parser! As such, this translation (parsing from concrete syntax
+    to abstract) can fail, making it a projection to unparsing's embedding. 
+
+9.  The parsing monad and error monad actually share more operations than are 
+    shown in their interfaces as I provided them. To claim this point, transfer 
+    an operation from one monad to the other in one of the following three ways:
+
+    To claim the point on easy mode, give the type of the choice combinator <|> 
+    in the error monad, and give algebraic laws that define its behavior.
+
+
+        val <|> : 'a error * 'a error -> 'a error
+       
+        ; OK x <|> _ = OK x
+        ; ERROR msg <|> OK x = OK x
+        ; ERROR msg <|> ERROR msg = ERROR msg
+
+    To claim the point on normal mode, give the type of the list function in 
+    the parsing monad, and give algebraic laws that define its behavior.
+
+    val list : 'a parser list -> 'a list parser
+
+    ; Not quite sure on laws for this one, but I think the gist is: 
+
+    ; list (SOME x :: SOME xs) = SOME (x::xs)
+    ; list (ERROR x :: SOME xs) = ERROR x
+    ; list (ERROR x :: ERROR xs) = (ERROR x, ERROR xs)
+    etc. 
+
+
+    To claim the point on hard mode, give the type of the monadic bind 
+    operation >>= in the parsing monad, and define its behavior by giving 
+    either algebraic laws or ML code.
+
+    val >>= : 'a parser * ('a -> 'b parser) -> 'b parser
+
+    ; I get what this is doing, but want to talk more about how to write it out 
+      formally. 
+    ; p of x >>= k = p of k x
+
+10. To claim this point, define a parsing combinator commaSeparated that 
+    captures the common syntactic abstraction of “zero or more things separated 
+    by commas.” Give the type of commaSeparated, and define its behavior by 
+    giving either algebraic laws or ML code.
+
+    If you successfully claimed the point in the previous module, 
+    you can’t claim it again.
+
+    asmparse.sml:249 has my previous implementation of commaSep.
+
+
+
+   
+    
