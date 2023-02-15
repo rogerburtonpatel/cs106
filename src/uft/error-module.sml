@@ -23,6 +23,7 @@ structure Error :> ERROR = struct
     end
 
   val list = errorList
+  
   fun map f (OK x)    = OK (f x)
     | map f (ERROR m) = ERROR m
 

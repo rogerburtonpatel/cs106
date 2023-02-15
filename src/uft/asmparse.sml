@@ -31,7 +31,9 @@ struct
   infixr 4 <$>     val op <$> = P.<$>
   infix 3 <~>      val op <~> = P.<~>
   infix 1 <|>      val op <|> = P.<|>
-  infix 3 >>        val op >> = P.>>
+  infix 3 >>       val op >> = P.>>
+
+  infixr 0 $         fun f $ g = f o g
 
   val succeed = P.succeed
   val curry = P.curry
@@ -94,6 +96,8 @@ struct
   val name      = P.maybe (fn (L.NAME  n)    => SOME n  | _ => NONE) one
   val string    = P.maybe (fn (L.STRING s)   => SOME s  | _ => NONE) one
   val reg       = P.maybe (fn (L.REGISTER n) => SOME n  | _ => NONE) one
+  
+  val string' : O.literal parser = O.STRING <$> string
 
   fun token t = sat (P.eq t) one >> succeed () (* parse any token *)
   val eol = token L.EOL
@@ -125,12 +129,11 @@ struct
   fun regs operator operands = A.OBJECT_CODE (O.REGS (operator, operands))
      (* curried instruction builder *)
   fun regslit operator regs lit = A.OBJECT_CODE (O.REGSLIT (operator, regs, lit))
-  fun regsglob operator r1 name = A.OBJECT_CODE (O.REGSTR (operator, r1, name))
-  (* This could be better, I know *)
-  fun setglob operator name r1 = regsglob operator r1 name
 
-  fun labeler operator label = A.DEFLABEL (label)
-  fun gotoer operator label  = A.GOTO_LABEL (label)
+(* follow-ups: switch arguments, and labeler needing a string *)
+
+  fun labeler operator label = A.DEFLABEL label
+  fun gotoer operator label  = A.GOTO_LABEL label
   fun ifgotoer operator r1 label  = A.IF_GOTO_LABEL (r1, label)
 
   fun eR0 operator          = regs operator []
@@ -139,7 +142,7 @@ struct
   fun eR3 operator r1 r2 r3 = regs operator [r1, r2, r3]
 
   fun eRL operator r1 lit   = regslit operator [r1] lit
-
+  fun eLR operator lit r1   = eRL operator r1 lit
 
 
   (***** Example parser for you to extend *****)
@@ -207,15 +210,17 @@ struct
     <|> binopParser "cons"
     <|> binopParser ">"
     <|> binopParser "<"
+    <|> binopParser "="
 
     <|> oneParser "print"
     <|> oneParser "println"
     <|> oneParser "printu"
     <|> oneParser "error"
-    <|> regsglob "loadglobal" <$> reg <~> the ":=" 
-                              <~> the "_G" <~> the "[" <*> string <~> the "]"
-    <|> setglob "setglobal"   <$> (the "_G" >> the "[" >> string)
-                              <~> the "]" <~> the ":=" <*> reg
+    <|> eRL "loadglobal" <$> reg <~> the ":=" <~> the "_G" <~> the "[" <*> string' <~> the "]"
+    <|> eLR "setglobal"  <$> (the "_G" >> the "[" >> string') <~> the "]" <~> the ":=" <*> reg
+    
+    <|> eLR "check" <$> (the "check" >> string') <*> reg
+    <|> eLR "expect" <$> (the "expect" >> string') <*> reg
                             
     <|> oneParser "inc"
     <|> oneParser "dec"
@@ -239,7 +244,7 @@ struct
     <|> unopParser "cdr"
     <|> unopParser "hash"
 
-    <|> eR2 "=" <$> reg <~> the ":=" <*> reg
+    <|> eR2 "assign" <$> reg <~> the ":=" <*> reg
 
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence
@@ -253,8 +258,8 @@ struct
       Designing syntax so each one terminates with `eol` is recommended. *)
 
    fun loadfunc (reg, arity) body = A.LOADFUNC (reg, arity, body)
-   val loadfunStart : (int * int) parser = P.pzero <~> eol
-   (* (the ".load" >> reg) <*> int *)
+   val loadfunStart : (int * int) parser =
+      the ".load" >> (P.pair <$> reg <*> int) <~> eol
    val loadfunEnd : unit parser = the "end" <~> eol
 
    (* grammar :   <instruction> ::= <one_line_instruction> EOL
@@ -308,7 +313,7 @@ struct
 
 (* factor out binops/unops if you can. also factor out object code wrapper *)
 
-  fun unparse1 (A.OBJECT_CODE (rs)) = 
+  fun unparse1 (A.OBJECT_CODE (rs)) =
       (case rs 
         of (O.REGS (opAndRegs)) =>
           (case opAndRegs 
@@ -334,6 +339,8 @@ struct
               spaceSep ["not", reg x]
             | ("cons", [x, y, z]) =>
               spaceSep [reg x, ":=", reg y, "cons", reg z]   
+            | ("=", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "=", reg z]   
             | ("hash", [x, y]) =>
               spaceSep [reg x, ":=", "hash", reg y] 
             | ("function?", [x, y]) => 
@@ -371,7 +378,7 @@ struct
                 end                  
             | ("boolOf", [x, y]) =>
                 spaceSep [reg x, ":=", "boolOf", reg y]
-            | ("=", [x, y]) =>
+            | ("assign", [x, y]) =>
                 spaceSep [reg x, ":=", reg y]
             | ("print", [x]) =>
               spaceSep ["print", reg x]
@@ -379,6 +386,8 @@ struct
               spaceSep ["println", reg x]
             | ("printu", [x]) =>
               spaceSep ["printu", reg x]
+            | ("error", [x]) =>
+              spaceSep ["error", reg x]
             | ("halt", []) => "halt"
             | _ => 
               "an unknown register-based assembly-code instruction") 
@@ -389,15 +398,11 @@ struct
           | ("check", [x], l) => 
             spaceSep ["check", unparse_lit l, reg x]
           | ("expect", [x], l) => 
-          spaceSep ["expect", unparse_lit l, reg x]
-          | _ => "an unknown register-literal based assembly-code instruction")
-
-        | (O.REGSTR (regAndStr)) =>
-          (case regAndStr
-          of ("loadglobal", x, name) =>
-            spaceSep [reg x, ":=", "_G[", stringify name, "]"]
-          | ("setglobal", x, name) =>
-            spaceSep ["_G[", stringify name, "]", ":=", reg x]
+            spaceSep ["expect", unparse_lit l, reg x]
+          | ("loadglobal", [x], name) =>
+            spaceSep [reg x, ":=", "_G[", unparse_lit name, "]"]
+          | ("setglobal", [x], name) =>
+            spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
           | _ => "an unknown register-string based assembly-code instruction")
         | _ => "an unknown assembly-code instruction")
     | unparse1 (A.DEFLABEL s) =

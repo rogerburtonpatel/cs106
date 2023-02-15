@@ -27,7 +27,6 @@ structure ObjectCode = struct
                *)
 
       | REGINT     of operator * reg * reg * int
-      | REGSTR     of operator * reg * string
 
 
     type module = instr list
@@ -65,7 +64,6 @@ struct
     | instr (O.GOTO offset) = concatSp ["goto", int offset]
     | instr (O.REGINT (opr, r1, r2, offset)) =
                concatSp [opr, int r1, int r2, int offset]
-    | instr (O.REGSTR (opr, r, s))   = concatSp [opr, int r, s]
     | instr (O.LOADFUNC _) = Impossible.impossible "LOADFUNC reached instr"
 
   fun add (O.LOADFUNC (r, k, body), tail) =
