@@ -34,6 +34,7 @@ instruction_info instructions[] = {
   { ">=",  Ge,  parseR3, "<= rX rY rZ" },
   { "<=",  Le,  parseR3, ">= rX rY rZ" },
   { "cons",  Le,  parseR3, "cons rX rY rZ" },
+  { "=",  Le,  parseR3, "= rX rY rZ" },
 
   { "inc", Inc, parseR1, "inc rX" },
   { "dec", Dec, parseR1, "dec rX" },
@@ -41,7 +42,7 @@ instruction_info instructions[] = {
   { "not", Not, parseR1, "not rX" },
 
   {"boolOf", BoolOf, parseR2, "boolof rX rY" },
-  {"=", RegAssign, parseR2, "rX := rY"},
+  {"assign", RegAssign, parseR2, "rX := rY"},
   {"car", Car, parseR2, "rX := car rY"},
   {"cdr", Cdr, parseR2, "rX := cdr rY"},
   {"function?", IsFunction, parseR2, "rX := function? rY"},

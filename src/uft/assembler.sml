@@ -6,7 +6,6 @@ structure Assembler :>
   sig
     val translate : AssemblyCode.instr list -> ObjectCode.instr list Error.error
       (* What can go wrong: An undefined or multiply-defined label *)
-
   end
   =
 struct
@@ -27,6 +26,7 @@ struct
   fun flip f x y  = f y x
   fun cons x xs = x :: xs
 
+
   (* A "translation" that cannot handle any labels.  You will define a better one *)
   fun translate instrs =
     let fun cvt (A.OBJECT_CODE instr)       = Error.OK instr
@@ -34,6 +34,7 @@ struct
           | cvt _                           = Error.ERROR "assembler not implemented"
     in  Error.list (map cvt instrs)
     end
+    (* this gets redefined *)
 
   (* In lab, define `fold`, `lift`, `labelEnv`, `labelElim`, and `translate` here *)
   val position : A.instr -> int = 
@@ -54,7 +55,7 @@ struct
 
   val fail = Error.ERROR
 
-val _ = fold : (int * AssemblyCode.instr * 'a -> 'a) -> 'a -> AssemblyCode.instr list -> 'a
+  val _ = fold : (int * AssemblyCode.instr * 'a -> 'a) -> 'a -> AssemblyCode.instr list -> 'a
 
   (* fun lift g = 
     fn (a, b, c) => 
@@ -103,7 +104,7 @@ val _ = fold : (int * AssemblyCode.instr * 'a -> 'a) -> 'a -> AssemblyCode.instr
       in fold g (succeed []) instrs
       end
 
-   val _ = labelElim :
+    val _ = labelElim :
       AssemblyCode.instr list -> int Env.env ->
       ObjectCode.instr list Error.error
 
