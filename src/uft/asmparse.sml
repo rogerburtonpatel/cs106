@@ -121,7 +121,7 @@ struct
         case AsmLex.tokenize s
           of Error.OK [t, AsmLex.EOL] => sat (P.eq t) one >> succeed ()
            | _ => (app eprint ["fail: `", s, "`\n"]; Impossible.impossible "non-token in assembler parser")
-  val the = many1 the
+  (* val the = many1 the *)
 
 
 
@@ -187,10 +187,19 @@ struct
 
   (* Example parser: reads an instruction /without/ reading end of line *)
 
+
   (* these help make the code more legible, I think. *)
   fun oneParser    name = eR1 name <$> (the name >> reg)
   fun binopParser  name = eR3 name <$> reg <~> the ":=" <*> reg <~> the name <*> reg
   fun unopParser   name = eR2 name <$> reg <~> the ":=" <~> the name <*> reg
+
+
+  (* trying to make parsing combinators work for me. lack of understanding
+     getting in the way. what's missing? (this probably looks quite silly...) *)
+  (* fun parseOps psr []      = succeed NONE
+    | parseOps psr (x::xs) = psr x <|> parseOps xs
+
+  val parseBinops = parseOps binopParser *)
 
   val one_line_instr : A.instr parser
      =  the "@" >> regs <$> name <*> many int  (* "passthrough" syntax *)
