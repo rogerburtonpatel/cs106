@@ -16,9 +16,11 @@ struct
 
   type 'a error = 'a Error.error
   val (succeed, <*>, <$>, >=>) = (Error.succeed, Error.<*>, Error.<$>, Error.>=>)
+  val (>>=) = Error.>>=
   infixr 4 <$>
   infix 3  <*>
   infix 2  >=>
+  infix 0  >>=
   val fail = Error.ERROR
 
   fun curry f x y = f (x, y)
