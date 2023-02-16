@@ -40,3 +40,6 @@ R: "Yeah, makes sense. I figured if anyone would've been there it would be you"
 NR: "No, I was out playing touch football"
 
 
+"charmingly naive"
+
+"There's not enough words there for it to be wrong"
