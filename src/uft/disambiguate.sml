@@ -56,22 +56,48 @@ struct
   (***************** disambiguate expressions ******************)
 
   exception LeftAsExercise of string
+  exception AttemptedToSetToPrimitive of string
+
+  fun implode [] = ""
+    | implode (c::cs) = c ^ implode cs
+  
+  (* fun explode "" = []
+    | explode (c ^ cs) = c :: explode cs *)
 
   fun fst (x, y) = x
+
+(* VAR: LOCAL | GLOBAL *)
+(* SET: SETLOCAL | SETGLOBAL *)
+(* APPLY: FUNCALL | PRIMCALL *)
 
   val rec exp' : S.exp * environment -> X.exp = 
     fn (e, locals) =>
     let fun exp (S.LITERAL v)           = value v
           | exp (S.VAR x)               =
-              raise LeftAsExercise "disambiguate VAR"
+              (case referent (x, locals) 
+              of LOCAL => X.LOCAL x
+               | OTHER_GLOBAL => X.GLOBAL x
+               | PRIMITIVE p => etaExpand p)
+              (* raise LeftAsExercise "dsambiguate VAR" *)
           | exp (S.SET (x, e))          = 
-              raise LeftAsExercise "disambiguate SET"
+              let val e' = exp e
+              in (case referent (x, locals)
+              of LOCAL => X.SETLOCAL (x, e')
+               | OTHER_GLOBAL => X.SETGLOBAL (x, e')
+               | PRIMITIVE p => raise AttemptedToSetToPrimitive
+                        ("In VScheme, you can't assign to a primitive (" ^ 
+                                            Primitive.name p ^ ") with set."))
+              end
           | exp (S.IFX (e1, e2, e3))    = X.IFX (exp e1, exp e2, exp e3)
           | exp (S.WHILEX (e1, e2))     = X.WHILEX (exp e1, exp e2)
           | exp (S.BEGIN es)            = X.BEGIN (map exp es)
           | exp (S.APPLY (S.VCON con, es)) = X.CONSTRUCTED (con, map exp es)
+          | exp (S.APPLY (S.VAR n, es)) = 
+              (case referent (n, locals)
+                of PRIMITIVE p => X.PRIMCALL (p, map exp es)
+                 | _           => X.FUNCALL (exp (S.VAR n), map exp es))
           | exp (S.APPLY (e, es)) = 
-              raise LeftAsExercise "disambiguate APPLY"
+                X.FUNCALL (exp e, map exp es)
           | exp (S.LETX (S.LET, bindings, e)) =
               let val bs = map (fn (x, e) => (x, exp e)) bindings
                   val e = exp' (e, map fst bindings @ locals)
