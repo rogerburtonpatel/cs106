@@ -121,6 +121,7 @@ struct
         case AsmLex.tokenize s
           of Error.OK [t, AsmLex.EOL] => sat (P.eq t) one >> succeed ()
            | _ => (app eprint ["fail: `", s, "`\n"]; Impossible.impossible "non-token in assembler parser")
+  val the = many1 the
 
 
 
