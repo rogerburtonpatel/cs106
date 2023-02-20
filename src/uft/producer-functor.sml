@@ -40,6 +40,7 @@ struct
 
   fun succeed y = fn xs => SOME (E.OK y, xs)
 
+
   infix 3 <*>
   fun tx_f <*> tx_b =
     fn xs => case tx_f xs
@@ -54,8 +55,12 @@ struct
   infixr 4 <$>
   fun f <$> p = succeed f <*> p
 
+  (* val _ = <$> : ('a -> 'b) -> 'a parser -> 'b parser *)
+
+
   infix 1 <|>
   fun t1 <|> t2 = (fn xs => case t1 xs of SOME y => SOME y | NONE => t2 xs) 
+            
 
   fun pzero _ = NONE
   fun perror msg ts = SOME (E.ERROR msg, ts)
