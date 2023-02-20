@@ -159,9 +159,9 @@
 
         val <|> : 'a error * 'a error -> 'a error
        
-        ; OK x <|> _ = OK x
-        ; ERROR msg <|> OK x = OK x
-        ; ERROR msg <|> ERROR msg = ERROR msg
+        ; OK x      <|> _          = OK x
+        ; ERROR msg <|> OK x       = OK x
+        ; ERROR msg <|> ERROR msg' = ERROR msg ^ msg'
 
     To claim the point on normal mode, give the type of the list function in 
     the parsing monad, and give algebraic laws that define its behavior.
@@ -170,11 +170,68 @@
 
     ; Not quite sure on laws for this one, but I think the gist is: 
 
-    ; list (SOME x :: SOME xs) = SOME (x::xs)
-    ; list (ERROR x :: SOME xs) = ERROR x
-    ; list (ERROR x :: ERROR xs) = (ERROR x, ERROR xs)
-    etc. 
+    ; list []      == 
+    ; list [p::ps] == id <$> p <*> list ps
 
+    <$> : ('b -> 'c) * 'b parser -> 'c parser
+    <*> : ('d -> 'e) parser * 'd parser -> 'e parser
+
+    so list ps is a 'd parser. 
+
+    list ps is a 'a list parser 
+
+    'd is a 'a list. 
+
+
+    we want the type 'e parser == 'a list parser so 
+    that the evaulation of <*> returns an 'a list parser and we can return it.
+
+    if 'e parser is a 'a list parser, 'e is a 'a list. 
+
+    so we have 
+    <*> : ('a list -> 'a list) parser * 'a list parser -> 'a list parser
+
+    so we need f <$> p : ('a list -> 'a list) parser
+
+    <$> : ('b -> 'c) * 'b parser -> 'c parser
+
+    so 'c parser needs to be a ('a list -> 'a list) parser
+
+    so 'c is ('a list -> 'a list)
+
+    so f is ('b -> 'a list -> 'a list)
+    and p is a 'b parser. we know p is a 'a parser from before, so we can
+    sub 'a for 'b: 
+
+    f : ('a -> 'a list -> 'a list)
+
+    p : 'a parser 
+
+    so we have 
+
+    list (p::ps) = f : ('a -> 'a list -> 'a list) <$> p : 'a parser <*> list ps : 'a list parser
+
+    hmm, 'a -> 'a list -> 'a list looks a lot like ::. 
+
+    list (p::ps) = curry op :: <$> p <*> list ps
+
+    of the same type, we have 
+    succeed [] for the nil case (since we need to cons onto it)
+
+    so:
+
+    fun list nil     = succeed nil 
+      | list (p::ps) = curry op :: <$> p <*> list ps
+
+
+
+
+
+
+    The type of p is 'a parser
+    list ps : 'a list parser 
+    f : 'a -> 'a
+    f is the identity function
 
     To claim the point on hard mode, give the type of the monadic bind 
     operation >>= in the parsing monad, and define its behavior by giving 
@@ -185,6 +242,9 @@
     ; I get what this is doing, but want to talk more about how to write it out 
       formally. 
     ; p of x >>= k = p of k x
+
+    ; p >>= succeed == p
+    ; 
 
 10. To claim this point, define a parsing combinator commaSeparated that 
     captures the common syntactic abstraction of “zero or more things separated 

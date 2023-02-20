@@ -56,8 +56,8 @@ struct
   exception LeftAsExercise of string
   exception AttemptedToSetToPrimitive of string
 
-  fun implode [] = ""
-    | implode (c::cs) = c ^ implode cs
+  (* fun implode [] = ""
+    | implode (c::cs) = c ^ implode cs *)
   
   (* fun explode "" = []
     | explode (c ^ cs) = c :: explode cs *)

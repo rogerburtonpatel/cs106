@@ -15,7 +15,14 @@ struct
 
   fun let' x e' e = S.LETX (S.LET, [(x, e')], e)   (* useful helper *)
 
-  fun value _ = Impossible.exercise "embedding of KNF values"
+  fun value (K.INT i)    = S.INT i
+    | value (K.REAL r)   = S.REAL r
+    | value (K.STRING s) = S.SYM s
+    | value (K.BOOL b)   = S.BOOLV b
+    | value K.EMPTYLIST  = S.EMPTYLIST
+    | value K.NIL        = S.BOOLV false
+
+
   fun def   _ = Impossible.exercise "embedding of KNF expressions into definitions"
 
 end

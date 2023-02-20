@@ -11,7 +11,17 @@ structure KNormalForm = struct
 
   datatype 'a exp      (* type parameter 'a is a _name_, typically
                           instantiated as `string` or `ObjectCode.reg` *)
-    = LEFT_AS_EXERCISE
+    = LITERAL of literal
+    | VMOP of vmop * 'a list
+    | VMOPLIT of vmop * 'a list * literal
+    | FUNCALL of 'a * 'a list 
+    | IF      of 'a * 'a exp * 'a exp 
+    | LET     of 'a * 'a exp * 'a exp
+    | BEGIN   of 'a exp * 'a exp 
+    | SET     of 'a * 'a exp
+    | WHILE   of 'a * 'a exp * 'a exp 
+    | FUNCODE of 'a list * 'a exp
+
 end
 
 structure KNormalUtil :> sig
@@ -32,7 +42,10 @@ struct
   structure K = KNormalForm
   type name = string
 
-  fun setglobal (x, register) = Impossible.exercise "setglobal"
-  fun getglobal x             = Impossible.exercise "getglobal"
+  fun setglobal (x, register) = K.VMOPLIT (Primitive.setglobal, [register], K.STRING x)
+  fun getglobal x             = K.VMOPLIT (Primitive.getglobal, [], K.STRING x)
+
+  (* Primitive.setglobal, n = 1
+  Primitive.getglobal,    n = 0 *)
 
 end

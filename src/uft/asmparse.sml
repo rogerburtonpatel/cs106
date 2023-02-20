@@ -185,21 +185,29 @@ struct
   infixr 4 <$>!
   fun f <$>! p = P.check (f <$> p)
 
+  exception TypeCheat 
   (* Example parser: reads an instruction /without/ reading end of line *)
+    fun list nil     = succeed nil 
+      | list (p::ps) = curry op :: <$> p <*> list ps
 
+
+    val _ = list : 'a parser list -> 'a list parser
+
+  val _ = succeed : 'a -> 'a parser
+    
 
   (* these help make the code more legible, I think. *)
-  fun oneParser    name = eR1 name <$> (the name >> reg)
+  fun oneParser    name = eR1 name <$> (the name >> reg) : A.instr parser
   fun binopParser  name = eR3 name <$> reg <~> the ":=" <*> reg <~> the name <*> reg
   fun unopParser   name = eR2 name <$> reg <~> the ":=" <~> the name <*> reg
 
 
   (* trying to make parsing combinators work for me. lack of understanding
      getting in the way. what's missing? (this probably looks quite silly...) *)
-  (* fun parseOps psr []      = succeed NONE
-    | parseOps psr (x::xs) = psr x <|> parseOps xs
+  fun parseOps psr []      = P.pzero
+    | parseOps psr (x::xs) = psr x <|> parseOps psr xs
 
-  val parseBinops = parseOps binopParser *)
+  (* val parseBinops = parseOps binopParser *)
 
   val one_line_instr : A.instr parser
      =  the "@" >> regs <$> name <*> many int  (* "passthrough" syntax *)
@@ -209,7 +217,7 @@ struct
                                            (* the ~ is ML's unary minus (negation) *)
     <|> P.check
         (swap <$> reg <~> the "," <*> reg <~> the ":=" <*> reg <~> the "," <*> reg)
-
+    (* <|> parseOps binopParser [list of ops] *)
     <|> binopParser "+"
     <|> binopParser "-"
     <|> binopParser "*"
