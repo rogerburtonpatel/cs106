@@ -76,7 +76,6 @@ struct
               of LOCAL => X.LOCAL x
                | OTHER_GLOBAL => X.GLOBAL x
                | PRIMITIVE p => etaExpand p)
-              (* raise LeftAsExercise "dsambiguate VAR" *)
           | exp (S.SET (x, e))          = 
               let val e' = exp e
               in (case referent (x, locals)
