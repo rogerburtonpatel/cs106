@@ -51,6 +51,11 @@ struct
     >>> Error.list           (* token list list error *)
     >=> AsmParse.parse       (* instr list error *)    
 
+  val KN_of_file : instream -> string KNormalForm.exp list error =
+  (* schemexOfFile >=> map KNormalForm.def  *)
+  (* To be done. *)
+
+
 
   (**** Support for materialization ****)
   
@@ -71,6 +76,9 @@ struct
   fun VS_of VS   = VS_of_file
     | VS_of inLang = raise NoTranslationTo VS
 
+  fun KN_of KN = KN_of_file
+    | KN_of inLange = raise NoTranslationTo KN
+
   fun VO_of VO     = (fn _ => Error.ERROR "There is no reader for .vo")
     | VO_of inLang = VS_of inLang >=> Assembler.translate
 
@@ -89,6 +97,7 @@ struct
 
   fun emitHO outfile = app (emitScheme outfile o Disambiguate.ambiguate)
 
+  fun emitKN outfile = app (emitScheme)
 
   (**** The Universal Forward Translator ****)
 

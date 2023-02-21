@@ -1,5 +1,5 @@
 If you want a rant on the topic, ask me. re: parsing. Maybe?
-- depth pts!!! 'the' and others
+- depth pts!!! 'the' and explode/implode and others
 
             // case InitConsCell: {
             //     struct VMBlock *vmb = vmalloc_raw(sizeof(*vmb));
@@ -14,14 +14,20 @@ Add <:> operator : curry op cons + <$>
 
 Ask about literal after @: can we have it, bc we use regs?
 
+UFT
+knf set/getglobal check 
+knembed last embedding steps 
+knproject
+tests
+uft
+
+
 // add move instruction and short-circuit boolean logic
 
 
 I recommend that your loader call svmdebug_value("unparse") to see if unparsing 
 is requested, and if so, have get_instruction call printasm on every 
 instruction that the loader reads.
-
-add function sentinel to end LOADFUNC
 
 
 Quotes

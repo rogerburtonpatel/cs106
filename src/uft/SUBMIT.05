@@ -2,50 +2,60 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - Good handling of LET/LETREC cases, projection looks solid, and 
+    pretty much all after-lab work was done solo. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - Adding the final cases to embedding and projecting def.
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+  - The special let case at knembemd.sml:53 -- this isn't the way
+    to do it; I tried a few other permutations with asName-like
+    functions. I'd like to talk about this, and why it matters. 
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - Talked a bit conceptually with Stephanie and Vivian, we worked
+    in lab on disambiguate.sml:71-111. 
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
+  - I changed the REGSLIT form, getting rid of it completely. 
+    I changed the parser so it could take a list of operators:
+    that was great! Felt amazing to be able to do that after 
+    being shown the light and given help. Thank you. 
 
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - Yes; after I add the finishing touches in lab. I'll likely resumbit
+    so I can incorporate feedback before thinking about the next 
+    assignment, and so I can get working uft tests. 
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - I'd like to see a talkthrough of the primitive embedding/projection.
+    Maybe also some UFT driver code. 
 
 Again supposing you are not selected to present, are you willing to
 serve on the review panel? (Or if there are more than one of you, who
 is willing to serve?)
 
-  - 
+  - Yes!
