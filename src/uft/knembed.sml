@@ -38,34 +38,26 @@ struct
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
     | exp (K.NAME x)       = S.VAR x
     | exp (K.VMOP (p, ns)) = S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
-    | exp (K.VMOPLIT (p, [n], v)) = 
-      (case P.name p
-        of "getglobal" => S.LITERAL (S.SYM (nameFrom v))
-         | "setglobal" => S.SET (nameFrom v, S.VAR n) 
+    | exp (K.VMOPLIT (p, ns, v)) = 
+      (case (P.name p, ns, v)
+        of ("getglobal", [], K.STRING s)  => S.VAR s
+         | ("setglobal", [n], K.STRING s) => S.SET (s, S.VAR n)
                               (* want to ask about this one *)
-         | _           => Impossible.exercise "still need to get here")
-    (* | exp getglobal STRING s = S.VAR *)
-    (* | exp setglobal x, STRING s = S.SET *)
-              (* @(x₁, …, xₙ)	APPLY
-              @(x₁, …, xₙ, v)	APPLY
-              x(x₁, …, xₙ)	APPLY *)
-    | exp (K.IFX (a, e1, e2)) = S.IFX (S.VAR a, (exp e1), (exp e2))
-    (* | exp (K.LETX (n, e, n)) = exp e *) (* want the special let form 
-                                             𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
+         | (pn, names, v)       => S.APPLY (S.VAR pn, (List.map S.VAR names)
+                                                       @ [S.LITERAL (value v)]))
+    | exp (K.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)
 
+    | exp (K.IFX (a, e1, e2)) = S.IFX (S.VAR a, (exp e1), (exp e2))
+    | exp (K.LETX (n, e, K.NAME n')) = 
+          if n = n'
+          then exp e 
+          else lt' n (exp e) (exp (K.NAME n'))
+          (* 𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
     | exp (K.LETX (n, e1, e2)) = lt' n (exp e1) (exp e2)
     | exp (K.BEGIN (e1, e2)) = S.BEGIN [exp e1, exp e2]
     | exp (K.SET (n, e)) = S.SET (n, exp e)
-    | exp (K.WHILEX (n, e1, e2)) = 
-          let val e = exp e1
-          in S.WHILEX ((lt' n e e), exp e2)
-          end 
+    | exp (K.WHILEX (n, e1, e2)) = S.WHILEX ((lt' n (exp e1) (S.VAR n)), exp e2)
     | exp (K.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
-
-    (* | exp (K.VMOP (p, ns)) = S.APPLY (p, ns)  *)
-    (* | exp  *)
-    | exp _ = Impossible.impossible "Left as exercise"
-
   val _ = exp : VScheme.name KNormalForm.exp -> VScheme.exp 
 
   fun def e = VScheme.EXP (exp e)
