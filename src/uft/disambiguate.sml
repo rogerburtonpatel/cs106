@@ -79,14 +79,12 @@ struct
                | OTHER_GLOBAL => X.GLOBAL x
                | PRIMITIVE p => etaExpand p)
           | exp (S.SET (x, e))          = 
-              let val e' = exp e
-              in (case referent (x, locals)
-              of LOCAL => X.SETLOCAL (x, e')
-               | OTHER_GLOBAL => X.SETGLOBAL (x, e')
+              (case referent (x, locals)
+              of LOCAL => X.SETLOCAL (x, exp e)
+               | OTHER_GLOBAL => X.SETGLOBAL (x, exp e)
                | PRIMITIVE p => raise AttemptedToSetToPrimitive
                         ("In VScheme, you can't assign to a primitive (" ^ 
                                             Primitive.name p ^ ") with set."))
-              end
           | exp (S.IFX (e1, e2, e3))    = X.IFX (exp e1, exp e2, exp e3)
           | exp (S.WHILEX (e1, e2))     = X.WHILEX (exp e1, exp e2)
           | exp (S.BEGIN es)            = X.BEGIN (map exp es)

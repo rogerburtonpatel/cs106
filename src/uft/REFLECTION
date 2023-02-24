@@ -1,0 +1,177 @@
+1. To claim this point, write an expression in vScheme in which x appears both 
+    as a GLOBAL variable and as a LOCAL variable.
+
+> (let ([y (set x 3)] [x 2]) (+ x y))
+
+2. To claim this point, write an expression, using the ML-like syntax of 
+K-normal form from the handout on K-normal form, that corresponds to the ML 
+expression n + 1, where n is a local variable.
+
+> let x = 1 in +(n, x)
+
+3. To claim this point, embed the previous expression into valid vScheme. 
+That is, write an expression in vScheme that is the embedding of an expression 
+in K-normal form; the expression that is embedded must correspond to the Scheme 
+expression (+ n 1), where n is a local variable.
+
+> (let ([r1 1]) (+ r1 n))
+
+4. You must understand all the relevant categories of the ways names can be 
+used in Scheme: formal parameter, local variable, global variable, user-defined 
+function, and primitive function. And in your ML representation of K-normal 
+form, you must understand the use of each of these types:
+
+Type 'a
+Type vmop
+Type literal
+
+To claim the point, for each of the three types listed, say what categories of 
+Scheme names are represented by values of that type.
+
+> Type 'a represents formal parameters and local variables.
+> Type vmop represents primitive functions. 
+> Type literal refers to user-defined functions and global variables. 
+
+
+5. Observe that expressions in K-normal form are a subset of vScheme 
+expressions, but literals in K-normal form are a superset of (Unambiguous) 
+Scheme values. It seems strange to have the relation point in opposite 
+directions. To claim this point, answer these two questions:
+
+In a system that is targeting the SVM but does not necessarily want to be 
+locked into translating Scheme, why is it a good idea to have K-normal form 
+expressions be a subset of Scheme expressions?
+
+> Here, we want to reduce the complexity of the language as we get lower-
+  and lower-level; we'd like to be able to translate as directly as possible
+  to machine code runnable on the SVM. Of course, we have to go through 
+  assembly and object code to do this, but these all take similar forms. 
+  The let-binding style of K-Normal Form mirrors a register-based approach
+  that the assembly, object, and virtual machine code all favor. K-Normal
+  Form having fewer expressions also helps keep a closer match to the 
+  instruction set of the SVM. Ergo, translating from the stricter K-Normal
+  Form rather than the more permissive Scheme is a powerful way to define 
+  a concrete step between high- and low-level languages. 
+
+In a system that is targeting the SVM but does not necessarily want to be 
+locked into translating Scheme, why is it a good idea to have K-normal form 
+literals be a superset of Scheme values?
+
+> Having a superset of atomic values-- KNF has String and Nil where Scheme has 
+  symbols and no built-in nil-- allows us to pattern match on broader types 
+  at a lower level (more languages have strings and an idea of a 'nil' than 
+  do they have symbols and no nil/None), making the lower passes of the language
+  more able to translate reduced forms of other languages. i.e. if we decide
+  instead to translate from another top-level language, say, Python, we'd
+  want our lower level representation to have data forms not specific to Scheme
+  (like symbols) so that we could keep them the same. KNF seems to be the 
+  dividing line between sym-land and string-land, along with having the built-
+  in Nil. Therefore, we could potentially more easily translate other high-level
+  languages to KNF and reduce from there, if necessary. 
+
+
+6. To claim this point, analyze the eta-expansions produced by function 
+etaExpand in file disambiguate.sml. This function returns a lambda written in 
+Disambiguated vScheme. Analyze the body of the lambda and say which of the 
+K-normal-form invariants it satisfies and why.
+
+>
+The body of the lambda is: 
+X.LAMBDA (formals, X.PRIMCALL (p, map X.LOCAL formals))
+
+Let's look at the K-Normal invariants:
+
+Every argument to every function call and VM operator has a name—except in 
+one special case, where one argument may be a literal value.
+
+--> The body of the lambda satisfies this invariant, because we map X.LOCAL 
+over the list of formal names (each of which is an explicit "x", "y", "z", or 
+"w"), creating a list of formal names make the arguments of the lambda and are
+passed to its body's PRIMCALL. 
+
+The condition in an if expression or while loop has a name.
+
+--> not applicable. 
+
+There is only one form of let, and it binds exactly one variable.
+
+--> not applicable. 
+
+
+The set and variable forms refer only to local variables. Global variables 
+are read and written by VM operators getglobal and setglobal.
+
+--> The body of the lambda satisfies this invariant, because the variable form
+    within refers only to local variables. This is for the same reason as above:
+    explicitly mapping X.LOCAL of the list of formals ensures that every 
+    variable created by the eta expansion is a local. 
+
+The begin form is restricted to exactly two expressions.
+
+--> not applicable. 
+
+
+The funcode form looks like a lambda, but it isn’t: a funcode may not have any 
+free names! (That is, all its free variables are global variables.)
+
+--> not applicable. 
+
+7. To claim this point, submit code that compiles and runs so that uft kn-kn 
+produces a sensible result, better than “I don’t know how to translate.” 
+This point is awarded for running the translation; you get the point even if 
+one or more of the functions have bugs.
+
+> Submitted UFT driver with a token. Thank you!
+
+8. To claim this point, say in a few short sentences what your tests tell you 
+about what parts of your code do and don’t work. This point is awarded for 
+understanding the results of your tests; you get the point even if your UFT 
+does not yet behave the way you hope.
+
+>
+The files bad.begin.scm, bad.lambda.scm, bad.letrec.scm, bad.let.scm, 
+          bad.while.scm, and bad.whilevars.scm prove that our nice error 
+          messages come through when we have forbidden forms. 
+The file good.scm demonstrates that we can successfully parse and unparse (virtually all) 
+KNF that's well-formed. We do this by showing that for each distinct form in 
+KNF, we can do a round-trip translation that preserves the important information
+and essence of the subset language. 
+
+The file etaexpand.scm shows that our eta expansion works as expected! 
+The file odd-let.scm shows that we can preserve the let case in a while even 
+when it might be abbreviated by a let parser; this is intended. 
+The file test.scm shows us that structural nesting of some of the KNF bodies 
+can still be successfully parsed and unparsed. Hurrah! 
+
+
+9. To demonstrate the Oxford brackets, you should be able to specify a key 
+element of a translation you already know well: the translation from assembly 
+language to object code that you implemented you implemented in the previous 
+module. This translation is specified by a function
+
+A : AssemblyCode.instr -> int -> (name -> int) -> ObjectCode.instr
+
+The parameter of type int is the position that the instruction occupies in the 
+instruction stream. The parameter of type name -> int is the environment ρ;
+it is the mathematician’s way of writing an environment of type int Env.env.
+
+To demonstrate ability with Oxford brackets, it is sufficient to write an 
+equation that describes the translation of just one instruction: 
+the GOTO instruction. When function A is given an assembly-language GOTO with 
+a label, it turns an object-language GOTO with a PC-relative offset. 
+To claim the point, use Oxford brackets to write an equation that describes 
+just the translation of the GOTO instruction. Notate the position parameter as 
+k and the environment parameter as ρ.
+
+Given fun T (translate):
+
+Orange inside ⟦⟧         Blue inside ⟦⟧
+      vv                          vv
+T(⟦goto label⟧, ρ, k) = ⟦goto $(ρ label) - (k + 1)⟧
+
+We can also get a little fancier with ρ and the error monad, since in our 
+metalanguage we do a little monadic operation: 
+
+Orange inside ⟦⟧         Blue inside ⟦⟧
+      vv                          vv
+T(⟦goto label⟧, ρ, k) = ⟦goto $(E.find ρ label) - (k + 1)⟧
