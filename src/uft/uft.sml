@@ -51,8 +51,10 @@ struct
     >>> Error.list           (* token list list error *)
     >=> AsmParse.parse       (* instr list error *)    
 
-  val KN_of_file : instream -> string KNormalForm.exp list error =
-  (* schemexOfFile >=> map KNormalForm.def  *)
+  fun KN_of_file instream = KN_of_file instream
+  
+  val KN_of_file: instream -> string KNormalForm.exp list error =
+    schemexOfFile >=> (Error.mapList KNProject.def)
   (* To be done. *)
 
 
@@ -97,7 +99,7 @@ struct
 
   fun emitHO outfile = app (emitScheme outfile o Disambiguate.ambiguate)
 
-  fun emitKN outfile = app (emitScheme)
+  fun emitKN outfile = app (emitScheme outfile o KNEmbed.def)
 
   (**** The Universal Forward Translator ****)
 
@@ -107,6 +109,7 @@ struct
     (case outLang
        of VO => VO_of      inLang >>> ! (emitVO outfile)
         | VS => VS_of      inLang >>> ! (emitVS outfile)
+        | KN => KN_of      inLang >>> ! (emitKN outfile)
         | HO => HO_of      inLang >>> ! (emitHO outfile)
         | _  => raise NoTranslationTo outLang
     ) infile
