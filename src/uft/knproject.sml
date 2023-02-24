@@ -15,6 +15,7 @@ struct
   structure P  = Primitive
   structure X  = UnambiguousVScheme
 
+  infix  0 >>=  val op >>= = Error.>>=
   infix  3 <*>  val op <*> = Error.<*>
   infixr 4 <$>  val op <$> = Error.<$>
   val succeed = Error.succeed
@@ -46,7 +47,7 @@ struct
     | exp (X.GLOBAL x) = succeed (KU.getglobal x)
     | exp (X.IFX (e1, e2, e3)) =
       curry3 K.IFX <$> asName e1 <*> exp e2 <*> exp e3
-    | exp (X.LETX (X.LET, nes, e)) = 
+    | exp (X.LETX (X.LET, nes, e)) =
       (case nes
         of [(n, e')] => curry3 K.LETX <$> (succeed n) <*> exp e' <*> exp e
          | _ => error "let must have only one binding in projection to \
@@ -73,19 +74,51 @@ struct
                                                           a register? *)
     | exp (X.FUNCALL (e, es)) = curry K.FUNCALL <$> asName e 
                                               <*> errorList (List.map asName es) 
-    | exp (X.PRIMCALL (p, es)) = curry K.VMOP <$> (succeed p) 
-                                              <*> errorList (List.map asName es)
-    | exp (X.LAMBDA (ns, e)) = curry K.FUNCODE <$> succeed ns <*> exp e
-                                                      
+    | exp (X.PRIMCALL (p, es)) = 
+      let fun mkVmop prim exps = 
+                curry K.VMOP <$> (succeed p) <*> errorList (List.map asName es)
+      in
+      (case (P.name p, es)
+        of (n, [e, X.LITERAL v]) =>
+         if n = "check" orelse n = "expect"
+         then curry3 K.VMOPLIT p <$> errorList [asName e] <*> succeed (value v)
+         else  mkVmop p es
+        | _ => mkVmop p es)
+      end
+    
+    | exp (X.LAMBDA (ns, e)) = error "no non-global functions in projection to \
+                                                              \K-Normal form!"
+  (* val fundef : string KNormalForm.exp -> string KNormalForm.exp = 
+  fn e => curry3 K.LETX <$> (succeed t) 
+                        <*> (curry K.FUNCODE <$> (succeed xs) <*> exp e)
+                        <*> (curry KU.setglobal <$> (succeed f) <*> asName t') *)
+  fun list nil     = succeed nil 
+  | list (p::ps) = curry op :: <$> p <*> list ps
 
-  fun def (X.EXP e) = exp e
+  (* val lt' : 'a parser list -> 'b parser -> ('a list * 'b) parser
+  val lambda' : 'a parser -> (name list * exp) parser
+  val setglobal : (name * exp) parser
+
+  lt' [bind (lambda' exp)] [setglobal exp] *)
+
+  fun def (X.EXP e) =  
+          (case e 
+          of (X.LETX (X.LET, [(t, X.LAMBDA (xs, e))], (X.SETGLOBAL (f, t')))) =>
+          if eqnames t (asName t')
+          then 
+          curry3 K.LETX <$> (succeed t) 
+                        <*> (curry K.FUNCODE <$> (succeed xs) <*> exp e)
+                        <*> (curry KU.setglobal <$> (succeed f) <*> asName t')
+          else exp e
+          | _ => exp e)
     | def (X.VAL _) = error "val not allowed when projecting to K-Normal Form"
     | def (X.CHECK_ASSERT _) = error "check-assert not allowed when projecting \
                                                               \to K-Normal Form"
     | def (X.CHECK_EXPECT _) = error "check-expect not allowed when projecting \
                                                               \to K-Normal Form"
-    | def _ = Impossible.exercise "not done yet"
-                                                                                                                           
+    | def (X.DEFINE (f, (xs, e))) = 
+      exp e >>= (fn e' => succeed (K.LETX ("$t1", e', 
+                                K.VMOPLIT (P.setglobal, ["$t1"], K.STRING f))))
 
 end
 
