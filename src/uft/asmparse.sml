@@ -207,6 +207,12 @@ struct
   fun parseOps psr []      = P.pzero
     | parseOps psr (x::xs) = psr x <|> parseOps psr xs
 
+  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "="]
+  val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
+                "null?", "nil?", "car", "cdr", "hash"]
+  val oneops = ["print", "println", "printu", "error", 
+                "inc", "dec", "neg", "not"]
+
   (* val parseBinops = parseOps binopParser *)
 
   val one_line_instr : A.instr parser
@@ -217,50 +223,24 @@ struct
                                            (* the ~ is ML's unary minus (negation) *)
     <|> P.check
         (swap <$> reg <~> the "," <*> reg <~> the ":=" <*> reg <~> the "," <*> reg)
-    (* <|> parseOps binopParser [list of ops] *)
-    <|> binopParser "+"
-    <|> binopParser "-"
-    <|> binopParser "*"
-    <|> binopParser "/"
-    <|> binopParser "//"
-    <|> binopParser "mod"
+        
+    <|> parseOps binopParser binops
 
-    <|> binopParser "cons"
-    <|> binopParser ">"
-    <|> binopParser "<"
-    <|> binopParser "="
+    <|> parseOps oneParser oneops
 
-    <|> oneParser "print"
-    <|> oneParser "println"
-    <|> oneParser "printu"
-    <|> oneParser "error"
     <|> eRL "loadglobal" <$> reg <~> the ":=" <~> the "_G" <~> the "[" <*> string' <~> the "]"
     <|> eLR "setglobal"  <$> (the "_G" >> the "[" >> string') <~> the "]" <~> the ":=" <*> reg
     
     <|> eLR "check" <$> (the "check" >> string') <*> reg
     <|> eLR "expect" <$> (the "expect" >> string') <*> reg
                             
-    <|> oneParser "inc"
-    <|> oneParser "dec"
-    <|> oneParser "neg"
-    <|> oneParser "not"
     <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
     <|> succeed (eR0 "halt") <~> the "halt"
     <|> labeler "deflabel" <$> (the "deflabel" >> string)
     <|> gotoer "goto" <$> (the "goto" >> string)
     <|> ifgotoer "if-goto" <$> (the "if" >> reg) <*> (the "goto" >> string)
     
-    <|> unopParser "boolOf"
-    <|> unopParser "function?"
-    <|> unopParser "pair?"
-    <|> unopParser "symbol?"
-    <|> unopParser "number?"
-    <|> unopParser "boolean?"
-    <|> unopParser "null?"
-    <|> unopParser "nil?"
-    <|> unopParser "car"
-    <|> unopParser "cdr"
-    <|> unopParser "hash"
+    <|> parseOps unopParser unops
 
     <|> eR2 "assign" <$> reg <~> the ":=" <*> reg
 
