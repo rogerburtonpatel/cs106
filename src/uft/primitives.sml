@@ -55,12 +55,13 @@ struct
   (* Pure, register-setting primitives grouped by arity.  You can extend these lists *)
 
   val binary  = [ "+", "-", "*", "/", "<", ">", "cons", "=", "idiv", "Array.sub"
-                , "sin", "cos", "tan", "asin", "acos", "atan", "Array.new"
+                , "Array.new"
                 , "mkclosure"
                 ]
   val unary   = [ "boolean?", "null?", "number?", "pair?", "function?", "nil?"
                 , "symbol?", "car", "cdr"
                 , "Array.new'", "sqrt", "exp", "ln", "Array.length"
+                , "sin", "cos", "tan", "asin", "acos", "atan"
                 , "!", "ref"
                 ]
 
