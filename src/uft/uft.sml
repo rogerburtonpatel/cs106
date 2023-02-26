@@ -51,12 +51,10 @@ struct
     >>> Error.list           (* token list list error *)
     >=> AsmParse.parse       (* instr list error *)    
 
-  fun KN_of_file instream = KN_of_file instream
-  
-  val KN_of_file: instream -> string KNormalForm.exp list error =
-    schemexOfFile >=> (Error.mapList KNProject.def)
-  (* To be done. *)
 
+  val KN_of_file: instream -> string KNormalForm.exp list error =
+    schemexOfFile >=> Error.mapList KNProject.def
+  (* To be done. *)
 
 
   (**** Support for materialization ****)
@@ -74,6 +72,16 @@ struct
   fun HOX_of HOX  = schemexOfFile
     | HOX_of _    = raise Backward
 
+  infixr 0 $ 
+  fun f $ g = f g
+
+  val VS_of_KN : ObjectCode.reg KNormalForm.exp list ->
+               AssemblyCode.instr list
+    = List.map Codegen.forEffect (* AssemblyCode.instr list list*)
+    >>> List.concat              (* AssemblyCode.instr list *)
+
+
+
   fun HO_of HO   = schemexOfFile
     | HO_of HOX  = Impossible.unimp "imperative features (HOX to HO)"
     | HO_of _    = raise Backward
@@ -83,12 +91,18 @@ struct
     | CL_of HOX    = HO_of HOX    >>> ! (map ClosureConvert.close)
     | CL_of inLang = FO_of inLang >>> ! (map FOCLUtil.embed)
 
-  fun VS_of VS   = VS_of_file
-    | VS_of inLang = raise NoTranslationTo VS
+  fun KN_reg_of KN = KN_of_file 
+                     >=> Error.mapList (KNRename.mapx KNRename.regOfName)
+    | KN_reg_of inLang = raise NoTranslationTo KN
 
   fun KN_of KN = KN_of_file
-    | KN_of inLange = raise NoTranslationTo KN
+    | KN_of inLang = raise NoTranslationTo KN
 
+  fun VS_of VS   = VS_of_file
+    | VS_of inLang = KN_reg_of inLang >>> ! VS_of_KN
+                                  (* unwrap KN_reg_of inLang result 
+                                  (error type), apply VS_of_KN to internals,
+                                  and rewrap. *)
   fun VO_of VO     = (fn _ => Error.ERROR "There is no reader for .vo")
     | VO_of inLang = VS_of inLang >=> Assembler.translate
 
