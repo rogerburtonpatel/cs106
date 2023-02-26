@@ -86,8 +86,9 @@ struct
         | _ => mkVmop p es)
       end
     
-    | exp (X.LAMBDA (ns, e)) = error "no non-global functions in projection to \
-                                                              \K-Normal form!"
+    | exp (X.LAMBDA (ns, e)) = curry K.FUNCODE <$> (succeed ns) <*> exp e
+    (* error "no non-global functions in projection to \
+                                                              \K-Normal form!" *)
   (* val fundef : string KNormalForm.exp -> string KNormalForm.exp = 
   fn e => curry3 K.LETX <$> (succeed t) 
                         <*> (curry K.FUNCODE <$> (succeed xs) <*> exp e)
@@ -101,8 +102,8 @@ struct
 
   lt' [bind (lambda' exp)] [setglobal exp] *)
 
-  fun def (X.EXP e) =  
-          (case e 
+  fun def (X.EXP e) = exp e
+          (* (case e 
           of (X.LETX (X.LET, [(t, X.LAMBDA (xs, e))], (X.SETGLOBAL (f, t')))) =>
           if eqnames t (asName t')
           then 
@@ -110,7 +111,7 @@ struct
                         <*> (curry K.FUNCODE <$> (succeed xs) <*> exp e)
                         <*> (curry KU.setglobal <$> (succeed f) <*> asName t')
           else exp e
-          | _ => exp e)
+          | _ => exp e) *)
     | def (X.VAL _) = error "val not allowed when projecting to K-Normal Form"
     | def (X.CHECK_ASSERT _) = error "check-assert not allowed when projecting \
                                                               \to K-Normal Form"
