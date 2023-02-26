@@ -35,15 +35,46 @@ struct
   val hconcat : 'a hughes_list list -> 'a hughes_list
     = fn xs => foldr op o empty xs
 
+
+  fun curry f x y = f (x, y)
+  fun curry3 f x y z = f (x, y, z)
   (************** the code generator ******************)
 
   (* three contexts for code generation: to put into a register,
      to run for side effect, or (in module 8) to return. *)
 
   fun toReg' (dest : reg) (e : reg KNormalForm.exp) : instruction hughes_list =
-        Impossible.exercise "toReg"
+        (case e
+          of K.LITERAL l => S(A.loadlit dest l)
+           | K.NAME n    => S (A.copyreg dest n)
+           | K.VMOP (p, ns) => S (A.setreg dest p ns) (*todo: check how do we know p sets a register?*)
+           | K.VMOPLIT (p, ns, l) => S (A.setregLit dest p ns l)
+           | K.FUNCALL (n, ns) => Impossible.exercise "wait till module 8!"
+           | K.IFX (n, e1, e2) => 
+             let val lab  = A.newlabel ()
+                 val lab' = A.newlabel ()
+             in S (A.ifgoto n lab) o (toReg' n e2) o S (A.goto lab')
+                                   o S (A.deflabel lab) o (toReg' n e1) 
+                                   o S (A.deflabel lab')
+            end
+           | K.LETX (n, e, e') => (toReg' n e) o (toReg' dest e')
+           | _ => Impossible.exercise "not yet")
   and forEffect' (e: reg KNormalForm.exp) : instruction hughes_list  =
-        Impossible.exercise "forEffect"
+(case e
+          of K.LITERAL l => empty
+           | K.NAME n    => empty
+           | K.VMOP (p, ns) => S (A.effect p ns)
+           | K.VMOPLIT (p, ns, l) => S (A.effectLit p ns l)
+           | K.FUNCALL (n, ns) => Impossible.exercise "wait till module 8!"
+           | K.IFX (n, e1, e2) => 
+             let val lab  = A.newlabel ()
+                 val lab' = A.newlabel ()
+             in S (A.ifgoto n lab) o (toReg' n e2) o S (A.goto lab')
+                                   o S (A.deflabel lab) o (toReg' n e1) 
+                                   o S (A.deflabel lab')
+            end
+           (* | K.LETX (n, e, e') => (toReg' n e) o (toReg' dest e') *)
+           | _ => Impossible.exercise "not yet")
   and toReturn' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         forEffect' e  (* this will change in module 8 *)
 
