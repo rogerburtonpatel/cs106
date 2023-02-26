@@ -24,5 +24,22 @@ struct
      such that 0 <= n < 256, and returns n *)
   val regOfName = AsmLex.registerNum
 
-  fun mapx f = Impossible.exercise "return a function that renames a KNF expression"
+  fun mapx f = 
+    fn e => 
+    (case e 
+     of K.LITERAL l => succeed (K.LITERAL l)
+      | K.NAME n => K.NAME <$> f n
+      | K.VMOP (p, ns) => curry K.VMOP <$> (succeed p) <*> errorList (map f ns)
+      | K.VMOPLIT (p, ns, l) => curry3 K.VMOPLIT <$> (succeed p) <*> 
+                                            errorList (map f ns) <*> (succeed l)
+      | K.FUNCALL (n, ns) => curry K.FUNCALL <$> f n <*> errorList (map f ns)
+      | K.IFX (n, e1, e2) => curry3 K.IFX <$> f n <*> mapx f e1 <*> mapx f e2
+      | K.LETX (n, e1, e2) => curry3 K.LETX <$> f n <*> mapx f e1 <*> mapx f e2
+      | K.BEGIN (e, e') => curry K.BEGIN <$> mapx f e <*> mapx f e'
+      | K.SET (n, e) => curry K.SET <$> f n <*> mapx f e
+      | K.WHILEX (n, e, e') => curry3 K.WHILEX <$> f n <*> mapx f e 
+                                                                  <*> mapx f e'
+      | K.FUNCODE (ns, e) => curry K.FUNCODE <$> errorList (map f ns) 
+                                                                  <*> mapx f e)
+
 end
