@@ -270,7 +270,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 <<<<<<< HEAD
             case RegCopy:
 =======
-            case RegAssign:
+            case RegCopy:
 >>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
                 registers[uX(curr_instr)] = registers[uY(curr_instr)];
                 break;
