@@ -162,7 +162,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = v;
                 break;
             
-            case RegAssign:
+            case RegCopy:
                 registers[uX(curr_instr)] = registers[uY(curr_instr)];
                 break;
 

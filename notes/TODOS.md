@@ -10,17 +10,14 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
 Cons cells
 Ask about setting globals to literals
 
+
+
 Add <:> operator : curry op cons + <$>
 
 Ask about literal after @: can we have it, bc we use regs?
 
-UFT
-knf set/getglobal check 
-knembed last embedding steps 
-knproject
-tests
-uft
-
+Any let with more than one binding is not valid. So what are all these let*s
+doing? They got a lot. 
 
 // add move instruction and short-circuit boolean logic
 
