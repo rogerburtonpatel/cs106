@@ -31,7 +31,7 @@ typedef enum opcode {
                       Car, Cdr,  // R2
                       IsFunction, IsNumber, IsSymbol, IsPair, // R2 
                       IsBoolean, IsNull, IsNil, // R2
-                      RegAssign, Swap, PlusImm, // R2
+                      RegCopy, Swap, PlusImm, // R2
                       If, Goto, // R1
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
