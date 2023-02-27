@@ -106,6 +106,6 @@ struct
   fun getglobal dest  name  = setregLit dest P.getglobal []    name
   fun setglobal name  reg   = effectLit      P.setglobal [reg] name
   
-  fun copyreg dest src = Impossible.exercise "register-register move"
+  fun copyreg dest src = regs "copy" [dest, src]
 
 end

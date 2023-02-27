@@ -42,7 +42,7 @@ instruction_info instructions[] = {
   { "not", Not, parseR1, "not rX" },
 
   {"boolOf", BoolOf, parseR2, "boolof rX rY" },
-  {"assign", RegAssign, parseR2, "rX := rY"},
+  {"copy", RegCopy, parseR2, "rX := rY"},
   {"car", Car, parseR2, "rX := car rY"},
   {"cdr", Cdr, parseR2, "rX := cdr rY"},
   {"function?", IsFunction, parseR2, "rX := function? rY"},
