@@ -5,8 +5,8 @@
 (* You'll complete this file *)
 
 structure ANProject :> sig
-  val value : UnambiguousVScheme.value -> ANormalForm.literal
-  val def   : UnambiguousVScheme.def -> string ANormalForm.exp Error.error
+  val value : KNormalForm.value -> ANormalForm.literal
+  val def   : KNormalForm.exp -> string ANormalForm.exp Error.error
 end 
   = 
 struct
@@ -14,6 +14,7 @@ struct
   structure AU = ANormalUtil
   structure P  = Primitive
   structure X  = UnambiguousVScheme
+  structure K  = KNormalForm
 
   infix  0 >>=  val op >>= = Error.>>=
   infix  3 <*>  val op <*> = Error.<*>
@@ -27,22 +28,25 @@ struct
 
   fun checky p = P.name p = "check" orelse P.name p = "expect"
 
-  val asName : X.exp -> X.name Error.error
+  (* val asName : X.exp -> X.name Error.error
          (* project into a name; used where ANF expects a name *)
     = fn X.LOCAL x => succeed x 
-       | e => error ("expected a local variable but instead got " ^ (X.whatIs e))
+       | e => error ("expected a local variable but instead got " ^ (X.whatIs e)) *)
 
 (* val exp   : UnambiguousVScheme.exp -> string ANormalForm.exp Error.error *)
   fun eqnames n1 (Error.OK s) = n1 = s
     | eqnames n1 (Error.ERROR msg) = false
 
-  fun value (X.SYM s) = A.STRING s
+  (* fun value (X.SYM s) = A.STRING s
     | value (X.INT i) = A.INT i
     | value (X.REAL r) = A.REAL r
     | value (X.BOOLV b) = A.BOOL b
-    | value  X.EMPTYLIST = A.EMPTYLIST
+    | value  X.EMPTYLIST = A.EMPTYLIST *)
 
-  fun exp (X.LITERAL v) = succeed (A.LITERAL (value v))
+  fun exp 
+  
+  
+  (* (X.LITERAL v) = succeed (A.LITERAL (value v))
     | exp (X.LOCAL x) = succeed (A.NAME x)
     | exp (X.GLOBAL x) = succeed (AU.getglobal x)
     | exp (X.IFX (e1, e2, e3)) =
@@ -95,7 +99,7 @@ struct
         | _ => mkVmop p es)
       end
     
-    | exp (X.LAMBDA (ns, e)) = curry A.FUNCODE <$> (succeed ns) <*> exp e
+    | exp (X.LAMBDA (ns, e)) = curry A.FUNCODE <$> (succeed ns) <*> exp e *)
     (* error "no non-global functions in projection to \
                                                               \A-Normal form!" *)
   (* val fundef : string ANormalForm.exp -> string ANormalForm.exp = 
@@ -111,7 +115,7 @@ struct
 
   lt' [bind (lambda' exp)] [setglobal exp] *)
 
-  fun def (X.EXP e) = exp e
+  (* fun def (X.EXP e) = exp e
           (* (case e 
           of (X.LETX (X.LET, [(t, X.LAMBDA (xs, e))], (X.SETGLOBAL (f, t')))) =>
           if eqnames t (asName t')
@@ -129,8 +133,7 @@ struct
     | def (X.DEFINE (f, (xs, e))) = 
     (* TODO change this r100 nonsense *)
       exp e >>= (fn e' => succeed (A.LETX ("$r100", e', 
-                                A.VMOPLIT (P.setglobal, ["$r100"], A.STRING f))))
+                                A.VMOPLIT (P.setglobal, ["$r100"], A.STRING f)))) *)
 
 end
-
 
