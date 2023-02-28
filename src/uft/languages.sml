@@ -5,7 +5,7 @@
     but don't need to look at the implementation *)
 
 structure Languages :> sig
-  datatype language = ES | HOX | HO | FO | CL | KN | VS | VO
+  datatype language = ES | HOX | HO | FO | CL | KN | AN | VS | VO
   val table : { language : language, short : string, description : string } list
 
   val find : string -> language option
@@ -14,7 +14,7 @@ structure Languages :> sig
 end
   =
 struct
-  datatype language = ES | HOX | HO | FO | CL | KN | VS | VO
+  datatype language = ES | HOX | HO | FO | CL | KN | AN | VS | VO
 
   fun inject (l, s, d) = { language = l, short = s, description = d }
 
@@ -25,6 +25,7 @@ struct
     , (FO,  "fo",  "First-order vScheme")
     , (CL,  "cl",  "First-order vScheme with closure and capture forms")
     , (KN,  "kn",  "K-Normal form")
+    , (AN,  "an",  "A-Normal form")
     , (VS,  "vs",  "VM assembly language")
     , (VO,  "vo",  "VM object code")
     ]
@@ -39,6 +40,7 @@ struct
   fun pred VO  = SOME VS
     | pred VS  = SOME KN
     | pred KN  = SOME CL
+    | pred AN  = SOME CL
     | pred CL  = SOME FO
     | pred FO  = SOME HO
     | pred HO  = SOME HOX

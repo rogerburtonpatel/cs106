@@ -65,8 +65,9 @@ struct
 
   val KN_of_file: instream -> string KNormalForm.exp list error =
     schemexOfFile >=> Error.mapList KNProject.def
-  (* To be done. *)
 
+  val AN_of_file: instream -> string ANormalForm.exp list error =
+    schemexOfFile >=> Error.mapList ANProject.def
 
   (**** Support for materialization ****)
   
@@ -88,9 +89,13 @@ struct
 
   val VS_of_KN : ObjectCode.reg KNormalForm.exp list ->
                AssemblyCode.instr list
-    = List.map Codegen.forEffect (* AssemblyCode.instr list list*)
+    = List.map Codegen.forEffectK (* AssemblyCode.instr list list*)
     >>> List.concat              (* AssemblyCode.instr list *)
 
+  val VS_of_AN : ObjectCode.reg ANormalForm.exp list ->
+               AssemblyCode.instr list
+    = List.map Codegen.forEffectA (* AssemblyCode.instr list list*)
+    >>> List.concat              (* AssemblyCode.instr list *)
 
 
   fun HO_of HO   = schemexOfFile >=> Error.mapList Mutability.detect
@@ -109,10 +114,18 @@ struct
                      >=> Error.mapList (KNRename.mapx KNRename.regOfName)
     | KN_reg_of inLang = raise NoTranslationTo KN
 
+  fun AN_reg_of AN = AN_of_file 
+                     >=> Error.mapList (ANRename.mapx ANRename.regOfName)
+    | AN_reg_of inLang = raise NoTranslationTo AN
+
   fun KN_of KN = KN_of_file
     | KN_of inLang = raise NoTranslationTo KN
 
+  fun AN_of AN = AN_of_file
+    | AN_of inLang = raise NoTranslationTo AN
+
   fun VS_of VS   = VS_of_file
+    | VS_of AN = AN_reg_of AN >>> ! VS_of_AN
     | VS_of inLang = KN_reg_of inLang >>> ! VS_of_KN
                                   (* unwrap KN_reg_of inLang result 
                                   (error type), apply VS_of_KN to internals,
@@ -136,6 +149,8 @@ struct
   fun emitHO outfile = app (emitScheme outfile o Disambiguate.ambiguate)
 
   fun emitKN outfile = app (emitScheme outfile o KNEmbed.def)
+  
+  fun emitAN outfile = app (emitScheme outfile o ANEmbed.def)
 
   (**** The Universal Forward Translator ****)
 
@@ -146,6 +161,7 @@ struct
        of VO => VO_of      inLang >>> ! (emitVO outfile)
         | VS => VS_of      inLang >>> ! (emitVS outfile)
         | KN => KN_of      inLang >>> ! (emitKN outfile)
+        | AN => AN_of      inLang >>> ! (emitAN outfile)
         | HO => HO_of      inLang >>> ! (emitHO outfile)
         | ES => ES_of      inLang >>> ! (emitHO outfile)
         | _  => raise NoTranslationTo outLang
