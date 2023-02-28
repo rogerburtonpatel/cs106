@@ -54,11 +54,12 @@ struct
 
   (* Pure, register-setting primitives grouped by arity.  You can extend these lists *)
 
-  val binary  = [ "+", "-", "*", "/", "<", ">", "cons", "=", "idiv"
+  val binary  = [ "+", "-", "*", "/", "<", ">", "cons", "=", "idiv", "mod", 
+                  "<=", ">="
                 , "mkclosure"
                 ]
   val unary   = [ "boolean?", "null?", "number?", "pair?", "function?", "nil?"
-                , "symbol?", "car", "cdr"
+                , "symbol?", "car", "cdr", "boolOf", "copy", "swap", "+imm"
                 ]
 
 
@@ -66,7 +67,8 @@ struct
      `error` looks a lot like `print`, but only `error` throws an error,
      so I feel compelled to separate them. *)
 
-  val side_effecting = [ "print", "printu", "println" ]   (* arity 1 *)
+  val side_effecting = [ "print", "printu", "println", 
+                         "inc", "dec", "neg", "not"]   (* arity 1 *)
   val error          = [ "error" ]            (* arity 1; never returns *)
   val halt           = [ "halt" ]
   val checky         = [ "check", "expect" ]  (* arity 2; one is literal *)

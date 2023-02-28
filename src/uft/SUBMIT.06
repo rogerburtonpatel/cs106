@@ -2,50 +2,58 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - A few assignments back, I grinded out having all the instructions in the 
+    uft and svm match. It paid off here. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - Do we need special global cases in toReg'? codegen.sml:49. 
+
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+  - I don't know at all what instructions that invoke 'mkclosure' look like!
+    instructions.c:62-64. I also want to talk about the +imm instruction; 
+    on revisiting, I realize I just don't concretely know how to conjure it up 
+    in KNF, asm, or object code. 
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - Not really at all this time. But thank you to everyone I discussed with! 
+    Alex, Stephanie, Vivian, Kresten, Jasper, Dennis. 
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
+  - I used more of a parser-combinator approach to some problems in response 
+  to your feedback in knproject.sml:120-123. This was also inspired by Kresten.
+  Thank you both!
 
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - Yes
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - MkClosure, SetClSlot, GetClSlot, and everything closure-related. 
 
 Again supposing you are not selected to present, are you willing to
 serve on the review panel? (Or if there are more than one of you, who
 is willing to serve?)
 
-  - 
+  - Yes!
