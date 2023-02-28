@@ -207,7 +207,8 @@ struct
   fun parseOps psr []      = P.pzero
     | parseOps psr (x::xs) = psr x <|> parseOps psr xs
 
-  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "="]
+  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "=", 
+                ">=", "<="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
                 "null?", "nil?", "car", "cdr", "hash"]
   val oneops = ["print", "println", "printu", "error", 
@@ -228,7 +229,7 @@ struct
 
     <|> parseOps oneParser oneops
 
-    <|> eRL "loadglobal" <$> reg <~> the ":=" <~> the "_G" <~> the "[" <*> string' <~> the "]"
+    <|> eRL "getglobal" <$> reg <~> the ":=" <~> the "_G" <~> the "[" <*> string' <~> the "]"
     <|> eLR "setglobal"  <$> (the "_G" >> the "[" >> string') <~> the "]" <~> the ":=" <*> reg
     
     <|> eLR "check" <$> (the "check" >> string') <*> reg
@@ -242,7 +243,7 @@ struct
     
     <|> parseOps unopParser unops
 
-    <|> eR2 "assign" <$> reg <~> the ":=" <*> reg
+    <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
 
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence
@@ -376,7 +377,7 @@ struct
                 end                  
             | ("boolOf", [x, y]) =>
                 spaceSep [reg x, ":=", "boolOf", reg y]
-            | ("assign", [x, y]) =>
+            | ("copy", [x, y]) =>
                 spaceSep [reg x, ":=", reg y]
             | ("print", [x]) =>
               spaceSep ["print", reg x]
@@ -397,7 +398,7 @@ struct
             spaceSep ["check", unparse_lit l, reg x]
           | ("expect", [x], l) => 
             spaceSep ["expect", unparse_lit l, reg x]
-          | ("loadglobal", [x], name) =>
+          | ("getglobal", [x], name) =>
             spaceSep [reg x, ":=", "_G[", unparse_lit name, "]"]
           | ("setglobal", [x], name) =>
             spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
