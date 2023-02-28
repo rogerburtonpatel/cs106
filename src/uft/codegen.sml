@@ -40,11 +40,6 @@ struct
   (* three contexts for code generation: to put into a register,
      to run for side effect, or (in module 8) to return. *)
 
-  fun validatePrimitive p ifSets ifEffect = 
-      (case p 
-        of P.SETS_REGISTER b => ifSets
-         | P.HAS_EFFECT    b => ifEffect)
-
 
 (* TODO ADD GLOBALS *)
   fun toReg' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
@@ -53,8 +48,6 @@ struct
            | K.NAME r    => S (A.copyreg dest r)
            | K.VMOP (p as P.SETS_REGISTER _, rs) => S (A.setreg dest p rs)
            | K.VMOP (P.HAS_EFFECT _, _) => forEffect' ex
-           (* | K.VMOP (p, rs) => 
-              validatePrimitive p (S (A.setreg dest p rs)) (forEffect' ex) *)
            | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
                                                     S (A.setregLit dest p rs l) 
            | K.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffect' ex
@@ -70,10 +63,9 @@ struct
            | K.LETX (r, e, e') => (toReg' r e) o (toReg' dest e')
            | K.BEGIN (e1, e2)  => (forEffect' e1) o (toReg' dest e2)
            | K.SET (r, e)      => (toReg' r e) o S (A.copyreg dest r)
-
-           | K.WHILEX (r, e, e') => (forEffect' e) 
-                                    o S (A.loadlit r (K.BOOL false))
-           | K.FUNCODE (rs, e)   => 
+           | K.WHILEX _        => (forEffect' ex)
+                                    o S (A.loadlit dest (K.BOOL false))
+           | K.FUNCODE (rs, e) =>
                         S (A.loadfunc dest (List.length rs) ((toReturn' e []))))
   and forEffect' (ex: reg KNormalForm.exp) : instruction hughes_list  =
 (case ex
@@ -83,8 +75,7 @@ struct
            | K.VMOP (p as P.HAS_EFFECT _, ns) => S (A.effect p ns)
            | K.VMOPLIT (p as P.SETS_REGISTER _, _, _) => empty
            | K.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
-           (* | K.VMOPLIT (p, ns, l) => 
-              validatePrimitive p empty (S (A.effectLit p ns l)) *)
+
            | K.FUNCALL (r, ns) => Impossible.exercise "wait till module 8!"
            | K.IFX (r, e1, e2) => 
              let val lab  = A.newlabel ()
@@ -100,7 +91,7 @@ struct
              let val lab  = A.newlabel ()
                  val lab' = A.newlabel ()
              in S (A.goto lab) o S (A.deflabel lab') o (forEffect' e')
-                o S (A.deflabel lab) o (toReg' r e) o S (A.ifgoto r lab')             
+                o S (A.deflabel lab) o (toReg' r e) o S (A.ifgoto r lab')          
             end
            | K.FUNCODE (rs, e) => 
               let val r = 255 (* TODO change this *)
