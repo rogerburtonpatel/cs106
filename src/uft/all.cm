@@ -66,6 +66,17 @@ group is
   knembed.sml       (* embedding and projection; completed by students *)
   knproject.sml
 
+  (******* A-NORMAL FORM ********)
+
+
+  anf.sml      
+
+  anembed.sml      
+  anproject.sml
+  anrename.sml
+
+
+
 
   (********** CODE GENERATION ******)
 
