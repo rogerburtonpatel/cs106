@@ -64,6 +64,13 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 expect(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
                 break;
             }
+            case CheckAssert: {
+                v = literal_value(vm, uYZ(curr_instr));
+                check(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
+                expect(vm, AS_CSTRING(vm, v), mkBooleanValue(false));
+                break;
+            }
+
             /* ARITH- R3 */
             case Add:
                 registers[uX(curr_instr)] = 
@@ -147,7 +154,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             
             // TODO ASK ABOUT LOADING GLOBALS
-            case LoadGlobal:
+            case GetGlobal:
                 registers[uX(curr_instr)] = vm->globals[uYZ(curr_instr)];
                 break;
 
@@ -158,7 +165,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             /* R2 */
             case BoolOf:
                 v.tag = Boolean;
-                v.b = falsey(registers[uY(curr_instr)]);
+                v.b = asBool(registers[uY(curr_instr)]);
                 registers[uX(curr_instr)] = v;
                 break;
             
@@ -171,6 +178,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = registers[uY(curr_instr)];
                 registers[uY(curr_instr)] = v;
                 break;
+            
+            case Hash:
+                registers[uX(curr_instr)] = 
+                            mkNumberValue(hashvalue(registers[uY(curr_instr)]));
+                break;
 
             case PlusImm:
                 registers[uX(curr_instr)] = mkNumberValue(
@@ -181,13 +193,13 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
             /* (UN)CONDITIONAL MOVEMENT */
             case If: 
-                bool v_false = falsey(registers[uX(curr_instr)]);
-                if (!v_false) {
+                bool truth = asBool(registers[uX(curr_instr)]);
+                if (!truth) {
                     counter++; // If false, skip next instruction.
                 }
                 break;
             case Goto:
-                counter += 1 + AS_NUMBER(vm, registers[iXYZ(curr_instr)]); 
+                counter += 1 + iXYZ(curr_instr); 
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
                           // then skipping the increment with continue

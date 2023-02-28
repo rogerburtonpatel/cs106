@@ -111,7 +111,7 @@ bool eqtests(Value v1, Value v2) { // will not work for hashing!
 }
 
 // returns false if v is nilValue or Value(false), true otherwise
-inline bool falsey(Value v) {
+inline bool asBool(Value v) {
     // Value boolval;
     // boolval.tag = Boolean;
     switch (v.tag) {

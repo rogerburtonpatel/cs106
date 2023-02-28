@@ -118,8 +118,9 @@ struct
     | def (X.CHECK_EXPECT _) = error "check-expect not allowed when projecting \
                                                               \to K-Normal Form"
     | def (X.DEFINE (f, (xs, e))) = 
-      exp e >>= (fn e' => succeed (K.LETX ("$t1", e', 
-                                K.VMOPLIT (P.setglobal, ["$t1"], K.STRING f))))
+    (* TODO change this r100 nonsense *)
+      exp e >>= (fn e' => succeed (K.LETX ("$r100", e', 
+                                K.VMOPLIT (P.setglobal, ["$r100"], K.STRING f))))
 
 end
 

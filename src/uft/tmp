@@ -1,0 +1,12 @@
+.load module 11
+loadliteral 0 false
+loadliteral 1 2
+loadliteral 2 3
+if 0
+goto 2
+copy 0 2
+goto 1  // this is going to r1
+copy 0 1
+check 0 string 23 105 102 45 102 97 108 115 101 45 116 119 111 45 101 108 115 101 45 116 104 114 101 101
+loadliteral 1 3
+expect 1 string 5 116 104 114 101 101
