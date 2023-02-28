@@ -207,8 +207,7 @@ struct
   fun parseOps psr []      = P.pzero
     | parseOps psr (x::xs) = psr x <|> parseOps psr xs
 
-  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "=", 
-                ">=", "<="]
+  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
                 "null?", "nil?", "car", "cdr", "hash"]
   val oneops = ["print", "println", "printu", "error", 
