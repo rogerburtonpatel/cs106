@@ -1,177 +1,236 @@
-1. To claim this point, write an expression in vScheme in which x appears both 
-    as a GLOBAL variable and as a LOCAL variable.
+1. To claim this point, submit a mapx that handles all cases and typechecks 
+ without ever mentioning either of the two value constructors Error.OK and 
+ Error.ERROR. (Using function Error.succeed is good and necessary.) Moreover, 
+ achieve this outcome without using the monadic bind operation >>=. 
+ (Using the <$> and <*> functions is encouraged.)
 
-> (let ([y (set x 3)] [x 2]) (+ x y))
+>  Submitted on Monday
 
-2. To claim this point, write an expression, using the ML-like syntax of 
-K-normal form from the handout on K-normal form, that corresponds to the ML 
-expression n + 1, where n is a local variable.
+2. To claim this point, identify a line number in file codegen.sml where you 
+wrote code that uses function composition to build a list of instructions, and 
+explain how the code would look different if it instead used standard list 
+operations like ::, @, and List.concat.
 
-> let x = 1 in +(n, x)
+> 
+  In codegen.sml:46:161, the functions that convert KNormalForm / ANormalForm
+  to a list of instructions use hughes lists-- lists that are functions and are
+  appended with compostion (o). This representation allows for fast append- 
+  O(1) rather than O(n). The code would look very different were we using 
+  traditional ML lists: we'd be wrapping internal sub-values with [] rather 
+  than constructing them with S, empty would be replaced with [] or nil, 
+  o would be replaced with @ in some cases, :: in others, and List.concat* in 
+  thirds-- it would be a real pain to figure out where. I appreciate the 
+  hughes representation for an easy (and quick) implementation: by calling the
+  final result on [], we can construct the list and relegate our overhead to
+  one place (this will also be less than if we were doing @/concat every time!)
 
-3. To claim this point, embed the previous expression into valid vScheme. 
-That is, write an expression in vScheme that is the embedding of an expression 
-in K-normal form; the expression that is embedded must correspond to the Scheme 
-expression (+ n 1), where n is a local variable.
+  * while we might be able to get away with not using concat, I think we agree 
+    the overhead of choosing :: vs @ and the runtime cost are ugly enough to 
+    steer us away.
 
-> (let ([r1 1]) (+ r1 n))
+3. To claim this point, identify the two classes of primitives, show how they 
+are treated differently in your code generator (with line numbers), and give an 
+example of what could go wrong if the two classes of primitives were 
+indistinguishable in the UFT.
 
-4. You must understand all the relevant categories of the ways names can be 
-used in Scheme: formal parameter, local variable, global variable, user-defined 
-function, and primitive function. And in your ML representation of K-normal 
-form, you must understand the use of each of these types:
+> 
+  The two classes of primitives are 
+  1. those that are evaluated for side effects, represented by HAS_EFFECT, and
+  2. those that are evalutated to set a register, represented by SETS_REGISTER
 
-Type 'a
-Type vmop
-Type literal
+. These are distinguished in places like codegen.sml:51-52, 53-54, 76-77, 77-78,
+  109-110, 111-112, 134-135, and 136-137. These are grouped by twos since they
+  show the further distinction between primitives that operate on a literal 
+  and those that don't. For each, we need to carefully determine the context
+  passed in: if an effecting primitive is given to a register-setting function,
+  we must be careful with what we do. If we aren't careful, lots could go wrong
+  in the UFT: we could generate incorrect assembly code, which our parser to 
+  object code wouldn't like at all, and the error monad would start flaring 
+  up with 'incorrect number of tokens expected' or even fail to a form that
+  would silently generate erroneous instructions. Either way, it's bad-- we 
+  need to be intentional with our handling of faulty forms. 
 
-To claim the point, for each of the three types listed, say what categories of 
-Scheme names are represented by values of that type.
+4. To claim this point, identify at least one invariant that is common to both 
+K-normal form and assembly language, but not to Scheme source code.
 
-> Type 'a represents formal parameters and local variables.
-> Type vmop represents primitive functions. 
-> Type literal refers to user-defined functions and global variables. 
+> 
+  An essential invariant of KNF and assembly is that we only call functions 
+  with named values: we aren't calling print on the number 3! (except of course
+  for globals). More specifically, our names NEED to be 'register-like' in KNF 
+  if we want to translate, and we need actual registers in asm. 
+  
+  This is obviously not true of vscheme, where we can call primitives or 
+  user-defined functions on any value or type of name. 
+
+  One more invariant is that we are explicit between local and global variables
+  in KNF, and in asm every global value is explicity referred to using the 
+  global table. There aren't local variables in asm, but we separate regs from
+  globals by threading through this differentiation invariant from KNF. 
+  In the KNF stage itself, we break down scheme variables into LOCAL and 
+  GLOBAL, which we don't do at the top level. Ergo, the invariant explicity
+  held between the two is that no set or variable expression refers to a 
+  global variable. 
+
+5. The translation equations in the translation handout preserve semantics only 
+if the input code satisfies a precondition. To claim this point, specify the 
+precondition. Your specification must appeal solely to properties of K-normal 
+form; it must not mention assembly code or translation. 
+
+> 
+  The precondition is any names free in a let expression are not free in 
+  sub-let expressions in the body of the let. TODO
+
+6. The terms “unchecked run-time error” (Modula-3 specification and others), 
+“undefined behavior” (C specification and others), and “getting stuck” 
+(operational semantics) all mean the same thing. This concept recurs in too 
+many contexts to be an accident. To claim this point, identify one specific 
+place in your code (file name and line number) where your compiler exploits 
+this concept, and explain how things would change if you were required to check 
+for this error (at either compile time or run time, your option).
+
+> 
+  In codegen.sml:56, I use the Impossible module to indicate absolute failure
+  of an operation: in this case, to generate assembly code from a function
+  call. This will invoke ML's 'raise' keyword in impossible.sml:12, which will
+  crash the UFT with an unchecked run-time error. This is because we just 
+  don't want to give ANY leeway on something we haven't implemented yet. But
+  if we were to use the 'handle' keyword when calling toRegK' and friends 
+  used to generate code, we could potentially smooth over this rough 
+  behavior. Maybe we'd skip the FUNCALL entirely, or just put a 
+  comment in the file, or something. Either way, the UFT wouldn't crash in 
+  this place, and compliation would finish. 
+
+7. To claim this point, ensure that your Monday submission includes test file 
+kntest.scm with these properties:
+
+It is accepted as valid K-normal form by the UFT checker uft kn-kn.
+
+Every syntactic form of K-normal form occurs in a position that effects the 
+result of primitives check and expect.
+
+The point is for knowing how to test—you can earn it even if the tests don’t
+pass.
+
+> Yep
+
+8. Every primitive in file src/uft/primitives.sml should have a corresponding 
+entry in the instruction table in file src/svm/instructions.c. And except for 
+control-flow instructions, every entry in the instruction table should 
+correspond to a primitive in file primitives.sml.
+
+To claim this point, submit the files with these properties, plus one of the 
+following two forms of supporting evidence:
+
+If you had to add or change anything to make the primitives consistent, submit 
+your notes from step 14.
+
+If you didn’t have to add or change anything in step 14, explain whether you 
+owe this happy outcome to good luck or good management. Justify your answer.
+
+> 
+  I largely had to change nothing; just adding mkclosure and friends to 
+  instructions.c and renaming/adding a few names, roughly 10 minutes. I think
+  this is the payoff for something I was really proud of a few weeks ago. 
+  I spent a lot of time during parsing making sure that the UFT and SVM
+  agreed on a wealthy list of primitives. This felt like a really nice way
+  to be rewarded at the end of the day. Of course, some implementations can 
+  still be put in! But having a fluent conversation between translation 
+  and exectution felt extremely rewarding. 
+
+9. To claim this point, answer three questions about each of three language 
+extensions that might be added to vScheme. The questions are:
+
+1: To implement the feature, which languages (in addition to the source language) 
+will have to change?
+
+2: What translation is best qualified to implement the new feature?
+
+3: Roughly how will it work?
 
 
-5. Observe that expressions in K-normal form are a subset of vScheme 
-expressions, but literals in K-normal form are a superset of (Unambiguous) 
-Scheme values. It seems strange to have the relation point in opposite 
-directions. To claim this point, answer these two questions:
+> 
+vScheme is extended with Lisp’s defconstant form, which defines a name that 
+afterward acts like a literal value (a.k.a. a “compile-time constant”). Such 
+a constant behaves a lot like an enumeration literal in C, or like a constant 
+named with #define. (Attempts to assign to or call a defined constant can be 
+treated as calls to the error primitive.)
 
-In a system that is targeting the SVM but does not necessarily want to be 
-locked into translating Scheme, why is it a good idea to have K-normal form 
-expressions be a subset of Scheme expressions?
+1: To implement the feature, which languages 
+(in addition to the source language) will have to change?
 
-> Here, we want to reduce the complexity of the language as we get lower-
-  and lower-level; we'd like to be able to translate as directly as possible
-  to machine code runnable on the SVM. Of course, we have to go through 
-  assembly and object code to do this, but these all take similar forms. 
-  The let-binding style of K-Normal Form mirrors a register-based approach
-  that the assembly, object, and virtual machine code all favor. K-Normal
-  Form having fewer expressions also helps keep a closer match to the 
-  instruction set of the SVM. Ergo, translating from the stricter K-Normal
-  Form rather than the more permissive Scheme is a powerful way to define 
-  a concrete step between high- and low-level languages. 
+1: KNormal and ANormal could change so that we can recognize a defconstant
+instruction by the time we get to asm, at which point we'd just convert it to 
+a literal. We might even be able to make it into a literal at the top-most 
+level and do a preprocessor-style pass on Vscheme code, kind of like 
 
-In a system that is targeting the SVM but does not necessarily want to be 
-locked into translating Scheme, why is it a good idea to have K-normal form 
-literals be a superset of Scheme values?
+sed 's/defconstant X Y/Y/g' 
 
-> Having a superset of atomic values-- KNF has String and Nil where Scheme has 
-  symbols and no built-in nil-- allows us to pattern match on broader types 
-  at a lower level (more languages have strings and an idea of a 'nil' than 
-  do they have symbols and no nil/None), making the lower passes of the language
-  more able to translate reduced forms of other languages. i.e. if we decide
-  instead to translate from another top-level language, say, Python, we'd
-  want our lower level representation to have data forms not specific to Scheme
-  (like symbols) so that we could keep them the same. KNF seems to be the 
-  dividing line between sym-land and string-land, along with having the built-
-  in Nil. Therefore, we could potentially more easily translate other high-level
-  languages to KNF and reduce from there, if necessary. 
+type of thing.
 
 
-6. To claim this point, analyze the eta-expansions produced by function 
-etaExpand in file disambiguate.sml. This function returns a lambda written in 
-Disambiguated vScheme. Analyze the body of the lambda and say which of the 
-K-normal-form invariants it satisfies and why.
+
+2: What translation is best qualified to implement the new feature?
+
+2: Like said before, maybe a top-level translation from VScheme to whatever
+we put below it. If defconstant returns anything, we'd need to do this at the 
+assembly level, though. 
+
+3: Roughly how will it work?
+
+3: In the same sed-style way at the top-level as before. 
+
+The extensions are:
+
 
 >
-The body of the lambda is: 
-X.LAMBDA (formals, X.PRIMCALL (p, map X.LOCAL formals))
+vScheme is extended with Perl’s (command unless condition), which evaluates 
+expression command, unless the condition is satisfied, in which case it does
+nothing and returns nil.
 
-Let's look at the K-Normal invariants:
+1: To implement the feature, which languages 
+(in addition to the source language) will have to change?
 
-Every argument to every function call and VM operator has a name—except in 
-one special case, where one argument may be a literal value.
+1: This would have to be done at the scheme-level, since this is a whole
+      new form. Maybe we could break it into an IFX past that, such that 
+      after VScheme we just treat it as 
+      
+      if condition exp nil. 
 
---> The body of the lambda satisfies this invariant, because we map X.LOCAL 
-over the list of formal names (each of which is an explicit "x", "y", "z", or 
-"w"), creating a list of formal names make the arguments of the lambda and are
-passed to its body's PRIMCALL. 
+      But with return values, we'd need to make sure exp could return something
+      like nil. Hmm. Maybe that's something we'd enforce (or not enforce)
+      in type checking at the top level. 
 
-The condition in an if expression or while loop has a name.
+2: What translation is best qualified to implement the new feature?
 
---> not applicable. 
+2: From VScheme to anything below it, replace it with an if that doesn't
+      get typechecked for e1 and e2 being the same type.
 
-There is only one form of let, and it binds exactly one variable.
+3: Roughly how will it work?
 
---> not applicable. 
+3: At the vscheme level, replace the unless statements with if statements.
+      This would have to be an intermediary step in type checking, since we
+      don't want to invalidate those ifs. 
 
+vScheme is extended with two new forms of expression, (break) and (continue), 
+which respectively exit or restart the innermost loop in which they appear—just
+like the corresponding statements in C.
 
-The set and variable forms refer only to local variables. Global variables 
-are read and written by VM operators getglobal and setglobal.
+1: To implement the feature, which languages 
+(in addition to the source language) will have to change?
 
---> The body of the lambda satisfies this invariant, because the variable form
-    within refers only to local variables. This is for the same reason as above:
-    explicitly mapping X.LOCAL of the list of formals ensures that every 
-    variable created by the eta expansion is a local. 
+1: This would change the languages quite a bit. We'd need to change
+VScheme, of course, and then everything below it until KNF,
+where we'd probably translate it into a GOTO. So everything 
+above and including KNF/ANF, but not asm. 
 
-The begin form is restricted to exactly two expressions.
+2: What translation is best qualified to implement the new feature?
 
---> not applicable. 
+2: The translation from KNF to asm, since we can turn it into a goto. 
 
+3: Roughly how will it work?
 
-The funcode form looks like a lambda, but it isn’t: a funcode may not have any 
-free names! (That is, all its free variables are global variables.)
+3: It'll detect where the next-level loop is, probably with a 
+   label. Then it'll have a goto to that label, or to after the 
+   loop. This is obviously quite tricky, but I think this is
+   how it would have to be done. 
 
---> not applicable. 
-
-7. To claim this point, submit code that compiles and runs so that uft kn-kn 
-produces a sensible result, better than “I don’t know how to translate.” 
-This point is awarded for running the translation; you get the point even if 
-one or more of the functions have bugs.
-
-> Submitted UFT driver with a token. Thank you!
-
-8. To claim this point, say in a few short sentences what your tests tell you 
-about what parts of your code do and don’t work. This point is awarded for 
-understanding the results of your tests; you get the point even if your UFT 
-does not yet behave the way you hope.
-
->
-The files bad.begin.scm, bad.lambda.scm, bad.letrec.scm, bad.let.scm, 
-          bad.while.scm, and bad.whilevars.scm prove that our nice error 
-          messages come through when we have forbidden forms. 
-The file good.scm demonstrates that we can successfully parse and unparse (virtually all) 
-KNF that's well-formed. We do this by showing that for each distinct form in 
-KNF, we can do a round-trip translation that preserves the important information
-and essence of the subset language. 
-
-The file etaexpand.scm shows that our eta expansion works as expected! 
-The file odd-let.scm shows that we can preserve the let case in a while even 
-when it might be abbreviated by a let parser; this is intended. 
-The file test.scm shows us that structural nesting of some of the KNF bodies 
-can still be successfully parsed and unparsed. Hurrah! 
-
-
-9. To demonstrate the Oxford brackets, you should be able to specify a key 
-element of a translation you already know well: the translation from assembly 
-language to object code that you implemented you implemented in the previous 
-module. This translation is specified by a function
-
-A : AssemblyCode.instr -> int -> (name -> int) -> ObjectCode.instr
-
-The parameter of type int is the position that the instruction occupies in the 
-instruction stream. The parameter of type name -> int is the environment ρ;
-it is the mathematician’s way of writing an environment of type int Env.env.
-
-To demonstrate ability with Oxford brackets, it is sufficient to write an 
-equation that describes the translation of just one instruction: 
-the GOTO instruction. When function A is given an assembly-language GOTO with 
-a label, it turns an object-language GOTO with a PC-relative offset. 
-To claim the point, use Oxford brackets to write an equation that describes 
-just the translation of the GOTO instruction. Notate the position parameter as 
-k and the environment parameter as ρ.
-
-Given fun T (translate):
-
-Orange inside ⟦⟧         Blue inside ⟦⟧
-      vv                          vv
-T(⟦goto label⟧, ρ, k) = ⟦goto $(ρ label) - (k + 1)⟧
-
-We can also get a little fancier with ρ and the error monad, since in our 
-metalanguage we do a little monadic operation: 
-
-Orange inside ⟦⟧         Blue inside ⟦⟧
-      vv                          vv
-T(⟦goto label⟧, ρ, k) = ⟦goto $(E.find ρ label) - (k + 1)⟧
