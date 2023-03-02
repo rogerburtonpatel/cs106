@@ -62,3 +62,4 @@
 callgrind.out.*
 /src/svm/legacy
 a.out
+/.migrated
