@@ -14,9 +14,14 @@
 #include "vmstack.h"
 #include "name.h"
 #include "vtable.h"
+#include "vmstack.h"
 
 #define MAX_LITERALS 4096
 #define MAX_GLOBALS  4096
+
+#define MAX_STACK_FRAMES 5000
+#define NUM_REGISTERS (10 * MAX_STACK_FRAMES)
+
 
 typedef struct VMState *VMState;
 
@@ -24,11 +29,15 @@ typedef struct VMState *VMState;
 struct VMState {
 
   Instruction *instructions;
-  uint32_t counter;
+  Instruction *pc;
   Value registers[NUM_REGISTERS];
   Value literals[MAX_LITERALS];
-  uint16_t num_literals;
+  
+  Activation Stack[MAX_STACK_FRAMES];
+  uint16_t stackpointer;
+  uint32_t R_window_start;
 
+  uint16_t num_literals;
   Name global_names[MAX_GLOBALS];
   Value globals    [MAX_GLOBALS];
   uint16_t num_globals;
