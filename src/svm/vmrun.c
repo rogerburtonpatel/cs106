@@ -32,6 +32,8 @@
 
 #define CANDUMP 1
 
+#define CANDUMP 1
+
 void vmrun(VMState vm, struct VMFunction *fun) {
     print("%x\n", 0xf09d9aaf);
     print("%x\n", 0xf09d9aaf & 0x1fffff);
@@ -47,6 +49,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     (void) dump_call;  // make it OK not to use `dump_call`
 
     Instruction *pc = vm->instructions = fun->instructions;
+
     Instruction curr_instr;
     Value *registers = vm->registers; 
     /* registers always = vm->registers + vm->R_window_start */
@@ -56,7 +59,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
         curr_instr = *pc;
 
         if (CANDUMP && dump_decode) {
-            idump(stderr, vm, (int64_t)pc, curr_instr, 0, 
+            idump(stderr, vm, counter, curr_instr, 0, 
             registers + uX(curr_instr), 
             registers + uY(curr_instr), 
             registers + uZ(curr_instr));
@@ -267,11 +270,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = v;
                 break;
             
-<<<<<<< HEAD
+
             case RegCopy:
-=======
-            case RegCopy:
->>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
                 registers[uX(curr_instr)] = registers[uY(curr_instr)];
                 break;
 
@@ -280,14 +280,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = registers[uY(curr_instr)];
                 registers[uY(curr_instr)] = v;
                 break;
-<<<<<<< HEAD
             
             case Hash:
                 registers[uX(curr_instr)] = 
                             mkNumberValue(hashvalue(registers[uY(curr_instr)]));
                 break;
-=======
->>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
 
             case PlusImm:
                 registers[uX(curr_instr)] = mkNumberValue(
@@ -482,6 +479,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 = registers[uZ(curr_instr)];
                 break;
             }
+
             default:
                 printf("Opcode Not implemented!\n");
                 break;
