@@ -12,6 +12,7 @@
 
 #include "value.h"
 #include "vmstack.h"
+#include "name.h"
 #include "vtable.h"
 
 #define MAX_LITERALS 4096
