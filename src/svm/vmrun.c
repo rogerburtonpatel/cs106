@@ -41,17 +41,17 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     const char *dump_call   = svmdebug_value("call");
     (void) dump_call;  // make it OK not to use `dump_call`
 
-    uint32_t counter = vm->counter = 0;
-    Instruction *instructions = vm->instructions = fun->instructions;
+    // uint32_t counter = vm->counter = 0;
+    Instruction *instructions, *pc = vm->instructions = fun->instructions;
     Instruction curr_instr;
-    
-    Value *registers = vm->registers;
+    Value *registers = vm->registers + vm->R_window_start;
     Value v;
 
     while(1) {
-        curr_instr = instructions[counter];
+        curr_instr = *pc;
+
         if (CANDUMP && dump_decode) {
-            idump(stderr, vm, counter, curr_instr, 0, 
+            idump(stderr, vm, (int)pc, curr_instr, 0, 
             registers + uX(curr_instr), 
             registers + uY(curr_instr), 
             registers + uZ(curr_instr));
@@ -62,7 +62,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 /* I'm ok with having a counter variable external to the vmstate
                    and storing it when we Halt, because it saves a dereference
                    every time, and we only Halt once. */
-                vm->counter = counter;
+                vm->pc = pc;
                 return;
             case Print:
                 print("%v", registers[uX(curr_instr)]);
@@ -211,11 +211,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case If: 
                 bool truth = asBool(registers[uX(curr_instr)]);
                 if (!truth) {
-                    counter++; // If false, skip next instruction.
+                    pc++; // If false, skip next instruction.
                 }
                 break;
             case Goto:
-                counter += 1 + iXYZ(curr_instr); 
+                pc += 1 + iXYZ(curr_instr); 
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
                           // then skipping the increment with continue
@@ -225,9 +225,31 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case Return: 
                 assert(0);
                 break;
-            case Call: 
-                assert(0);
+            case Call: {
+                uint8_t r0 = uY(curr_instr);
+                uint8_t rn = uZ(curr_instr);
+                uint8_t n  = rn - r0;
+                // uint32_t reg_window_start = vm->R + r0;
+
+                uint32_t dest_reg_idx = uX(curr_instr);
+
+                // save caller activation record on the stack
+                Activation a = {pc + 1, vm->R_window_start, dest_reg_idx};
+                vm->Stack[vm->stackpointer++] = a;
+
+                // grab the called function
+                struct VMFunction *fun = AS_VMFUNCTION(vm, registers[0]);
+                assert(fun->arity == n);
+
+                vm->R_window_start += r0;
+
+                // transfer control= move instruction pointer to start of 
+                // function instruction stream
+                pc = &fun->instructions[0] - 1; /* account for increment */
+
+                // return will undo this based on the activation! 
                 break;
+            }
             case Tailcall: 
                 assert(0);
                 break;
@@ -236,7 +258,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 printf("Not implemented!\n");
                 break;
         }
-        counter++;
+        pc += 1;
     }
     return;
 }
