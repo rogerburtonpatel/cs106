@@ -61,6 +61,10 @@ instruction_info instructions[] = {
   {"null?", IsNull, parseR2, "rX := null? rY"},
   {"nil?", IsNil, parseR2, "rX := nil? rY"},
   
+  {"return", Return, parseR1, "return rX"},
+  {"call", Call, parseR3, "rX := call rY (rY+1, ..., rZ)"},
+  {"tailcall", Tailcall, parseR2, "tailcall rX (rX+1, ..., rY)"},
+
   {"mkclosure", MkClosure, parseR2, "ngl i have no idea what this looks like"},
   {"setclslot", SetClSlot, parseR2, "same here"},
   {"getclslot", GetClSlot, parseR2, "yet again"},
