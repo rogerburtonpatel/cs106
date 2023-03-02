@@ -4,16 +4,17 @@
 
 (* You'll complete this file *)
 
-structure ANProject :> sig
-  val value : KNormalForm.value -> ANormalForm.literal
-  val def   : KNormalForm.exp -> string ANormalForm.exp Error.error
+structure ANTranslate :> sig
+  type reg = ObjectCode.reg
+  (* val value : KNormalForm.value -> ANormalForm.literal *)
+  val exp   : string KNormalForm.exp -> string ANormalForm.exp Error.error
 end 
   = 
 struct
   structure A  = ANormalForm
   structure AU = ANormalUtil
   structure P  = Primitive
-  structure X  = UnambiguousVScheme
+  (* structure X  = UnambiguousVScheme *)
   structure K  = KNormalForm
 
   infix  0 >>=  val op >>= = Error.>>=
@@ -22,6 +23,8 @@ struct
   val succeed = Error.succeed
   val error = Error.ERROR
   val errorList = Error.list
+
+  type reg = ObjectCode.reg
 
   fun curry  f x y   = f (x, y)
   fun curry3 f x y z = f (x, y, z)
@@ -43,7 +46,8 @@ struct
     | value (X.BOOLV b) = A.BOOL b
     | value  X.EMPTYLIST = A.EMPTYLIST *)
 
-  fun exp 
+  fun exp (K.LITERAL l) = succeed (A.SIMPLE (A.LITERAL l))
+    | exp _ = error "nope"
   
   
   (* (X.LITERAL v) = succeed (A.LITERAL (value v))
@@ -115,7 +119,7 @@ struct
 
   lt' [bind (lambda' exp)] [setglobal exp] *)
 
-  fun def ()
+  (* fun def () *)
   (* fun def (X.EXP e) = exp e
           (* (case e 
           of (X.LETX (X.LET, [(t, X.LAMBDA (xs, e))], (X.SETGLOBAL (f, t')))) =>

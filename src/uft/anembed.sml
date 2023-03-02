@@ -36,12 +36,21 @@ struct
 
 (* 𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
 (* Todo: this case ^^ for easy reading *)
-  fun exp (A.I expr) = 
-      (case expr 
-        of (A.LITERAL v)    => S.LITERAL (value v)
+  fun exp (A.SIMPLE expr) = 
+      (case expr
+        of (A.LITERAL v) => S.LITERAL (value v)
+        | (A.NAME x)     => S.VAR x
+        | (A.VMOP (p, ns)) => S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
+        | (A.VMOPLIT (p, ns, v)) => 
+            (case (P.name p, ns, v)
+              of ("getglobal", [], A.STRING s)  => S.VAR s
+               | ("setglobal", [n], A.STRING s) => S.SET (s, S.VAR n)
+               | (pn, names, v) => S.APPLY (S.VAR pn, (List.map S.VAR names)
+                                                       @ [S.LITERAL (value v)]))
+        | (A.FUNCALL (n, ns)) => S.APPLY (S.VAR n, List.map S.VAR ns)
         | _ => Impossible.exercise "todo")
-    | exp (A.T expr) = 
-      (case expr 
+    | exp e = 
+      (case e 
         of _ => Impossible.exercise "todo")
     (* | exp (A.NAME x)       = S.VAR x
     | exp (A.VMOP (p, ns)) = S.APPLY (S.VAR (P.name p), List.map S.VAR ns)

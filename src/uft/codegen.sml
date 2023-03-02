@@ -102,61 +102,68 @@ struct
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         forEffectK' e  (* this will change in module 8 *)
 
-  fun toRegA' (dest : reg) (ex : reg ANormalForm.exp) : instruction hughes_list =
-        (case ex
-          of AN.LITERAL l => S (A.loadlit dest l)
-           | AN.NAME r    => S (A.copyreg dest r)
-           | AN.VMOP (p as P.SETS_REGISTER _, rs) => S (A.setreg dest p rs)
-           | AN.VMOP (P.HAS_EFFECT _, _) => forEffectA' ex
-           | AN.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
-                                                    S (A.setregLit dest p rs l) 
-           | AN.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectA' ex
-           | AN.FUNCALL (r, rs) => Impossible.exercise "wait till module 8!"
-           | AN.IFX (r, e1, e2) => 
-             let val lab  = A.newlabel ()
-                 val lab' = A.newlabel ()
-             in S (A.ifgoto r lab) o (toRegA' r e2) o S (A.goto lab')
-                                   o S (A.deflabel lab) o (toRegA' r e1) 
-                                   o S (A.deflabel lab')
-            end
-            (* Floatables *)
-           | AN.LETX (r, e, e') => (toRegA' r e) o (toRegA' dest e')
-           | AN.BEGIN (e1, e2)  => (forEffectA' e1) o (toRegA' dest e2)
-           | AN.SET (r, e)      => (toRegA' r e) o S (A.copyreg dest r)
-           | AN.WHILEX _        => (forEffectA' ex)
-                                    o S (A.loadlit dest (AN.BOOL false))
-           | AN.FUNCODE (rs, e) =>
+  fun toRegA' (dest : reg) (expr : reg ANormalForm.exp) : instruction hughes_list =
+        (case expr
+          of AN.SIMPLE ex =>
+          (case ex
+            of AN.LITERAL l => S (A.loadlit dest l)
+             | AN.NAME r    => S (A.copyreg dest r)
+             | AN.VMOP (p as P.SETS_REGISTER _, rs) => S (A.setreg dest p rs)
+             | AN.VMOP (P.HAS_EFFECT _, _) => forEffectA' expr
+             | AN.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
+                                                     S (A.setregLit dest p rs l) 
+             | AN.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectA' expr
+             | AN.FUNCALL (r, rs) => Impossible.exercise "wait till module 8!"
+ 
+             | AN.BEGIN (e1, e2)  => (forEffectA' e1) o (toRegA' dest e2)
+             | AN.SET (r, e)      => (toRegA' r e) o S (A.copyreg dest r)
+             | AN.FUNCODE (rs, e) =>
                        S (A.loadfunc dest (List.length rs) ((toReturnA' e []))))
-  and forEffectA' (ex: reg ANormalForm.exp) : instruction hughes_list  =
-(case ex
-          of AN.LITERAL _ => empty
-           | AN.NAME _    => empty
-           | AN.VMOP (p as P.SETS_REGISTER _, _) => empty 
-           | AN.VMOP (p as P.HAS_EFFECT _, ns) => S (A.effect p ns)
-           | AN.VMOPLIT (p as P.SETS_REGISTER _, _, _) => empty
-           | AN.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
 
-           | AN.FUNCALL (r, ns) => Impossible.exercise "wait till module 8!"
+            | AN.IFX (r, e1, e2) => 
+              let val lab  = A.newlabel ()
+                  val lab' = A.newlabel ()
+              in S (A.ifgoto r lab) o (toRegA' r e2) o S (A.goto lab')
+                                    o S (A.deflabel lab) o (toRegA' r e1) 
+                                    o S (A.deflabel lab')
+          end
+          (* Floatables *)
+          | AN.LETX (r, e, e') => (toRegA' r (AN.SIMPLE e)) o (toRegA' dest e')
+          | AN.WHILEX _        => (forEffectA' expr)
+                                  o S (A.loadlit dest (AN.BOOL false)))
+  and forEffectA' (expr: reg ANormalForm.exp) : instruction hughes_list  =
+        (case expr
+          of AN.SIMPLE ex =>
+          (case ex
+            of AN.LITERAL _ => empty
+             | AN.NAME _    => empty
+             | AN.VMOP (p as P.SETS_REGISTER _, _) => empty 
+             | AN.VMOP (p as P.HAS_EFFECT _, ns) => S (A.effect p ns)
+             | AN.VMOPLIT (p as P.SETS_REGISTER _, _, _) => empty
+             | AN.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
+
+             | AN.FUNCALL (r, ns) => Impossible.exercise "wait till module 8!"
+             | AN.BEGIN (e1, e2)    => (forEffectA' e1) o (forEffectA' e2)
+             | AN.SET   (r, e)      => (toRegA' r e)
+             | AN.FUNCODE (rs, e) => 
+                 let val r = 255 (* TODO change this *)
+                 in toRegA' r expr
+                 end)
+
            | AN.IFX (r, e1, e2) => 
              let val lab  = A.newlabel ()
                  val lab' = A.newlabel ()
              in S (A.ifgoto r lab) o (forEffectA' e2) o S (A.goto lab')
                                    o S (A.deflabel lab) o (forEffectA' e1) 
                                    o S (A.deflabel lab')
-            end
-           | AN.LETX  (r, e, e')  => (toRegA' r e) o (forEffectA' e')
-           | AN.BEGIN (e1, e2)    => (forEffectA' e1) o (forEffectA' e2)
-           | AN.SET   (r, e)      => (toRegA' r e)
+             end
+           | AN.LETX  (r, e, e')  => (toRegA' r (AN.SIMPLE e)) o (forEffectA' e')
            | AN.WHILEX (r, e, e') => 
              let val lab  = A.newlabel ()
                  val lab' = A.newlabel ()
              in S (A.goto lab) o S (A.deflabel lab') o (forEffectA' e')
-                o S (A.deflabel lab) o (toRegA' r e) o S (A.ifgoto r lab')          
-            end
-           | AN.FUNCODE (rs, e) => 
-              let val r = 255 (* TODO change this *)
-              in toRegA' r ex
-              end)
+                 o S (A.deflabel lab) o (toRegA' r e) o S (A.ifgoto r lab')          
+               end)
   and toReturnA' (e:  reg ANormalForm.exp) : instruction hughes_list  =
         forEffectA' e  (* this will change in module 8 *)
 

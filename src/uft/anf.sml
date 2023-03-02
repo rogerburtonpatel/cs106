@@ -11,9 +11,12 @@ structure ANormalForm = struct
 
   datatype 'a exp      (* type parameter 'a is a _name_, typically
                           instantiated as `string` or `ObjectCode.reg` *)
-    = I of 'a internal_allowed_exp | T of 'a top_level_only_exp
+    = IFX     of 'a * 'a exp * 'a exp 
+    | LETX    of 'a * 'a simple_exp * 'a exp
+    | WHILEX  of 'a * 'a exp * 'a exp 
+    | SIMPLE  of 'a simple_exp
 
-  and 'a internal_allowed_exp
+  and 'a simple_exp
   = LITERAL of literal 
   | NAME of 'a 
   | VMOP of vmop * 'a list
@@ -22,12 +25,6 @@ structure ANormalForm = struct
   | BEGIN   of 'a exp * 'a exp 
   | SET     of 'a * 'a exp
   | FUNCODE of 'a list * 'a exp
-
-  and 'a top_level_only_exp
-  =   IFX     of 'a * 'a exp * 'a exp 
-    | LETX    of 'a * 'a internal_allowed_exp * 'a exp
-    | WHILEX  of 'a * 'a exp * 'a exp 
-  
 
 end
 
@@ -49,9 +46,10 @@ struct
   structure A = ANormalForm
   type name = string
 
-  fun setglobal (x, register) = A.I (A.VMOPLIT (Primitive.setglobal, 
+  fun setglobal (x, register) = A.SIMPLE (A.VMOPLIT (Primitive.setglobal, 
                                             [register], A.STRING x))
-  fun getglobal x             = A.I (A.VMOPLIT (Primitive.getglobal, [], A.STRING x))
+  fun getglobal x             = A.SIMPLE (A.VMOPLIT (Primitive.getglobal, 
+                                                     [], A.STRING x))
 
 end
 

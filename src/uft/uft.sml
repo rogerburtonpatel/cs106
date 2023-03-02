@@ -55,8 +55,15 @@ struct
   val KN_of_file: instream -> string KNormalForm.exp list error =
     schemexOfFile >=> Error.mapList KNProject.def
 
+(* string KNormalForm.exp list error -> 
+                  string ANormalForm.exp list error *)
+
+    val AN_of_KN =
+    Error.mapList ANTranslate.exp (* string ANormalForm.exp list error *)
+
   val AN_of_file: instream -> string ANormalForm.exp list error =
-    schemexOfFile >=> Error.mapList ANProject.def
+    KN_of_file                        (* string KNormalForm.exp list error *)
+    >=> AN_of_KN                      (* string ANormalForm.exp list error *)
 
   (**** Support for materialization ****)
   
@@ -73,22 +80,21 @@ struct
   infixr 0 $ 
   fun f $ g = f g
 
-  val VS_of_KN : ObjectCode.reg KNormalForm.exp list ->
-               AssemblyCode.instr list
-    = List.map Codegen.forEffectK (* AssemblyCode.instr list list*)
-    >>> List.concat              (* AssemblyCode.instr list *)
-
   val VS_of_AN : ObjectCode.reg ANormalForm.exp list ->
                AssemblyCode.instr list
     = List.map Codegen.forEffectA (* AssemblyCode.instr list list*)
     >>> List.concat              (* AssemblyCode.instr list *)
+
+  val VS_of_KN : string KNormalForm.exp list ->
+                 AssemblyCode.instr list
+    = Error.mapList ANTranslate.exp  >=> Error.mapList (ANRename.mapx ANRename.regOfName) >>> VS_of_AN  (* AssemblyCode.instr list *)
 
 
   fun HO_of HO   = schemexOfFile
     | HO_of HOX  = Impossible.unimp "imperative features (HOX to HO)"
     | HO_of _    = raise Backward
 
-  fun KN_reg_of KN = KN_of_file 
+  fun KN_reg_of KN = KN_of_file
                      >=> Error.mapList (KNRename.mapx KNRename.regOfName)
     | KN_reg_of inLang = raise NoTranslationTo KN
 
@@ -100,12 +106,13 @@ struct
     | KN_of inLang = raise NoTranslationTo KN
 
   fun AN_of AN = AN_of_file
+    | AN_of KN = AN_of_KN
     | AN_of inLang = raise NoTranslationTo AN
 
   fun VS_of VS   = VS_of_file
-    | VS_of AN = AN_reg_of AN >>> ! VS_of_AN
-    | VS_of inLang = KN_reg_of inLang >>> ! VS_of_KN
-                                  (* unwrap KN_reg_of inLang result 
+    | VS_of AN   = AN_reg_of AN >>> ! VS_of_AN
+    | VS_of inLang = KN_of_file inLang >>> ! AN_of_KN >>> ! VS_of
+                        (* unwrap KN_reg_of inLang result 
                                   (error type), apply VS_of_KN to internals,
                                   and rewrap. *)
   fun VO_of VO     = (fn _ => Error.ERROR "There is no reader for .vo")

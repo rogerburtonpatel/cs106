@@ -39,7 +39,7 @@ struct
   fun pred VO  = SOME VS
     | pred VS  = SOME KN
     | pred KN  = SOME CL
-    | pred AN  = SOME CL
+    | pred AN  = SOME KN
     | pred CL  = SOME FO
     | pred FO  = SOME HO
     | pred HO  = SOME HOX
