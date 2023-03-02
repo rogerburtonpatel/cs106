@@ -21,15 +21,25 @@
 
 #include "print.h"
 
+#include "svmdebug.h"
+#include "disasm.h"
+
 #include "vmerror.h"
 #include "vmheap.h"
 #include "vmstring.h"
+
+#define CANDUMP 1
 
 void vmrun(VMState vm, struct VMFunction *fun) {
     
     if (fun->size < 1) {
         return;
     }
+
+    /* Thank you to Norman for this debugging infrastructure */
+    const char *dump_decode = svmdebug_value("decode");
+    const char *dump_call   = svmdebug_value("call");
+    (void) dump_call;  // make it OK not to use `dump_call`
 
     uint32_t counter = vm->counter = 0;
     Instruction *instructions = vm->instructions = fun->instructions;
@@ -40,6 +50,12 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
     while(1) {
         curr_instr = instructions[counter];
+        if (CANDUMP && dump_decode) {
+            idump(stderr, vm, counter, curr_instr, 0, 
+            registers + uX(curr_instr), 
+            registers + uY(curr_instr), 
+            registers + uZ(curr_instr));
+        }
         switch (opcode(curr_instr)) {
             /* BASIC */
             case Halt:
@@ -203,6 +219,19 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
                           // then skipping the increment with continue
+
+
+            /* FUNCTIONS */
+            case Return: 
+                assert(0);
+                break;
+            case Call: 
+                assert(0);
+                break;
+            case Tailcall: 
+                assert(0);
+                break;
+
             default:
                 printf("Not implemented!\n");
                 break;
