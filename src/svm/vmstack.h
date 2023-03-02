@@ -3,9 +3,10 @@
 
 #include "value.h"
 
-struct Activation {
-  void *DELETE_ME; // I'm only here so the code will compile
-  // ... you fill in the fields ...
-};
+typedef struct Activation {
+    Instruction *resume_loc;
+    uint32_t R_window_start;
+    uint32_t dest_reg;
+} Activation; /* NOT a pointer type! */
 
 #endif
