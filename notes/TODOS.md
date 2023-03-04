@@ -10,6 +10,8 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
 Cons cells
 Ask about setting globals to literals
 
+FOR NORMAN: the goto in the provided vo code: returnt.vo was wrong. 
+goto 5 skips over the instruction. why?
 
 
 Add <:> operator : curry op cons + <$>
