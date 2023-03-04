@@ -201,9 +201,6 @@ struct
   fun binopParser  name = eR3 name <$> reg <~> the ":=" <*> reg <~> the name <*> reg
   fun unopParser   name = eR2 name <$> reg <~> the ":=" <~> the name <*> reg
 
-
-  (* trying to make parsing combinators work for me. lack of understanding
-     getting in the way. what's missing? (this probably looks quite silly...) *)
   fun parseOps psr []      = P.pzero
     | parseOps psr (x::xs) = psr x <|> parseOps psr xs
 
@@ -300,14 +297,13 @@ struct
 
   fun stringify s = "\034" ^ s ^ "\034"
 
-  fun unparse_lit lit = 
-    case lit of O.INT n  => int n
-              | O.REAL r => Real.toString r
-              | O.STRING s => stringify s
-              | O.BOOL true => "#t"
-              | O.BOOL false => "#f"
-              | O.EMPTYLIST => "'()"
-              | O.NIL => "nil"
+  fun unparse_lit (O.INT n)  = int n
+    | unparse_lit (O.REAL r) = Real.toString r
+    | unparse_lit (O.STRING s) = stringify s
+    | unparse_lit (O.BOOL true) = "#t"
+    | unparse_lit (O.BOOL false) = "#f"
+    | unparse_lit O.EMPTYLIST = "'()"
+    | unparse_lit O.NIL = "nil"
 
 (* factor out binops/unops if you can. also factor out object code wrapper *)
 
