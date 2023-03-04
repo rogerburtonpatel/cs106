@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/bash -x
 # 
-# Purpose: runs tests from .vo files
+# Purpose: tests knormal form
 # 
 
-## Usage: votests
+## Usage: kntests
 ## 
 ## 
 ## 
@@ -16,7 +16,8 @@
 BASEDIR=/h/rburto03/106/student-2023s
 
 SVMDIR=$BASEDIR/src/svm
-TESTDIR=$BASEDIR/tests/vo_tests
+UFTDIR=$BASEDIR/src/uft
+TESTDIR=$BASEDIR/tests/kntests
 
 
 cd $SVMDIR
@@ -31,21 +32,29 @@ if [[ ! -e $BASEDIR/bin/svm ]]; then
     fi
 fi
 
+cd $UFTDIR
+
+if [[ ! -e $BASEDIR/bin/uft ]]; then
+    echo "No uft executable found; compiling..."
+    make
+    if [[ "$?" -ne "0" ]]; then
+        echo "Exiting on compilation failure."
+        exit 1
+    fi
+fi
+
 # run tests
 run_tests () {
     
     pass=0
 
-    for file in $TESTDIR/to-fail/*; do
-        svm $file 2>&1 | grep "fail" # grep returns 0 if found
+    for file in $TESTDIR/*; do
+        uft kn-vo $file | svm 2>&1 | grep -v "fail" 
+                                                    # grep returns 0 if found
         pass=$((pass + $?))
         echo $pass
     done
 
-    for file in $TESTDIR/to-pass/*; do
-        svm $file | grep -v "fail"
-        pass=$((pass + $?))
-    done
     if [[ "$pass" -eq "0" ]]; then 
         echo "All tests passed."
     fi
