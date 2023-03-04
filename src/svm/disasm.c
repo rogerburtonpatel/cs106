@@ -126,6 +126,7 @@ static void fprintfunname(FILE *fp, VMState vm, Value v) {
     case VMFunction:
     case VMClosure:
       (void) vm;
+      // assert(0); // TODO! 
       // You need here a loop through all your globals, searching
       // for an `i` such that `identical(global number i, v)` holds.
       // If you find one, print " ($NAME)" where $NAME is

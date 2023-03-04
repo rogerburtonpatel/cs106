@@ -36,7 +36,6 @@ static void dofile(struct VMState *vm, FILE *input) {
       ; module = loadmodule(vm, input)
       ) {
     vmrun(vm, module);
-    free(module); 
   }
   report_unit_tests();
 }
