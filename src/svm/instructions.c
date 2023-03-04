@@ -20,8 +20,8 @@ instruction_info instructions[] = {
   { "printu", Printu, parseR1, "printu rX" },
   { "error", Error, parseR1, "error rX" },
   { "loadliteral", LoadLiteral, parseR1LIT, "rX := LIT" },
-  { "getglobal", GetGlobal, parseR1GLO, "rX := _G[glo]" },
-  { "setglobal", SetGlobal, parseR1GLO, "_G[glo] := rX" },
+  { "getglobal", GetGlobal, parseR1GLO, "rX := _G[YZ]" },
+  { "setglobal", SetGlobal, parseR1GLO, "_G[YZ] := rX" },
   { "check", Check, parseR1LIT, "check LIT, rX" },
   { "expect", Expect, parseR1LIT, "expect LIT, rX" },
   { "check-assert", CheckAssert, parseR1LIT, "check-assert LIT, rX" },
@@ -37,8 +37,8 @@ instruction_info instructions[] = {
   { "<",  Lt,  parseR3, "< rX rY rZ" },
   { ">=",  Ge,  parseR3, "<= rX rY rZ" },
   { "<=",  Le,  parseR3, ">= rX rY rZ" },
-  { "cons",  Le,  parseR3, "cons rX rY rZ" },
-  { "=",  Le,  parseR3, "= rX rY rZ" },
+  { "cons", Cons, parseR3, "cons rX rY rZ" },
+  { "=",  Eq,  parseR3, "= rX rY rZ" },
   
   { "inc", Inc, parseR1, "inc rX" },
   { "dec", Dec, parseR1, "dec rX" },
@@ -50,6 +50,7 @@ instruction_info instructions[] = {
   {"cdr", Cdr, parseR2, "rX := cdr rY"},
   {"hash", Hash, parseR2, "rX := hash rY"},
   {"copy", RegCopy, parseR2, "rX := rY"},
+  {"move", RegCopy, parseR2, "rX := rY"},
   {"swap", Swap, parseR2, "rX, rY := rY, rX"},
   {"+imm", PlusImm, parseR2U8, "rX := rY + IMM"},
 
@@ -70,15 +71,12 @@ instruction_info instructions[] = {
   {"getclslot", GetClSlot, parseR2, "yet again"},
 
   {"if",   If,   parseR1,    "if rX" },
-  {"goto", Goto, parseR0I24, "goto offset" },
+  {"goto", Goto, parseR0I24, "goto XYZ" },
 };
 
 int number_of_instructions = sizeof(instructions) / sizeof(instructions[0]);
 
-bool isgetglobal(Opcode code) {
-  fprintf(stderr,
-          "%s, line %d: function `isgetglobal` is not implemented", __FILE__, __LINE__);
-  (void) code;
-  return false; // change this for your SVM
+int isgetglobal(Opcode code) {
+  return code == GetGlobal;
 }
 

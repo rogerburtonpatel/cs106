@@ -42,9 +42,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     (void) dump_call;  // make it OK not to use `dump_call`
 
     // uint32_t counter = vm->counter = 0;
-    Instruction *instructions, *pc = vm->instructions = fun->instructions;
+    Instruction *pc = vm->instructions = fun->instructions;
     Instruction curr_instr;
-    Value *registers = vm->registers + vm->R_window_start;
+    Value *registers = vm->registers;
     Value v;
 
     while(1) {
@@ -144,6 +144,15 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                                             % d);
                 break;
             }
+
+            /* BOOLEAN LOGIC- R3 */
+            case Eq:
+            // TODO: THIS WILL BE MORE COMPLEX. HEHE
+                registers[uX(curr_instr)] = 
+                mkBooleanValue(
+                    AS_NUMBER(vm, registers[uY(curr_instr)]) 
+                    == AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                break;
             /* UNARY ARITH- R1 */
             case Inc:
                 registers[uX(curr_instr)] = 
@@ -222,10 +231,21 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
 
             /* FUNCTIONS */
-            case Return: 
-                assert(0);
+            case Return: {
+                // pop the call stack
+                Activation a = vm->Stack[--vm->stackpointer];
+                // get return value 
+                Value return_value = registers[uX(curr_instr)];
+                // restore register window state and current instruction
+                vm->R_window_start = a.R_window_start;
+                registers = vm->registers + a.R_window_start;
+                pc = a.resume_loc;
+                // set final return. 
+                registers[a.dest_reg_idx] = return_value;
                 break;
+            }
             case Call: {
+                // TODO CLEAN AND ABOVE
                 uint8_t r0 = uY(curr_instr);
                 uint8_t rn = uZ(curr_instr);
                 uint8_t n  = rn - r0;
@@ -233,8 +253,22 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint32_t dest_reg_idx = uX(curr_instr);
 
                 // save caller activation record on the stack
-                Activation a = {pc + 1, vm->R_window_start, dest_reg_idx};
+                Activation a = {pc, vm->R_window_start, dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
+
+                // check for invalid function 
+                if (registers[r0].tag == Nil) {
+                    const char *funname = lastglobalset(vm, r0, fun, pc);
+                    if (funname == NULL) {
+                        runerror(vm, 
+                        "tried calling a function in register %hhu, \
+                        which is nil and was never set to a function.\n", r0);
+                    } else {
+                        runerror(vm, 
+                        "tried calling a function in register %hhu, which is \
+                          nil and was last set to function %s.\n", r0, funname);
+                    }
+                }
 
                 // grab the called function
                 struct VMFunction *fun = AS_VMFUNCTION(vm, registers[r0]);
@@ -242,7 +276,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 // move the register window
                 vm->R_window_start += r0;
-                registers += vm->R_window_start;
+                registers = vm->registers + vm->R_window_start;
 
                 // transfer control= move instruction pointer to start of 
                 // function instruction stream
@@ -256,7 +290,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
 
             default:
-                printf("Not implemented!\n");
+                printf("Opcode Not implemented!\n");
                 break;
         }
         pc += 1;
