@@ -1,0 +1,59 @@
+#!/bin/bash
+# 
+# Purpose: runs tests for module 2
+# 
+
+## Usage: 2-tests 
+## 
+## 
+## 
+## 
+## author: rab
+## date:  Mon Jan 30 16:04:53 EST 2023
+
+# TODO: use grep conditional capture to print failing tests.
+
+BASEDIR=/h/rburto03/106/student-2023s
+
+SVMDIR=$BASEDIR/src/svm
+TESTDIR=$BASEDIR/tests/vo_tests
+
+
+cd $SVMDIR
+
+# compile if needed
+if [[ ! -e $BASEDIR/bin/svm ]]; then
+    echo "No svm executable found; compiling..."
+    make
+    if [[ "$?" -ne "0" ]]; then
+        echo "Exiting on compilation failure."
+        exit 1
+    fi
+fi
+
+# run tests
+run_tests () {
+    
+    pass=0
+
+    for file in $TESTDIR/to-fail/*; do
+        svm $file 2>&1 | grep "fail" # grep returns 0 if found
+        pass=$((pass + $?))
+        echo $pass
+    done
+
+    for file in $TESTDIR/to-pass/*; do
+        svm $file | grep -v "fail"
+        pass=$((pass + $?))
+    done
+    if [[ "$pass" -eq "0" ]]; then 
+        echo "All tests passed."
+    fi
+}
+
+main () {
+
+    run_tests
+}
+
+main
