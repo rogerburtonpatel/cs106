@@ -36,7 +36,6 @@ static void dofile(struct VMState *vm, FILE *input) {
       ; module = loadmodule(vm, input)
       ) {
     vmrun(vm, module);
-    free(module); // TODO see if needed, or should be on VMHeap...
   }
   report_unit_tests();
 }

@@ -59,7 +59,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
         curr_instr = *pc;
 
         if (CANDUMP && dump_decode) {
-            idump(stderr, vm, counter, curr_instr, 0, 
+            idump(stderr, vm, (int64_t)pc, curr_instr, 0, 
             registers + uX(curr_instr), 
             registers + uY(curr_instr), 
             registers + uZ(curr_instr));
@@ -381,11 +381,13 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 Activation a = {pc, vm->R_window_start, dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
 
-                assert(func->arity == n);
+                // grab the called function
+                struct VMFunction *fun = AS_VMFUNCTION(vm, registers[r0]);
+                assert(fun->arity == n);
 
                 // move the register window
                 vm->R_window_start += r0;
-                registers = vm->registers + vm->R_window_start;
+                registers += vm->R_window_start;
 
                 // transfer control= move instruction pointer to start of 
                 // function instruction stream
