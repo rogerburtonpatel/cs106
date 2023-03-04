@@ -24,7 +24,7 @@ typedef enum opcode {
                       CheckAssert, // R1LIT
                       LoadLiteral, // R1LIT
                       GetGlobal, SetGlobal, // R1GLO
-                      Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, // R3
+                      Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, Eq, // R3
                       Cons, // R3
                       Inc, Dec, Neg, Not, // R1
                       BoolOf, // R2
