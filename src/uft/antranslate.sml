@@ -1,6 +1,5 @@
-(* Project disambiguated VScheme into ANormal representation. 
-    Note that this can fail if the disambiguated VScheme is not already 
-    written in ANormal-form. *)
+(* Translate KNormal Form into ANormal representation. 
+   This probably won't fail TODO FIX. *)
 
 (* You'll complete this file *)
 
@@ -47,7 +46,18 @@ struct
     | value  X.EMPTYLIST = A.EMPTYLIST *)
 
   fun exp (K.LITERAL l) = succeed (A.SIMPLE (A.LITERAL l))
+    | exp (K.NAME n)    = succeed (A.SIMPLE (A.NAME n))
+    | exp (K.VMOP (p, ns)) = succeed (A.SIMPLE (A.VMOP (p, ns)))
+    | exp (K.VMOPLIT (p, ns, l)) = A.SIMPLE <$> (curry3 A.VMOPLIT <$> (succeed p) <*> 
+                                             (succeed ns) <*> (succeed l))
     | exp _ = error "nope"
+(*
+       | A.FUNCALL (n, ns) => curry A.FUNCALL <$> f n <*> errorList (map f ns)
+       | A.BEGIN (e, e') => curry A.BEGIN <$> mapx f e <*> mapx f e'
+       | A.SET (n, e) => curry A.SET <$> f n <*> mapx f e
+       | A.FUNCODE (ns, e) => curry A.FUNCODE <$> errorList (map f ns) 
+                                                                   <*> mapx f e) *)
+
   
   
   (* (X.LITERAL v) = succeed (A.LITERAL (value v))

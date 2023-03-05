@@ -23,27 +23,28 @@ struct
   (* AsmLex.registerNum takes a string starting with "r" followed by a number n
      such that 0 <= n < 256, and returns n *)
   val regOfName = AsmLex.registerNum
-
+exception typecheat
   fun mapx f = fn expr => 
   (case expr 
-    of A.SIMPLE e =>
-    (case e 
-      of A.LITERAL l => succeed (A.SIMPLE (A.LITERAL l))
-      | A.NAME n => (A.SIMPLE <$> (A.NAME <$> f n))
-      (* this need a lot of fixing *)
-      | A.VMOP (p, ns) => curry (A.SIMPLE (A.VMOP)) <$> (succeed p) <*> errorList (map f ns)
-      | A.VMOPLIT (p, ns, l) => curry3 A.VMOPLIT <$> (succeed p) <*> 
-                                            errorList (map f ns) <*> (succeed l)
-      | A.FUNCALL (n, ns) => curry A.FUNCALL <$> f n <*> errorList (map f ns)
-      | A.BEGIN (e, e') => curry A.BEGIN <$> mapx f e <*> mapx f e'
-      | A.SET (n, e) => curry A.SET <$> f n <*> mapx f e
-      | A.FUNCODE (ns, e) => curry A.FUNCODE <$> errorList (map f ns) 
-                                                                  <*> mapx f e)
+    of A.SIMPLE e => A.SIMPLE <$> (mapxSimple f e)
+     | A.IFX (n, e1, e2) => curry3 A.IFX <$> f n <*> mapx f e1 <*> mapx f e2
+     | A.LETX (n, e1, e2) => curry3 A.LETX <$> f n <*> mapxSimple f e1 <*> mapx f e2
+     | A.WHILEX (n, e, e') => curry3 A.WHILEX <$> f n <*> mapx f e
+                                                                 <*> mapx f e')
+  and mapxSimple f = fn e =>
+  (case e 
+      of A.LITERAL l => succeed (A.LITERAL l)
+       | A.NAME n => A.NAME <$> f n
+       (* this need a lot of fixing *)
+       | A.VMOP (p, ns) =>  curry A.VMOP <$> (succeed p) <*> errorList (map f ns)
+       | A.VMOPLIT (p, ns, l) => curry3 A.VMOPLIT <$> (succeed p) <*> 
+                                             errorList (map f ns) <*> (succeed l)
+       | A.FUNCALL (n, ns) => curry A.FUNCALL <$> f n <*> errorList (map f ns)
+       | A.BEGIN (e, e') => curry A.BEGIN <$> mapx f e <*> mapx f e'
+       | A.SET (n, e) => curry A.SET <$> f n <*> mapx f e
+       | A.FUNCODE (ns, e) => curry A.FUNCODE <$> errorList (map f ns) 
+                                                                   <*> mapx f e)
 
-      | A.IFX (n, e1, e2) => curry3 A.IFX <$> f n <*> mapx f e1 <*> mapx f e2
-      | A.LETX (n, e1, e2) => curry3 A.LETX <$> f n <*> mapx f e1 <*> mapx f e2
-      | A.WHILEX (n, e, e') => curry3 A.WHILEX <$> f n <*> mapx f e
-                                                                  <*> mapx f e')
     
 
 end

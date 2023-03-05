@@ -5,6 +5,8 @@
 (* You'll get a partially complete version of this file, 
     which you'll need to complete *)
 
+(* string knormal -> string anormal -> reg anormal -> asm -> vo *)
+
 structure UFT :> sig
   type language = Languages.language
   exception NotForward of language * language
@@ -86,17 +88,16 @@ struct
     >>> List.concat              (* AssemblyCode.instr list *)
 
   val VS_of_KN : string KNormalForm.exp list ->
-                 AssemblyCode.instr list
-    = Error.mapList ANTranslate.exp  >=> Error.mapList (ANRename.mapx ANRename.regOfName) >>> VS_of_AN  (* AssemblyCode.instr list *)
+                 AssemblyCode.instr list error
+    = Error.mapList ANTranslate.exp 
+    >=> Error.mapList (ANRename.mapx ANRename.regOfName) 
+    >>> ! VS_of_AN  (* AssemblyCode.instr list *)
 
 
   fun HO_of HO   = schemexOfFile
     | HO_of HOX  = Impossible.unimp "imperative features (HOX to HO)"
     | HO_of _    = raise Backward
 
-  fun KN_reg_of KN = KN_of_file
-                     >=> Error.mapList (KNRename.mapx KNRename.regOfName)
-    | KN_reg_of inLang = raise NoTranslationTo KN
 
   fun AN_reg_of AN = AN_of_file 
                      >=> Error.mapList (ANRename.mapx ANRename.regOfName)
@@ -106,12 +107,11 @@ struct
     | KN_of inLang = raise NoTranslationTo KN
 
   fun AN_of AN = AN_of_file
-    | AN_of KN = AN_of_KN
+    | AN_of KN = AN_of_file (* TODO ASK *)
     | AN_of inLang = raise NoTranslationTo AN
 
   fun VS_of VS   = VS_of_file
-    | VS_of AN   = AN_reg_of AN >>> ! VS_of_AN
-    | VS_of inLang = KN_of_file inLang >>> ! AN_of_KN >>> ! VS_of
+    | VS_of inLang = AN_reg_of inLang >>> ! VS_of_AN
                         (* unwrap KN_reg_of inLang result 
                                   (error type), apply VS_of_KN to internals,
                                   and rewrap. *)
