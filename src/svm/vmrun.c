@@ -232,47 +232,75 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
             /* FUNCTIONS */
             case Return: {
-                // pop the call stack
+                if (vm->stackpointer == 0) {
+                    runerror(vm, "attempting to return register %hhu, "
+                                 "from non-function.", uX(curr_instr));
+                }
+
                 Activation a = vm->Stack[--vm->stackpointer];
-                // get return value 
+
                 Value return_value = registers[uX(curr_instr)];
+
                 // restore register window state and current instruction
                 vm->R_window_start = a.R_window_start;
                 registers = vm->registers + a.R_window_start;
                 pc = a.resume_loc;
-                // set final return. 
+
+                // set final return
                 registers[a.dest_reg_idx] = return_value;
                 break;
             }
             case Call: {
-                // TODO CLEAN AND ABOVE
+                uint32_t dest_reg_idx = uX(curr_instr);
                 uint8_t r0 = uY(curr_instr);
                 uint8_t rn = uZ(curr_instr);
                 uint8_t n  = rn - r0;
 
-                uint32_t dest_reg_idx = uX(curr_instr);
-
-                // save caller activation record on the stack
-                Activation a = {pc, vm->R_window_start, dest_reg_idx};
-                vm->Stack[vm->stackpointer++] = a;
-
-                // check for invalid function 
+                // check for invalid function
                 if (registers[r0].tag == Nil) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
                     if (funname == NULL) {
                         runerror(vm, 
-                        "tried calling a function in register %hhu, \
-                        which is nil and was never set to a function.\n", r0);
+                        "tried calling a function in register %hhu, "
+                        "which is nil and was never set to a function.", r0);
                     } else {
                         runerror(vm, 
-                        "tried calling a function in register %hhu, which is \
-                          nil and was last set to function %s.\n", r0, funname);
+                        "tried calling a function in register %hhu, which is "
+                    "nil and was last set to function \"%s\".", r0, funname);
                     }
                 }
+                // We'd like to do this up top, but we need to make sure the 
+                // function exists first so we can print a helpful 
+                // debug message with a name we know to be valid!
+                if (vm->stackpointer == MAX_STACK_FRAMES) {
+                    // TODO: I'd like to print the name of the offending 
+                    // function, but lastglobalset isn't necessarily going
+                    // to work. 
+                    // const char *funname = lastglobalset(vm, r0, fun, pc);
 
-                // grab the called function
-                struct VMFunction *fun = AS_VMFUNCTION(vm, registers[r0]);
-                assert(fun->arity == n);
+                    runerror(vm, 
+                        "attempting to call function in register %hhu"
+                        " caused a Stack Overflow", r0);
+                }
+                // TODO Ask
+                // fprintf(stderr, "vm->R_window_start + r0 + 255: %u", vm->R_window_start + r0 + 255);
+                if (vm->R_window_start + r0 + 255 >= NUM_REGISTERS) {
+                    // TODO same here
+                    // const char *funname = lastglobalset(vm, r0, fun, pc);
+                    runerror(vm, 
+                        "attempting to call function in register %hhu"
+                        " caused a Register Window Overflow", r0);
+                }
+
+                // call stack save
+                Activation a = {pc, vm->R_window_start, dest_reg_idx};
+                vm->Stack[vm->stackpointer++] = a;
+
+
+                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
+                // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
+
+                assert(func->arity == n);
 
                 // move the register window
                 vm->R_window_start += r0;
@@ -280,14 +308,50 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 // transfer control= move instruction pointer to start of 
                 // function instruction stream
-                pc = &fun->instructions[0] - 1; /* account for increment */
+                pc = &func->instructions[0] - 1; /* account for increment */
 
                 // return will undo this based on the activation! 
                 break;
             }
-            case Tailcall: 
-                assert(0);
+            case Tailcall: {
+                uint8_t r0 = uX(curr_instr);
+                uint8_t rn = uY(curr_instr);
+                uint8_t n  = rn - r0;
+
+                if (registers[r0].tag == Nil) {
+                    const char *funname = lastglobalset(vm, r0, fun, pc);
+                    if (funname == NULL) {
+                        runerror(vm, 
+                        "tried tailcalling a function in register %hhu, "
+                        "which is nil and was never set to a function.", r0);
+                    } else {
+                        runerror(vm, 
+                    "tried tailcalling a function in register %hhu, which is "
+                    "nil and was last set to function \"%s\".", r0, funname);
+                    }
+                }
+                if (rn + vm->R_window_start >= NUM_REGISTERS) {
+                    // TODO same here-- see Call
+                    // const char *funname = lastglobalset(vm, r0, fun, pc);
+                    runerror(vm, 
+                      "attempting to tailcall function in register %hhu"
+                      "caused a Register Window Overflow", r0);
+                }
+
+                // copy over function and argument registers 
+                for (int i = 0; i <= n; ++i) {
+                    registers[i] = registers[r0 + i];
+                }
+
+                struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
+                // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
+                assert(func->arity == n);
+
+                pc = &func->instructions[0] - 1; /* account for increment */
+
+
                 break;
+            }
 
             default:
                 printf("Opcode Not implemented!\n");
