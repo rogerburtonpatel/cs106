@@ -3,7 +3,7 @@
     loadliteral 4 0
     = 4 1 4
     if 4
-    goto 7
+    goto 6
     move 4 0
     loadliteral 5 1
     - 5 1 5

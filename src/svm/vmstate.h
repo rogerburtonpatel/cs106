@@ -14,7 +14,6 @@
 #include "vmstack.h"
 #include "name.h"
 #include "vtable.h"
-#include "vmstack.h"
 
 #define MAX_LITERALS 4096
 #define MAX_GLOBALS  4096

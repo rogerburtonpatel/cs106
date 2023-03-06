@@ -105,12 +105,12 @@ struct
               )
       in fold g (succeed []) instrs
       end
+      and translate instrs = (labelEnv >=> labelElim instrs) instrs
 
     val _ = labelElim :
       AssemblyCode.instr list -> int Env.env ->
       ObjectCode.instr list Error.error
 
-    fun translate instrs = (labelEnv >=> labelElim instrs) instrs
 
     val _ = translate : 
       AssemblyCode.instr list -> ObjectCode.instr list Error.error
