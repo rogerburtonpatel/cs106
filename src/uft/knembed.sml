@@ -33,8 +33,6 @@ struct
   fun nameFrom (K.STRING s) = s
     | nameFrom _          = Impossible.impossible "misused function"
 
-(* 𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
-(* Todo: this case ^^ for easy reading *)
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
     | exp (K.NAME x)       = S.VAR x
     | exp (K.VMOP (p, ns)) = S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
