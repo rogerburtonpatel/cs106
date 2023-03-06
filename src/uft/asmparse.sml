@@ -407,7 +407,6 @@ struct
             | ("error", [x]) =>
               spaceSep ["error", reg x]
               (* Dirty trick: parse and unparse prettily with custom formatting *)
-              (* TODO PULL TO HELPER *)
             | ("call", [x, y, z]) =>
               let val regarg = if y = z then "" else reg z
               in spaceSep ([reg x, ":=", "call", reg y, "(", regarg, ")"])

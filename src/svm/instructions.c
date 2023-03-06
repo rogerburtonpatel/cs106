@@ -66,9 +66,9 @@ instruction_info instructions[] = {
   {"call", Call, parseR3, "rX := call rY (rY+1, ..., rZ)"},
   {"tailcall", Tailcall, parseR2, "tailcall rX (rX+1, ..., rY)"},
 
-  {"mkclosure", MkClosure, parseR2, "ngl i have no idea what this looks like"},
-  {"setclslot", SetClSlot, parseR2, "same here"},
-  {"getclslot", GetClSlot, parseR2, "yet again"},
+  {"mkclosure", MkClosure, parseR3, "rX := mkclosure rY rZ"},
+  {"setclslot", SetClSlot, parseR3, "rX := setclslot rY rZ"},
+  {"getclslot", GetClSlot, parseR3, "rX := getclslot rY rZ"},
 
   {"if",   If,   parseR1,    "if rX" },
   {"goto", Goto, parseR0I24, "goto XYZ" },
