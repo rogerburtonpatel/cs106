@@ -27,6 +27,7 @@
 #include "vmerror.h"
 #include "vmheap.h"
 #include "vmstring.h"
+#include "vmsizes.h"
 
 #define CANDUMP 1
 
@@ -178,7 +179,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[uX(curr_instr)] = vm->literals[uYZ(curr_instr)];
                 break;
             
-            // TODO ASK ABOUT LOADING GLOBALS
             case GetGlobal:
                 registers[uX(curr_instr)] = vm->globals[uYZ(curr_instr)];
                 break;
@@ -273,17 +273,20 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 // function exists first so we can print a helpful 
                 // debug message with a name we know to be valid!
                 if (vm->stackpointer == MAX_STACK_FRAMES) {
-                    // TODO: I'd like to print the name of the offending 
-                    // function, but lastglobalset isn't necessarily going
-                    // to work. 
+                    fprintf(stderr, "Offending function: ");
+                    fprintfunname(stderr, vm, registers[r0]);
+                    // TODO: i'd like to use lastglobalset for a much cleaner
+                    // error statement, but it's returning null (even
+                    // when the name has been clearly set). I'm a bit tired 
+                    // right now and will look later. If I don't get to this,
+                    // it's something I'd like to hear about. 
                     // const char *funname = lastglobalset(vm, r0, fun, pc);
 
                     runerror(vm, 
                         "attempting to call function in register %hhu"
                         " caused a Stack Overflow", r0);
                 }
-                // TODO Ask
-                // fprintf(stderr, "vm->R_window_start + r0 + 255: %u", vm->R_window_start + r0 + 255);
+
                 if (vm->R_window_start + r0 + 255 >= NUM_REGISTERS) {
                     // TODO same here
                     // const char *funname = lastglobalset(vm, r0, fun, pc);
@@ -353,6 +356,37 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             }
 
+            case MkClosure: {
+
+                uint8_t       nslots = uZ(curr_instr);
+                struct VMFunction *f = 
+                                  AS_VMFUNCTION(vm, registers[uY(curr_instr)]);
+                
+                VMNEW(struct VMClosure *, cl, vmsize_closure(nslots));
+                
+                *cl = (struct VMClosure) { .f = f, .nslots = nslots };
+                registers[uX(curr_instr)] = mkClosureValue(cl);
+                break;
+            }
+
+            case GetClSlot: {
+                struct VMClosure *cl = 
+                                    AS_CLOSURE(vm, registers[uY(curr_instr)]);
+                registers[uX(curr_instr)] = 
+                cl->captured[(uint32_t)AS_NUMBER(vm, 
+                                                    registers[uZ(curr_instr)])];
+                break;
+            }
+
+            case SetClSlot: {
+                struct VMClosure *cl = 
+                    AS_CLOSURE(vm, registers[uX(curr_instr)]);
+                
+                cl->captured[(uint32_t)AS_NUMBER(vm, 
+                                                    registers[uY(curr_instr)])]
+                = registers[uZ(curr_instr)];
+                break;
+            }
             default:
                 printf("Opcode Not implemented!\n");
                 break;

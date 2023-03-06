@@ -1,0 +1,104 @@
+CS 106 Homework Submission
+
+What person or group is submitting this homework?
+
+  - Roger
+
+What work are you proud of?
+
+  - Everything's done early, testing framework is coming into place, and 
+    A-Normal form is on its way. I'm likely going to resubmit on Monday 
+    with more depth content; for now, I'm proud that I'm working on it. 
+
+What code would you like help improving?  Are there bugs you'd like
+help finding during code review?
+
+
+  - vmrun.c:277: nice error messages on overflow, since lastglobalset doesn't
+    seem to want to return anything but null. currently hacking through 
+    with an exposed fprintfunname, but I don't love it.  
+
+  - vmstate.h: do I really need an R_window_start? I could just do the math 
+    with the variables registers and vm->registers; it all works fine. 
+    But it's much clearer with the R window, so I'd like to ask my peers 
+    how they made this choice. 
+
+
+What code, if any, would you especially like the course staff to
+review?  Why?
+
+  There are a couple this week. I wrote a ton to make up for the lighter 
+  workload and to generally get ahead so I don't run into another token. 
+  Thanks so much for your help. 
+
+  - asmparse.sml:262, 264, 278-281:
+    surely these could be better. I was looking for a bracketed parser but 
+    couldn't find it. I know there's a nicer way to do this; s.t. we have to 
+    match brackets when parsing and so the parser can have cleaner code. 
+
+  - in all the testing vo files, the goto's were always 1 more than what 
+    my svm wanted. My uft translated the corresponding .vs's to programs 
+    with gotos that were all 1 less, and that worked. This made me wonder
+    if I've been doing goto wrong this whole time, but every other 
+    test given with goto in the past has worked so far. Unsure on what 
+    to do, if anything. 
+
+  -  One wild one: I can't parse the provided fact.vs, but If I -- wait for it--
+     remove the ~comment~ underneath the function declaration: 
+
+      r0 := function (1 arguments) {
+      ;; parameter n is in r1
+      r2 := 0
+      ...
+      ->
+
+      r0 := function (1 arguments) {
+      r2 := 0
+      ...
+
+      then it works. I'm mystified. I looked a lot at my loadfunstart, 
+      and generally was able to do a lot of debugging this module to get
+      my svm and uft sleek and functional, but this one has just evaded me. 
+
+
+      - vmrun.c:277: the cleanest way to get a function name for a nice 
+        error statement is eluding me. even when fprintfunname finds the name, 
+        lastglobalset returns NULL. I'll do some thinking as to why. 
+
+
+In this course, all code may be shared freely.  Aside from code that
+is distributed with the assignment, does your submission contain any
+other code that you got from someone else?  If so, what code is it
+(file names and line numbers please) and who supplied it?
+
+  - No. Thank you to Kresten and Matt for help during lab, and thank you to 
+    Norman for help with ANF! (currently it's in a different branch; it'll 
+    be submitted in main once it's brewed)
+
+In response to last week's code review, have you made any material
+changes?  What were they?  By file name and line number, where are
+they found in the code?  If you remember, who helped you during code
+review?
+
+  - I reviewed a lot of my conceptual knowledge after bombing the last question
+    on the REFLECTION. Then I corrected mkclosure, setclslot, and getclslot 
+    in instructions.c:67-69, and wrote the implementations based on the 
+    feedback you gave in vmrun.c:359-390.
+
+
+We have a plenary code review tomorrow.  Are you willing to present
+(as a group, if applicable)?
+
+  - Very much! I actually feel quite good this week about how far I've come.
+
+Supposing you are not selected to present at tomorrow's plenary code
+review, what code would you like to see presented?  What would you
+learn the most from?
+
+  - Good name-checking in errors, as discussed above. 
+
+Again supposing you are not selected to present, are you willing to
+serve on the review panel? (Or if there are more than one of you, who
+is willing to serve?)
+
+  - Yes!

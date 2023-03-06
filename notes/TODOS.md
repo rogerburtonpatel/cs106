@@ -7,7 +7,9 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
 
             // }
 
-Cons cells
+Cons cells!!!! and clean up Eq and other instrs
+
+
 Ask about setting globals to literals
 
 FOR NORMAN: the goto in the provided vo code: returnt.vo was wrong. 

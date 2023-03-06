@@ -116,17 +116,21 @@ static OperandSet operands(Instruction i) {
   return used;
 }      
 
-static void fprintfunname(FILE *fp, VMState vm, Value v);
+void fprintfunname(FILE *fp, VMState vm, Value v);
   // if v is a function or closure, and if v is identical to the value
   // of a global variable, write " ($NAME)" to file descriptor fp, 
   // where $NAME is replaced with the name of the global variable
 
-static void fprintfunname(FILE *fp, VMState vm, Value v) {
+void fprintfunname(FILE *fp, VMState vm, Value v) {
   switch (v.tag) {
     case VMFunction:
     case VMClosure:
-      (void) vm;
-      // assert(0); // TODO! 
+      for (int i = 0; i < MAX_GLOBALS; ++i) {
+          if (identical(vm->globals[i], v)) {
+            fprintf(fp, "(function %s)", nametostr(vm->global_names[i]));
+            return;
+          }
+      }
       // You need here a loop through all your globals, searching
       // for an `i` such that `identical(global number i, v)` holds.
       // If you find one, print " ($NAME)" where $NAME is
