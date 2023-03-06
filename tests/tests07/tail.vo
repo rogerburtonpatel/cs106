@@ -3,7 +3,7 @@
     loadliteral 2 0
     = 2 1 2
     if 2
-    goto 4
+    goto 3
     loadliteral 2 1
     - 1 1 2
     tailcall 0 1
