@@ -45,7 +45,6 @@ instruction_info instructions[] = {
   { "neg", Neg, parseR1, "neg rX" },
   { "not", Not, parseR1, "not rX" },
 
-  {"boolOf", BoolOf, parseR2, "boolof rX rY" },
   {"car", Car, parseR2, "rX := car rY"},
   {"cdr", Cdr, parseR2, "rX := cdr rY"},
   {"hash", Hash, parseR2, "rX := hash rY"},
