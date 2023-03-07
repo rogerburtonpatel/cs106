@@ -10,5 +10,5 @@
     }
     r1 := "test value"
     check "initial assignment to r1", r1
-    r0 := call r100
+    r0 := call r100 ()
     expect "final value of r1", r1

@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "check-expect.h"
 #include "iformat.h"
@@ -275,6 +276,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 if (vm->stackpointer == MAX_STACK_FRAMES) {
                     fprintf(stderr, "Offending function: ");
                     fprintfunname(stderr, vm, registers[r0]);
+                    fprintf(stderr, "\n");
                     // TODO: i'd like to use lastglobalset for a much cleaner
                     // error statement, but it's returning null (even
                     // when the name has been clearly set). I'm a bit tired 
@@ -288,8 +290,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 if (vm->R_window_start + r0 + 255 >= NUM_REGISTERS) {
-                    // TODO same here
-                    // const char *funname = lastglobalset(vm, r0, fun, pc);
+                    fprintf(stderr, "Offending function: ");
+                    fprintfunname(stderr, vm, registers[r0]);
+                    fprintf(stderr, "\n");
                     runerror(vm, 
                         "attempting to call function in register %hhu"
                         " caused a Register Window Overflow", r0);
@@ -334,6 +337,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     }
                 }
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
+                    fprintf(stderr, "Offending function: ");
+                    fprintfunname(stderr, vm, registers[r0]);
+                    fprintf(stderr, "\n");
                     // TODO same here-- see Call
                     // const char *funname = lastglobalset(vm, r0, fun, pc);
                     runerror(vm, 
@@ -342,6 +348,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 // copy over function and argument registers 
+                // TODO why isn't memmove working?
+                // memmove(registers, (registers + r0), n + 1);
                 for (int i = 0; i <= n; ++i) {
                     registers[i] = registers[r0 + i];
                 }
