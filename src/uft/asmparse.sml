@@ -144,13 +144,18 @@ struct
   fun eR2 operator r1 r2    = regs operator [r1, r2]
   fun eR3 operator r1 r2 r3 = regs operator [r1, r2, r3]
 
-  fun eRMany operator r1 rs = regs operator ([r1] @ rs)
+  fun eRMany operator r1 rs = regs operator [r1, List.hd rs, List.last rs]
 
   (*Dirty trick : parsing call with accounting for the missing argument *)
   fun eRCall operator r1 r2 rs = 
-    let val regargs = if rs = nil then [r1, r2, r2] else [r1, r2] @ rs
+    let val regargs = 
+      (case rs
+        of nil => [r1, r2, r2]
+         | _ => [r1, r2, List.last rs])
     in regs operator regargs
     end
+    
+   
   
 
   fun eRL operator r1 lit   = regslit operator [r1] lit
@@ -258,10 +263,22 @@ struct
     <|> parseOps unopParser unops
 
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
+    
+    <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" (* make this better? *)
+    <|> eR1 "return" <$> (the "return" >> reg)
+    <|> eR3 "tailcall" <$> (the "tailcall" >> reg)
+            <~> the "(" <*> reg <~> the "-" <*> reg <~> the ")" 
+    <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
+            <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")" 
 
+    (* <|> eRMany "tailcall" <$> (the "tailcall" >> reg) <~> the "(" <*> many reg <~> the ")" TODO AS THIS HAS TO BE BETTER *)
+    (* <|> eR2 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
+    <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> reg <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
+     (* <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
+            <~> the "(" <~> reg <~> the "," <~> the "...," <*> reg <~> the ")" TODO AS THIS HAS TO BE BETTER *)
     <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
     <|> eR1 "return" <$> (the "return" >> reg)
-    <|> eRMany "tailcall" <$> (the "tailcall" >> reg) <~> the "(" <*> many reg <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
+    <|> eRMany "tailcall" <$> (the "tailcall" >> reg) <~> the "(" <*> many reg <~> the ")" TODO AS THIS HAS TO BE BETTER *)
 
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence
@@ -407,12 +424,19 @@ struct
             | ("error", [x]) =>
               spaceSep ["error", reg x]
               (* Dirty trick: parse and unparse prettily with custom formatting *)
+            | ("call", [x, y]) =>
+              spaceSep ([reg x, ":=", "call", reg y, "(", ")"])
+
+
             | ("call", [x, y, z]) =>
-              let val regarg = if y = z then "" else reg z
-              in spaceSep ([reg x, ":=", "call", reg y, "(", regarg, ")"])
-              end 
-            | ("call", (x::y::zs)) =>
-              spaceSep ([reg x, ":=", "call", reg y, "("] @ map reg zs @ [")"])
+              let val args = 
+                  if z = y 
+                  then ""
+                  else if z = y + 1
+                  then reg z
+                  else spaceSep ([reg (y + 1) , "-", reg z])
+              in spaceSep([reg x, ":=", "call", reg y, "(", args, ")"])
+              end
 
             | ("return", [x]) =>
               spaceSep (["return", reg x])

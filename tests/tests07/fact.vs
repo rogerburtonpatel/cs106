@@ -1,5 +1,4 @@
     r0 := function (1 arguments) {
-      ;; parameter n is in r1
       r2 := 0
       r2 := r1 = r2
       if r2 goto L1
