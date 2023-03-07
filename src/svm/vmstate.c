@@ -51,3 +51,7 @@ const char *global_name(VMState state, unsigned index) {
   (void) state; (void) index; // replace with real code
   assert(0);
 }
+void initialize_global(VMState vm, Value name, Value v) {
+  (void) vm; (void) name; (void) v; // replace with real code
+  assert(0);
+}
