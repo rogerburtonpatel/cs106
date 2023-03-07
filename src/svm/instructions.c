@@ -9,6 +9,8 @@
 #include "name.h"
 #include "itable.h"
 
+#include <stdio.h>
+
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
 instruction_info instructions[] = {
@@ -23,7 +25,9 @@ instruction_info instructions[] = {
 int number_of_instructions = sizeof(instructions) / sizeof(instructions[0]);
 
 bool isgetglobal(Opcode code) {
+  fprintf(stderr,
+          "%s, line %d: function `isgetglobal` is not implemented", __FILE__, __LINE__);
   (void) code;
-  return 0; // change this for your SVM
+  return false; // change this for your SVM
 }
 
