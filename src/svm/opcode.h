@@ -8,6 +8,8 @@
 #ifndef OPCODE_INCLUDED
 #define OPCODE_INCLUDED
 
+#include <stdbool.h>
+
 typedef enum opcode { 
                       Halt, // R0
                       Print, // R1
@@ -18,6 +20,6 @@ typedef enum opcode {
                       Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;
 
-int isgetglobal(Opcode code); // update this for your SVM, in instructions.c
+bool isgetglobal(Opcode code); // update this for your SVM, in instructions.c
 
 #endif
