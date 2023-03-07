@@ -7,6 +7,20 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
 
             // }
 
+Depth:
+Dynamic compilation and loading [2 points]. 
+μScheme and vScheme both have a use syntactic form, which tells the interpreter 
+to load and run code. This goal is to implement two machine instructions, one to
+ call popen and read from a pipe, and one to load a list of modules from an open
+  file descriptor. These two instructions can then eventually be used to call 
+  the compiler and load the results. These instructions can be tested now, and 
+  then by the time of module 4, they can be used to implement a use function.
+
+
+
+
+
+
 Cons cells!!!! and clean up Eq and other instrs
 
 
