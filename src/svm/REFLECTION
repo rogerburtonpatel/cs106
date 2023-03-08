@@ -1,0 +1,46 @@
+1. To claim this point, give us the number of the line of code in file vmrun.c 
+that implements R ⊕ r0  in the rule for call.
+
+
+
+2. To claim this point, give us the number of the line of code in file vmrun.c 
+that computes σ(R(r)) and the line of code that updates location R′(r′) in σ.
+
+3. To claim this point, submit files overstack.vs and overreg.vs from step 14, 
+and confirm that they assemble, load, and detect overflow by the following 
+commands:
+
+uft vs-vo overstack.vs | valgrind svm
+uft vs-vo overreg.vs   | valgrind svm
+Confirm that
+
+Each command causes the svm to terminate with a sensible error message.
+
+The error messages are different in the two cases.
+
+No memory errors are detected by valgrind.
+
+4. To claim this point, submit the overtail.vs file from step 14, along with a 
+brief explanation—one or two sentences at most—of its similarities to and 
+differences from overstack.vs.
+
+5. To claim this point, identify one important invariant that the 
+representation of struct VMFunction must satisfy. (Hint: If any information is 
+redundant, it must be internally consistent.)
+
+6. To claim this point, explain how the invariant in the previous step is 
+exploited in the implementation of vmrun.
+
+7. To claim this point, answer these two questions:
+
+Explain what, if any, is the performance benefit of using register windows in 
+the SVM, as opposed to a fixed set of 256 VM registers.
+
+Explain what, if any, is the performance cost (in your VM code) of using 
+register windows in the SVM, as opposed to a fixed set of 256 VM registers.
+
+8. When your SVM runs code that involves a call to an undefined function, 
+as in the Scheme example (wait---what? 42), the error message should show the 
+name of the function. To claim this point, identify the line numbers in vmrun.c 
+where this error message is issued. There should be at least two locations: 
+one for ordinary calls and one for tail calls.
