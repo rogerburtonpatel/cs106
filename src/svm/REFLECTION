@@ -1,6 +1,7 @@
 1. To claim this point, give us the number of the line of code in file vmrun.c 
 that implements R ⊕ r0  in the rule for call.
 
+>
 vmrun.c:312-313 for `call`. We restore the original register window by popping
 the activation record that me make in vmrun.c:302. This record stores the 
 original R, so that (R ⊕ r0)(i) = R(r0 + i) can be freely used in the new 
@@ -10,6 +11,7 @@ function as the semantics for register access.
 2. To claim this point, give us the number of the line of code in file vmrun.c 
 that computes σ(R(r)) and the line of code that updates location R′(r′) in σ.
 
+>
 vmrun.c:243 gets us σ(R(r)) as the variable return_value by pulling it out of
 the σ that reads from the current (callee) Register window. vmrun.c:251 updates
 σ{R′(r′) ↦ σ(R(r)} by setting the original destination register to the returned
@@ -29,29 +31,108 @@ The error messages are different in the two cases.
 
 No memory errors are detected by valgrind.
 
-All set!
+> All set!
 
 4. To claim this point, submit the overtail.vs file from step 14, along with a 
 brief explanation—one or two sentences at most—of its similarities to and 
 differences from overstack.vs.
 
+> 
+The files are functionally identical: the only main difference is that 
+overtail.vs tailcalls the_worst_zero_youve_ever_seen, which means the call 
+stack never grows > 1 and the register window never moves past the orignal shift
+from the call on overtail.vs:15. This allows it to perform the ~10000 operations
+required by the function, which `call` in overstack.vs:8 can't do because the 
+stack would overflow at 5000 frames. 
+
 5. To claim this point, identify one important invariant that the 
 representation of struct VMFunction must satisfy. (Hint: If any information is 
 redundant, it must be internally consistent.)
 
+>
+Within a struct VMFuction, nregs MUST be equal to the largest register number
+within the contained instructions[] field. This is redundant information 
+because the largest register number could be found by combing through
+instructions[], but...
+
 6. To claim this point, explain how the invariant in the previous step is 
 exploited in the implementation of vmrun.
+
+> 
+We can exploit the fact that it's held in a variable for us by making a quick
+and easy check agains it: in vmrun.c:292, 339 we use it to check against 
+NUM_REGISTERS. I had this wrong in my submission: the condition should be 
+
+vm->R_window_start + func->nregs > NUM_REGISTERS
+
+using >, not >= because nregs is 1 greater than the largest register number. 
+
+This exploits the fact that this work (finding nregs) is done at load time, 
+and we want that cost to stay there and not leak into runtime. But we need
+to maintain the invariant, or we risk under- or over-representing the 
+Register window max, which can have minor consequences now 
+(in R_window overflow) and major consequences during GC. 
 
 7. To claim this point, answer these two questions:
 
 Explain what, if any, is the performance benefit of using register windows in 
 the SVM, as opposed to a fixed set of 256 VM registers.
 
+> 
+We don't have to carefully pick out which registers are alive and avoid them-
+we can just assume they're all important and skip that step altogether. 
+If finding alive registers is computationally expensive, this implementation
+helps performance. 
+
+
 Explain what, if any, is the performance cost (in your VM code) of using 
 register windows in the SVM, as opposed to a fixed set of 256 VM registers.
+
+> 
+We need to do a Register Window shift per function call (see vmrun.c:312-313), 
+save Activations on a stack (vmrun.c:302), and restore them (vmrun.c:241-248)
+every time we return. Phew! If these operations are more expensive than the 
+manual register management we'd have to do if we only had 256 registers, 
+then our implemenation shows a greater performance cost than gain. 
 
 8. When your SVM runs code that involves a call to an undefined function, 
 as in the Scheme example (wait---what? 42), the error message should show the 
 name of the function. To claim this point, identify the line numbers in vmrun.c 
 where this error message is issued. There should be at least two locations: 
 one for ordinary calls and one for tail calls.
+
+> 
+vmrun.c:261-272, 327-338 (call and tailcall, respectively) are the locations 
+where we check for this: if a register is set to a non-existant funciton, the
+get_global instruction we use to (fail to) retrieve this function will 
+set the register to Nil. Ergo, the if blocks check for a nil register. Stephanie
+pointed out in code review that by changing this condition to simply say 
+"flag any non-VMFunction value" helps us catch and provide better error messages
+for any moron that tries to call the number 4. The two branches of error message
+in the blocks are for if the function was ever set to a global, which will 
+happen in the 'user-calls-non-existent-function-case', or not, in which case
+the user is just trying to call a totally invalid register. 
+
+
+-----
+
+Resubmitting Depth pt. 13 from module 2, after looking with fresh eyes at 
+tokens.h
+
+In order to take in string literals, we would first need to add a name like
+TSTRING to the enum on tokens.h:31, so that the user is aware that they can 
+parse string literal tokens. We could add a comment to say that this 
+type must be a DOUBLE QUOTED string literal in the object code. 
+
+We would then need to add a function
+
+const char *tokens_get_string(Tokens *p, const char *original); 
+
+With the contract:
+
+tokens_get_string accepts a tokenized C string from the token stream and 
+returns the literal C string. It is only safe to call this function when 
+first_token_type(Tokens) == TSTRING. 
+
+This would assume that strings were able to be tokenized by the tokens()
+function; however, this change would not affect the interface. 
