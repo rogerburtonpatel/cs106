@@ -1,10 +1,19 @@
 1. To claim this point, give us the number of the line of code in file vmrun.c 
 that implements R ⊕ r0  in the rule for call.
 
+vmrun.c:312-313 for `call`. We restore the original register window by popping
+the activation record that me make in vmrun.c:302. This record stores the 
+original R, so that (R ⊕ r0)(i) = R(r0 + i) can be freely used in the new 
+function as the semantics for register access. 
 
 
 2. To claim this point, give us the number of the line of code in file vmrun.c 
 that computes σ(R(r)) and the line of code that updates location R′(r′) in σ.
+
+vmrun.c:243 gets us σ(R(r)) as the variable return_value by pulling it out of
+the σ that reads from the current (callee) Register window. vmrun.c:251 updates
+σ{R′(r′) ↦ σ(R(r)} by setting the original destination register to the returned
+value.  
 
 3. To claim this point, submit files overstack.vs and overreg.vs from step 14, 
 and confirm that they assemble, load, and detect overflow by the following 
@@ -19,6 +28,8 @@ Each command causes the svm to terminate with a sensible error message.
 The error messages are different in the two cases.
 
 No memory errors are detected by valgrind.
+
+All set!
 
 4. To claim this point, submit the overtail.vs file from step 14, along with a 
 brief explanation—one or two sentences at most—of its similarities to and 
