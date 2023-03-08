@@ -143,7 +143,7 @@ void printunicode(Printbuf output, va_list_box *box)
     unsigned code_point = va_arg(box->ap, unsigned);
 
     if ((code_point & 0x1fffff) != code_point)
-        runerror(NULL, "%d does not represent a Unicode code point",
+        runerror(NULL, "%d does not represent a Unicode code point", 
                         (int)code_point);
     if (code_point > 0xffff) {     // 21 bits
         bufput(output, 0xf0 |  (code_point >> 18));
