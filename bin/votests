@@ -16,7 +16,7 @@
 BASEDIR=/h/rburto03/106/student-2023s
 
 SVMDIR=$BASEDIR/src/svm
-TESTDIR=$BASEDIR/tests/vo_tests
+TESTDIR=$BASEDIR/tests/vo-tests
 
 
 cd $SVMDIR
@@ -34,19 +34,19 @@ fi
 # run tests
 run_tests () {
     
-    pass=0
+    numfail=0
 
     for file in $TESTDIR/to-fail/*; do
         svm $file 2>&1 | grep "fail" > /dev/null # grep returns 0 if found
-        pass=$((pass + $?))
-        echo $pass
+        numfail=$((numfail + $?))
+        echo $numfail
     done
 
     for file in $TESTDIR/to-pass/*; do
         svm $file | grep -v "fail" > /dev/null
-        pass=$((pass + $?))
+        numfail=$((numfail + $?))
     done
-    if [[ "$pass" -eq "0" ]]; then 
+    if [[ "$numfail" -eq "0" ]]; then 
         echo "All tests passed."
     fi
 }

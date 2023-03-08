@@ -11,7 +11,6 @@
 ## author: rab
 ## date:  Mon Jan 30 16:04:53 EST 2023
 
-# TODO: use grep conditional capture to print failing tests.
 
 BASEDIR=/h/rburto03/106/student-2023s
 
@@ -21,46 +20,46 @@ TESTDIR=$BASEDIR/tests/tests07
 
 
 cd $SVMDIR
-
-# compile if needed
-if [[ ! -e $BASEDIR/bin/svm ]]; then
-    echo "No svm executable found; compiling..."
-    make
-    if [[ "$?" -ne "0" ]]; then
-        echo "Exiting on compilation failure."
-        exit 1
-    fi
+make > /dev/null
+if [[ "$?" -ne "0" ]]; then
+    echo "Exiting on compilation failure."
+    exit 1
 fi
 
 cd $UFTDIR
-
-# compile if needed
-if [[ ! -e $BASEDIR/bin/uft ]]; then
-    echo "No uft executable found; compiling..."
-    make
-    if [[ "$?" -ne "0" ]]; then
-        echo "Exiting on compilation failure."
-        exit 1
-    fi
+make > /dev/null
+if [[ "$?" -ne "0" ]]; then
+    echo "Exiting on compilation failure."
+    exit 1
 fi
 
 # run tests
 run_tests () {
     
-    pass=0
+    numfail=0
 
     for file in $TESTDIR/*vo; do
-        svm $file 2>&1  | grep -v "fail" > /dev/null # grep returns 0 if found
-        pass=$((pass + $?))
+        svm $file 2>&1  | grep "pass" > /dev/null # grep returns 0 if found
+        failure=$?
+        if [[ "$failure" -ne "0" ]]; then
+            >&2 echo "Failed test $file"
+        fi
+        numfail=$((numfail + $failure))
     done
 
 
-    # for file in $TESTDIR/*vs; do
-    #     uft vs-vo $file | svm $file 2>&1 # | grep -v "fail" > /dev/null # grep returns 0 if found
-    #     pass=$((pass + $?))
-    # done
 
-    if [[ "$pass" -eq "0" ]]; then 
+
+    for file in $TESTDIR/*vs; do
+        uft vs-vo $file | svm 2>&1 | grep "pass" > /dev/null 
+        failure=$?
+        if [[ "$failure" -ne "0" ]]; then 
+            >&2 echo "Failed test $file"
+        fi
+        numfail=$((numfail + $failure))
+    done
+
+    if [[ "$numfail" -eq "0" ]]; then 
         echo "All tests passed."
     else 
         echo "Test failure-- comment out grep pipe and look closely"

@@ -43,10 +43,10 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     const char *dump_call   = svmdebug_value("call");
     (void) dump_call;  // make it OK not to use `dump_call`
 
-    // uint32_t counter = vm->counter = 0;
     Instruction *pc = vm->instructions = fun->instructions;
     Instruction curr_instr;
-    Value *registers = vm->registers;
+    Value *registers = vm->registers; 
+    /* registers always = vm->registers + vm->R_window_start */
     Value v;
 
     while(1) {
@@ -258,8 +258,10 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint8_t n  = rn - r0;
 
                 // check for invalid function
-                if (registers[r0].tag == Nil) {
+                // TODO: add funtion p to activation
+                if (registers[r0].tag != VMFunction) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
+                    fprint(stderr, "Offending value: %v\n", registers[r0]);
                     if (funname == NULL) {
                         runerror(vm, 
                         "tried calling a function in register %hhu, "
@@ -289,7 +291,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                         " caused a Stack Overflow", r0);
                 }
 
-                if (vm->R_window_start + r0 + 255 >= NUM_REGISTERS) {
+                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
+                if (vm->R_window_start + r0 + func->nregs >= NUM_REGISTERS) {
                     fprintf(stderr, "Offending function: ");
                     fprintfunname(stderr, vm, registers[r0]);
                     fprintf(stderr, "\n");
@@ -301,10 +304,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 // call stack save
                 Activation a = {pc, vm->R_window_start, dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
-
-
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
-                // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
 
                 assert(func->arity == n);
 
@@ -324,19 +323,21 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint8_t rn = uY(curr_instr);
                 uint8_t n  = rn - r0;
 
-                if (registers[r0].tag == Nil) {
+                if (registers[r0].tag != VMFunction) {
+                    fprint(stderr, "Offending value: %v\n", registers[r0]);
                     const char *funname = lastglobalset(vm, r0, fun, pc);
                     if (funname == NULL) {
                         runerror(vm, 
                         "tried tailcalling a function in register %hhu, "
-                        "which is nil and was never set to a function.", r0);
+                        "which was never set to a function.", r0);
                     } else {
                         runerror(vm, 
-                    "tried tailcalling a function in register %hhu, which is "
-                    "nil and was last set to function \"%s\".", r0, funname);
+                    "tried tailcalling a function in register %hhu, which "
+                    "was last set to function \"%s\".", r0, funname);
                     }
                 }
-                if (rn + vm->R_window_start >= NUM_REGISTERS) {
+                struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
+                if (vm->R_window_start + func->nregs >= NUM_REGISTERS) {
                     fprintf(stderr, "Offending function: ");
                     fprintfunname(stderr, vm, registers[r0]);
                     fprintf(stderr, "\n");
@@ -349,12 +350,12 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 // copy over function and argument registers 
                 // TODO why isn't memmove working?
-                // memmove(registers, (registers + r0), n + 1);
-                for (int i = 0; i <= n; ++i) {
-                    registers[i] = registers[r0 + i];
-                }
+                memmove(registers, (registers + r0), 
+                                                   sizeof(*registers) * (n + 1));
+                // for (int i = 0; i <= n; ++i) {
+                //     registers[i] = registers[r0 + i];
+                // }
 
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
                 // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
                 assert(func->arity == n);
 

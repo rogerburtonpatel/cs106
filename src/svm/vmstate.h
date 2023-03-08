@@ -33,7 +33,7 @@ struct VMState {
   Value literals[MAX_LITERALS];
   
   Activation Stack[MAX_STACK_FRAMES];
-  uint16_t stackpointer;
+  uint16_t stackpointer; /* points to 1st empty slot, right above 'top' */
   uint32_t R_window_start;
 
   uint16_t num_literals;
