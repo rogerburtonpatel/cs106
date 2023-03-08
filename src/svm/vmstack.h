@@ -6,7 +6,7 @@
 typedef struct Activation {
     Instruction *resume_loc;
     uint32_t R_window_start;
-    uint32_t dest_reg_idx;
+    uint32_t dest_reg_idx; /* relative to R_window_start */
 } Activation; /* NOT a pointer type! */
 
 
