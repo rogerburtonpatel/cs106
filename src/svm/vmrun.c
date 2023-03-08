@@ -33,6 +33,9 @@
 #define CANDUMP 1
 
 void vmrun(VMState vm, struct VMFunction *fun) {
+    print("%x\n", 0xf09d9aaf);
+    print("%x\n", 0xf09d9aaf & 0x1fffff);
+    print("%U\n", (unsigned)0x1d9aaf);
     
     if (fun->size < 1) {
         return;
@@ -72,6 +75,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case Println:
                 print("%v\n", registers[uX(curr_instr)]);
                 break;
+            case Printu:
+                print("%U", (unsigned)AS_NUMBER(vm, registers[uX(curr_instr)]));
+                break;                
             case Check: {
                 v = literal_value(vm, uYZ(curr_instr));
                 check(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
