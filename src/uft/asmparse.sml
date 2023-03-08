@@ -147,6 +147,9 @@ struct
   fun eRMany operator r1 rs = regs operator [r1, List.hd rs, List.last rs]
 
   (*Dirty trick : parsing call with accounting for the missing argument *)
+  fun eR1to2 operator r1    = regs operator [r1, r1]
+  fun eR2to3 operator r1 r2 = regs operator [r1, r2, r2]
+
   fun eRCall operator r1 r2 rs = 
     let val regargs = 
       (case rs
@@ -264,12 +267,40 @@ struct
 
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
     
-    <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" (* make this better? *)
-    <|> eR1 "return" <$> (the "return" >> reg)
-    <|> eR3 "tailcall" <$> (the "tailcall" >> reg)
-            <~> the "(" <*> reg <~> the "-" <*> reg <~> the ")" 
+    (* <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" 
+      TODO decide if using ^ *)
+
+    (* Accepted call syntax (in order): *)
+    (* rX := call rY (rY+1, ..., rZ) *)
+    (* rX := call rY (rY+1 - rZ) *)
+    (* rX := call rY (rZ) *)
+    (* rX := call rY () *)
+    (* rX := call rY    *)
     <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
+            <~> the "(" <~> reg <~> the "," <~> the "..." <~> the "," <*> reg <~> the ")"
+    <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
+            <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")"             
+    <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> reg <~> the ")" 
+    <|> eR2to3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <~> the ")" 
+    <|> eR2to3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg
+
+    <|> eR1 "return" <$> (the "return" >> reg)
+    (* Accepted tailcall syntax (in order): *)
+    (* tailcall rX (rX+1, ..., rY) *)
+    (* tailcall rX (rX+1 - rY) *)
+    (* tailcall rX (rY) *)
+    (* tailcall rX () *)
+    (* tailcall rX  *)
+
+    <|> eR2 "tailcall" <$> (the "tailcall" >> reg)
+            <~> the "(" <~> reg <~> the "," <~> the "..." <~> the "," <*> reg <~> the ")" 
+    <|> eR2 "tailcall" <$> (the "tailcall" >> reg)
             <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")" 
+    <|> eR2 "tailcall" <$> (the "tailcall" >> reg)
+            <~> the "(" <*> reg <~> the ")" 
+    <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
+            <~> the "(" <~> the ")" 
+    <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
 
     (* <|> eRMany "tailcall" <$> (the "tailcall" >> reg) <~> the "(" <*> many reg <~> the ")" TODO AS THIS HAS TO BE BETTER *)
     (* <|> eR2 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
