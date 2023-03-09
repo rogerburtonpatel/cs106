@@ -66,3 +66,5 @@ NR: "No, I was out playing touch football"
 "charmingly naive"
 
 "There's not enough words there for it to be wrong"
+
+"As long as we can emacs, the mechanism is immaterial."
