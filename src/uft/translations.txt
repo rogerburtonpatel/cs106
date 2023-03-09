@@ -1,0 +1,12 @@
+rules:
+toReturn FUNCODE x(x1, ..., xn) === S A.tailcall x(x1, ..., xn)
+
+toReturn NAME n === S A.return n
+
+toReturn IF (e, e1, e2) === S if (e, toReturn e1, toReturn e2)
+
+toReturn LET (n, e, e') === S let (n, e, toReturn e')
+
+toReturn BEGIN (e1, e2) === S begin (e1, toReturn e2)
+
+toReturn e === toReg' r0 e o A.return r0
