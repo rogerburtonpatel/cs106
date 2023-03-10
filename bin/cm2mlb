@@ -1,4 +1,4 @@
-#!/usr/bin/env lua5.1
+#!/usr/bin/env lua5.4
 
 local function argv_files(arg)
   if #arg == 0 then
