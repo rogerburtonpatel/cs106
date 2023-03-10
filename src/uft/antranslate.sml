@@ -16,12 +16,12 @@ struct
   (* structure X  = UnambiguousVScheme *)
   structure K  = KNormalForm
 
-  infix  0 >>=  val op >>= = Error.>>=
+  (* infix  0 >>=  val op >>= = Error.>>=
   infix  3 <*>  val op <*> = Error.<*>
   infixr 4 <$>  val op <$> = Error.<$>
   val succeed = Error.succeed
   val error = Error.ERROR
-  val errorList = Error.list
+  val errorList = Error.list *)
 
   type reg = ObjectCode.reg
 
@@ -36,14 +36,23 @@ struct
        | e => error ("expected a local variable but instead got " ^ (X.whatIs e)) *)
 
 (* val exp   : UnambiguousVScheme.exp -> string ANormalForm.exp Error.error *)
-  fun eqnames n1 (Error.OK s) = n1 = s
-    | eqnames _ (Error.ERROR _) = false
+
+
 
   (* fun value (X.SYM s) = A.STRING s
     | value (X.INT i) = A.INT i
     | value (X.REAL r) = A.REAL r
     | value (X.BOOLV b) = A.BOOL b
     | value  X.EMPTYLIST = A.EMPTYLIST *)
+
+  fun normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
+                normalize (A.LETX (y, ey, (A.LETX (x, ey', ex'))))
+    | normalize (K.LETX (x, (K.IFX (e, e1, e1)), ex')) = 
+                normalize (A.LETX (y, e, (A.IFX ())
+    | normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
+                normalize (A.LETX (y, ey, (A.LETX (x, ey', ex'))))
+    | normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
+                normalize (A.LETX (y, ey, (A.LETX (x, ey', ex'))))                                                
 
   fun exp (K.LITERAL l) = succeed (A.SIMPLE (A.LITERAL l))
     | exp (K.NAME n)    = succeed (A.SIMPLE (A.NAME n))
