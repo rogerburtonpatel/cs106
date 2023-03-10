@@ -57,6 +57,7 @@ fun freshName name = "y"
 can't really squash simpleExp, but other two could- i like the errors though *)
   fun exp e = 
     (case e 
+    (* each has its own normalize fn *)
       of K.LETX   _ => normalize e
        | K.IFX    _ => normalize e
        | K.BEGIN  _ => normalize e
@@ -64,7 +65,7 @@ can't really squash simpleExp, but other two could- i like the errors though *)
        (* todo: do we need to normalize set? *)
        | K.SET (n, e) => A.SET (n, exp e)
        | _ => A.SIMPLE (simpleExp e))
-
+(* simpleExp could be inlined as pattern matching inside the let. *)
   and simpleExp (K.LITERAL l) = A.LITERAL l
     | simpleExp (K.NAME n)    = A.NAME n
     | simpleExp (K.VMOP (p, ns)) = A.VMOP (p, ns)
@@ -72,6 +73,19 @@ can't really squash simpleExp, but other two could- i like the errors though *)
     | simpleExp (K.FUNCALL (n, ns)) = A.FUNCALL (n, ns)
     | simpleExp (K.FUNCODE (ns, e)) = A.FUNCODE (ns, exp e)
     | simpleExp _ = Impossible.impossible "simpleExp used on non-simple expr!"
+
+(* 
+          1    a      b 
+let x = (set z e) in ex'
+
+
+
+          1     a                  b
+let x = (let y = e in (set z y)) in ex'
+(define law (e e') (= (+ e e') (+ e' e)))
+
+ *)
+
 
   and normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
                 normalize (K.LETX (y, ey, (K.LETX (x, ey', ex'))))
@@ -87,6 +101,7 @@ can't really squash simpleExp, but other two could- i like the errors though *)
     (* float begins *)
 
     (* base cases- must come after recursive cases *)
+                      (* A.SIMPLE here!  *)
     | normalize (K.LETX   (x, e, e'))  = A.LETX   (x, simpleExp e, exp e')                                       
     | normalize (K.WHILEX (x, e, e'))  = A.WHILEX (x, exp e, exp e')                                       
     | normalize (K.IFX    (y, e1, e2)) = A.IFX    (y, exp e1, exp e2)                                       
