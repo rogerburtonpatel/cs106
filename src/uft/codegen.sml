@@ -115,10 +115,10 @@ struct
              | AN.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectA' expr
              | AN.FUNCALL (r, rs) => Impossible.exercise "wait till module 8!"
  
-             | AN.SET (r, e)      => (toRegA' r e) o S (A.copyreg dest r)
              | AN.FUNCODE (rs, e) =>
                        S (A.loadfunc dest (List.length rs) ((toReturnA' e []))))
 
+            | AN.SET (r, e)      => (toRegA' r e) o S (A.copyreg dest r)
             | AN.BEGIN (e1, e2)  => (forEffectA' e1) o (toRegA' dest e2)
             | AN.IFX (r, e1, e2) => 
               let val lab  = A.newlabel ()
@@ -143,12 +143,12 @@ struct
              | AN.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
 
              | AN.FUNCALL (r, ns) => Impossible.exercise "wait till module 8!"
-             | AN.SET   (r, e)      => (toRegA' r e)
              | AN.FUNCODE (rs, e) => 
                  let val r = 255 (* TODO change this *)
                  in toRegA' r expr
                  end)
 
+           | AN.SET   (r, e)      => (toRegA' r e)
            | AN.BEGIN (e1, e2)    => (forEffectA' e1) o (forEffectA' e2)
            | AN.IFX (r, e1, e2) => 
              let val lab  = A.newlabel ()

@@ -52,7 +52,28 @@ fun freshName name = "y"
                                                         b
                                               (let x = e2 in ex'))]] *)
 
-  fun normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
+                                   
+(* TODO: good to break up normalize/exp/simpleExp like this, or squash? 
+can't really squash simpleExp, but other two could- i like the errors though *)
+  fun exp e = 
+    (case e 
+      of K.LETX   _ => normalize e
+       | K.IFX    _ => normalize e
+       | K.BEGIN  _ => normalize e
+       | K.WHILEX _ => normalize e
+       (* todo: do we need to normalize set? *)
+       | K.SET (n, e) => A.SET (n, exp e)
+       | _ => A.SIMPLE (simpleExp e))
+
+  and simpleExp (K.LITERAL l) = A.LITERAL l
+    | simpleExp (K.NAME n)    = A.NAME n
+    | simpleExp (K.VMOP (p, ns)) = A.VMOP (p, ns)
+    | simpleExp (K.VMOPLIT (p, ns, l)) = A.VMOPLIT (p, ns, l)
+    | simpleExp (K.FUNCALL (n, ns)) = A.FUNCALL (n, ns)
+    | simpleExp (K.FUNCODE (ns, e)) = A.FUNCODE (ns, exp e)
+    | simpleExp _ = Impossible.impossible "simpleExp used on non-simple expr!"
+
+  and normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
                 normalize (K.LETX (y, ey, (K.LETX (x, ey', ex'))))
     | normalize (K.LETX (x, (K.IFX (y, e1, e2)), ex')) = 
                 normalize (K.IFX (y, (K.LETX (x, e1, ex')), (K.LETX (x, e2, ex'))))
@@ -60,12 +81,17 @@ fun freshName name = "y"
                 Impossible.impossible "let-while"
     | normalize (K.LETX (x, (K.BEGIN (e1, e2)), ex')) = 
                 normalize (K.BEGIN (e1, (K.LETX (x, e2, ex'))))
+    
+    (* float ifs *)
+    (* float whiles *)
+    (* float begins *)
 
-    (* | normalize (K.IFX (y, (A.LETX))) *)
-    | normalize _ = Impossible.impossible "not here yet"                                       
-
-  fun exp (K.LITERAL l) = (A.SIMPLE (A.LITERAL l))
-    | exp _ = Impossible.impossible "other kn-an translations"
+    (* base cases- must come after recursive cases *)
+    | normalize (K.LETX   (x, e, e'))  = A.LETX   (x, simpleExp e, exp e')                                       
+    | normalize (K.WHILEX (x, e, e'))  = A.WHILEX (x, exp e, exp e')                                       
+    | normalize (K.IFX    (y, e1, e2)) = A.IFX    (y, exp e1, exp e2)                                       
+    | normalize (K.BEGIN  (e1, e2))    = A.BEGIN  (exp e1, exp e2) 
+    | normalize _ = Impossible.impossible "normalize called on simple expr!"      
 
   (* fun exp (K.LITERAL l) = succeed (A.SIMPLE (A.LITERAL l))
     | exp (K.NAME n)    = succeed (A.SIMPLE (A.NAME n))

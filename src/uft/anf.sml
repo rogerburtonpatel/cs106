@@ -15,15 +15,15 @@ structure ANormalForm = struct
     | LETX    of 'a * 'a simple_exp * 'a exp
     | BEGIN   of 'a exp * 'a exp 
     | WHILEX  of 'a * 'a exp * 'a exp 
+    | SET     of 'a * 'a exp
     | SIMPLE  of 'a simple_exp
-
+(* TODO move set to non-simple *)
   and 'a simple_exp
   = LITERAL of literal 
   | NAME of 'a 
   | VMOP of vmop * 'a list
   | VMOPLIT of vmop * 'a list * literal
   | FUNCALL of 'a * 'a list 
-  | SET     of 'a * 'a exp
   | FUNCODE of 'a list * 'a exp
 
 end

@@ -71,7 +71,7 @@ struct
   
   exception Backward  (* for internal use only *)
                       (* raised if someone commands a backward translation *)
-
+  exception debug
   datatype language = datatype Languages.language (* imports value constructors *)
   exception NoTranslationTo of language  (* used internally *)
 
@@ -101,7 +101,9 @@ struct
 
   fun AN_reg_of AN = AN_of_file 
                      >=> Error.mapList (ANRename.mapx ANRename.regOfName)
-    | AN_reg_of inLang = raise NoTranslationTo AN
+    | AN_reg_of KN = AN_of_file 
+                     >=> Error.mapList (ANRename.mapx ANRename.regOfName)
+    | AN_reg_of inLange = raise NoTranslationTo AN
 
   fun KN_of KN = KN_of_file
     | KN_of inLang = raise NoTranslationTo KN
@@ -150,6 +152,6 @@ struct
         | HO => HO_of      inLang >>> ! (emitHO outfile)
         | _  => raise NoTranslationTo outLang
     ) infile
-    handle Backward => raise NotForward (inLang, outLang)
-         | NoTranslationTo outLang => raise NotForward (inLang, outLang)
+    (* handle Backward => raise NotForward (inLang, outLang)
+         | NoTranslationTo outLang => raise NotForward (inLang, outLang) *)
 end
