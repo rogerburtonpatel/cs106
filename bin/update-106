@@ -1,0 +1,14 @@
+#!/bin/bash -e
+# 
+# Purpose: pull's norman's code
+# 
+
+## Usage: update-106
+## 
+## 
+## 
+## 
+## author: rab
+## date:  Fri Mar 10 01:34:50 EST 2023
+
+git pull --rebase https://gitlab.cs.tufts.edu/cs106-staff/student-2023s.git main:main
