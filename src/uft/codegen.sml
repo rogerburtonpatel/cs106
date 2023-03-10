@@ -45,6 +45,33 @@ struct
   (* three contexts for code generation: to put into a register,
      to run for side effect, or (in module 8) to return. *)
 
+(* Thank you matt! *)
+  fun translateifK r e1 e2 f = 
+    let 
+      val lab  = A.newlabel()
+      val lab' = A.newlabel()
+    in S (A.ifgoto r lab) o (f e2) o S (A.goto lab')
+                                   o S (A.deflabel lab) o (f e1) 
+                                   o S (A.deflabel lab')
+    end
+
+  fun translateifA r e1 e2 f = 
+    let 
+      val lab  = A.newlabel()
+      val lab' = A.newlabel()
+    in S (A.ifgoto r lab) o (f e2) o S (A.goto lab')
+                                   o S (A.deflabel lab) o (f e1) 
+                                   o S (A.deflabel lab')
+    end
+
+fun translateCall dest r rs = 
+        if A.areConsecutive (r::rs)
+        then S (A.call dest r (List.last (r::rs)))
+        else 
+        Impossible.impossible ("non-consecutive " ^
+        "registers in call to dest " ^ Int.toString dest)
+
+
 
 (* TODO ADD GLOBALS *)
   fun toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
@@ -56,14 +83,8 @@ struct
            | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
                                                     S (A.setregLit dest p rs l) 
            | K.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectK' ex
-           | K.FUNCALL (r, rs) => Impossible.exercise "wait till module 8!"
-           | K.IFX (r, e1, e2) => 
-             let val lab  = A.newlabel ()
-                 val lab' = A.newlabel ()
-             in S (A.ifgoto r lab) o (toRegK' r e2) o S (A.goto lab')
-                                   o S (A.deflabel lab) o (toRegK' r e1) 
-                                   o S (A.deflabel lab')
-            end
+           | K.FUNCALL (r, rs) => translateCall dest r rs
+           | K.IFX (r, e1, e2) => translateifK r e1 e2 (toRegK' dest)
             (* Floatables *)
            | K.LETX (r, e, e') => (toRegK' r e) o (toRegK' dest e')
            | K.BEGIN (e1, e2)  => (forEffectK' e1) o (toRegK' dest e2)
@@ -81,14 +102,9 @@ struct
            | K.VMOPLIT (p as P.SETS_REGISTER _, _, _) => empty
            | K.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
 
-           | K.FUNCALL (r, ns) => Impossible.exercise "wait till module 8!"
-           | K.IFX (r, e1, e2) => 
-             let val lab  = A.newlabel ()
-                 val lab' = A.newlabel ()
-             in S (A.ifgoto r lab) o (forEffectK' e2) o S (A.goto lab')
-                                   o S (A.deflabel lab) o (forEffectK' e1) 
-                                   o S (A.deflabel lab')
-            end
+           | K.FUNCALL (r, rs) => translateCall 0 r rs
+           | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
+
            | K.LETX  (r, e, e')  => (toRegK' r e) o (forEffectK' e')
            | K.BEGIN (e1, e2)    => (forEffectK' e1) o (forEffectK' e2)
            | K.SET   (r, e)      => (toRegK' r e)
@@ -98,12 +114,22 @@ struct
              in S (A.goto lab) o S (A.deflabel lab') o (forEffectK' e')
                 o S (A.deflabel lab) o (toRegK' r e) o S (A.ifgoto r lab')          
             end
-           | K.FUNCODE (rs, e) => 
-              let val r = 255 (* TODO change this *)
-              in toRegK' r ex
-              end)
+           | K.FUNCODE (rs, e) => empty)
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
-        forEffectK' e  (* this will change in module 8 *)
+        (case e
+          of K.FUNCODE (reglist, ex) => (toRegK' 0 e) o (S (A.return 0))
+           | K.NAME n => S (A.return n)
+           | K.IFX (r, e1, e2) => translateifK r e1 e2 toReturnK'
+           | K.LETX (r, e1, e') => toRegK' r e1 o toReturnK' e'
+           | K.BEGIN (e1, e2) => forEffectK' e1 o toReturnK' e2
+           | K.SET (r, ex) => toRegK' r ex o S (A.return r)
+           | K.WHILEX (r, ex, ex') => toRegK' 0 e o S (A.return 0)
+           | K.FUNCALL (reg, reglist) => 
+                                  S (A.tailcall reg (List.last (reg::reglist))) 
+          (* 'wildcard' *)
+           | K.LITERAL _ => (toRegK' 0 e) o (S (A.return 0))
+           | K.VMOP _ => (toRegK' 0 e) o (S (A.return 0))
+           | K.VMOPLIT _ => (toRegK' 0 e) o (S (A.return 0)))
 
   fun toRegA' (dest : reg) (ex : reg ANormalForm.exp) : instruction hughes_list =
         (case ex
@@ -114,14 +140,9 @@ struct
            | AN.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
                                                     S (A.setregLit dest p rs l) 
            | AN.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectA' ex
-           | AN.FUNCALL (r, rs) => Impossible.exercise "wait till module 8!"
-           | AN.IFX (r, e1, e2) => 
-             let val lab  = A.newlabel ()
-                 val lab' = A.newlabel ()
-             in S (A.ifgoto r lab) o (toRegA' r e2) o S (A.goto lab')
-                                   o S (A.deflabel lab) o (toRegA' r e1) 
-                                   o S (A.deflabel lab')
-            end
+           | AN.FUNCALL (r, rs) => translateCall dest r rs
+           | AN.IFX (r, e1, e2) => translateifA r e1 e2 (toRegA' dest)
+
             (* Floatables *)
            | AN.LETX (r, e, e') => (toRegA' r e) o (toRegA' dest e')
            | AN.BEGIN (e1, e2)  => (forEffectA' e1) o (toRegA' dest e2)
@@ -139,14 +160,8 @@ struct
            | AN.VMOPLIT (p as P.SETS_REGISTER _, _, _) => empty
            | AN.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
 
-           | AN.FUNCALL (r, ns) => Impossible.exercise "wait till module 8!"
-           | AN.IFX (r, e1, e2) => 
-             let val lab  = A.newlabel ()
-                 val lab' = A.newlabel ()
-             in S (A.ifgoto r lab) o (forEffectA' e2) o S (A.goto lab')
-                                   o S (A.deflabel lab) o (forEffectA' e1) 
-                                   o S (A.deflabel lab')
-            end
+           | AN.FUNCALL (r, rs) => translateCall 0 r rs
+           | AN.IFX (r, e1, e2) => translateifA r e1 e2 forEffectA'
            | AN.LETX  (r, e, e')  => (toRegA' r e) o (forEffectA' e')
            | AN.BEGIN (e1, e2)    => (forEffectA' e1) o (forEffectA' e2)
            | AN.SET   (r, e)      => (toRegA' r e)
@@ -161,7 +176,21 @@ struct
               in toRegA' r ex
               end)
   and toReturnA' (e:  reg ANormalForm.exp) : instruction hughes_list  =
-        forEffectA' e  (* this will change in module 8 *)
+        (case e
+          of AN.FUNCODE (reglist, ex) => (toRegA' 0 e) o (S (A.return 0))
+           | AN.NAME n => S (A.return n)
+           | AN.IFX (r, e1, e2) => translateifA r e1 e2 toReturnA'
+           | AN.LETX (r, e1, e') => toRegA' r e1 o toReturnA' e'
+           | AN.BEGIN (e1, e2) => forEffectA' e1 o toReturnA' e2
+           | AN.SET (r, ex) => toRegA' r ex o S (A.return r)
+           | AN.WHILEX (r, ex, ex') => toRegA' 0 e o S (A.return 0)
+           | AN.FUNCALL (reg, reglist) => 
+                                  S (A.tailcall reg (List.last (reg::reglist))) 
+          (* 'wildcard' *)
+           | AN.LITERAL _ => (toRegA' 0 e) o (S (A.return 0))
+           | AN.VMOP _ => (toRegA' 0 e) o (S (A.return 0))
+           | AN.VMOPLIT _ => (toRegA' 0 e) o (S (A.return 0)))
+
 
 
   val _ = forEffectK' :        reg KNormalForm.exp -> instruction hughes_list
