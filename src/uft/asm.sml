@@ -13,12 +13,6 @@ structure AssemblyCode = struct
   datatype instr
     = OBJECT_CODE of ObjectCode.instr                   (* an object-code instruction *)
     | LOADFUNC    of ObjectCode.reg * int * instr list  (* body is assembly code *)
-<<<<<<< HEAD
-=======
-    | BINOP         of ObjectCode.reg * ObjectCode.reg * ObjectCode.reg
-    | UNOP          of ObjectCode.reg
-    | TWOREGOP      of ObjectCode.reg * ObjectCode.reg
->>>>>>> 0209572 (after submitting hw3 part 1. back in ml land. good shit.)
     | DEFLABEL      of string
     | GOTO_LABEL    of string
     | IF_GOTO_LABEL of ObjectCode.reg * string
