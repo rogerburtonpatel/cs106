@@ -1,12 +1,20 @@
 rules:
-toReturn FUNCODE x(x1, ..., xn) === S A.tailcall x(x1, ..., xn)
+# special cases 
+toReturn FUNCODE (reglist, e) === toReg' r0 (FUNCODE (reglist, e)) o toReturn r0
+
+toReturn FUNCALL (reg, reglist) === S A.tailcall reg (last reglist)
 
 toReturn NAME n === S A.return n
 
-toReturn IF (e, e1, e2) === S if (e, toReturn e1, toReturn e2)
+toReturn IF (reg, e1, e2) === S if (reg, toReturn e1, toReturn e2)
 
-toReturn LET (n, e, e') === S let (n, e, toReturn e')
+toReturn LET (n, e1, e') === toReg' n e1  o toReturn e'
 
-toReturn BEGIN (e1, e2) === S begin (e1, toReturn e2)
+toReturn BEGIN (e1, e2) === forEffect e1 o toReturn e2
 
+toReturn SET (x, ex) === toReg' ex o A.return ex
+
+toReturn (while x := e do e') === toReg r0 (while x := e do e') o return r0
+
+# other generic case - literal, vmop, vmoplit
 toReturn e === toReg' r0 e o A.return r0
