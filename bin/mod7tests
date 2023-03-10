@@ -12,7 +12,7 @@
 ## date:  Mon Jan 30 16:04:53 EST 2023
 
 # TODO for non-roger folks using this: update these dirs! :)
-BASEDIR=/h/rburto03/106/student-2023s
+BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
