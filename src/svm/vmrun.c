@@ -32,9 +32,6 @@
 #define CANDUMP 1
 
 void vmrun(VMState vm, struct VMFunction *fun) {
-    print("%x\n", 0xf09d9aaf);
-    print("%x\n", 0xf09d9aaf & 0x1fffff);
-    print("%U\n", (unsigned)0x1d9aaf);
     
     if (fun->size < 1) {
         return;
