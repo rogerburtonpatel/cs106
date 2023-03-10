@@ -108,8 +108,8 @@ struct
             | L.NAME "#t" => SOME (O.BOOL true)
             | L.NAME "false" => SOME (O.BOOL false)
             | L.NAME "#f" => SOME (O.BOOL false)
-            | L.NAME "emptylist" => SOME (O.EMPTYLIST)
-            | L.NAME "nil" => SOME (O.NIL)
+            | L.NAME "emptylist" => SOME O.EMPTYLIST
+            | L.NAME "nil" => SOME O.NIL
             | L.STRING s => SOME (O.STRING s)
             | _ => NONE
 
@@ -389,7 +389,7 @@ struct
             | ("halt", []) => "halt"
             | _ => 
               "an unknown register-based assembly-code instruction") 
-        | (O.REGSLIT (regAndLit)) =>
+        | (O.REGSLIT regAndLit) =>
           (case regAndLit 
           of ("loadliteral", [x], l) =>
             spaceSep [reg x, ":=", unparse_lit l]

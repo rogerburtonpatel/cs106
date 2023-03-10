@@ -37,7 +37,7 @@ struct
 
 (* val exp   : UnambiguousVScheme.exp -> string ANormalForm.exp Error.error *)
   fun eqnames n1 (Error.OK s) = n1 = s
-    | eqnames n1 (Error.ERROR msg) = false
+    | eqnames _ (Error.ERROR _) = false
 
   (* fun value (X.SYM s) = A.STRING s
     | value (X.INT i) = A.INT i
