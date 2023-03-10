@@ -266,10 +266,26 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
 
             /* FUNCTIONS */
-            case Return: 
-                assert(0);
+            case Return: {
+                if (vm->stackpointer == 0) {
+                    runerror(vm, "attempting to return register %hhu, "
+                                 "from non-function.", uX(curr_instr));
+                }
+
+                Activation a = vm->Stack[--vm->stackpointer];
+
+                Value return_value = registers[uX(curr_instr)];
+
+                // restore register window state and current instruction
+                vm->R_window_start = a.R_window_start;
+                registers = vm->registers + a.R_window_start;
+                pc = a.resume_loc;
+
+                // set final return
+                registers[a.dest_reg_idx] = return_value;
                 break;
             }
+
             case Call: {
                 uint8_t r0 = uY(curr_instr);
                 uint8_t rn = uZ(curr_instr);
@@ -277,9 +293,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 uint32_t dest_reg_idx = uX(curr_instr);
 
-                // save caller activation record on the stack
-                Activation a = {pc + 1, vm->R_window_start, dest_reg_idx};
-                vm->Stack[vm->stackpointer++] = a;
 
                 // check for invalid function 
                 if (registers[r0].tag == Nil) {

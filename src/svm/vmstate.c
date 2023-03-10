@@ -91,6 +91,6 @@ const char *global_name(VMState state, unsigned index) {
     return nametostr(state->global_names[index]);
 }
 void initialize_global(VMState vm, Value name, Value v) {
-  (void) vm; (void) name; (void) v; // replace with real code
-  assert(0);
+  (void) vm; (void) name; (void) v; // todo replace with real code
+  return;
 }

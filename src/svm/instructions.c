@@ -69,7 +69,7 @@ instruction_info instructions[] = {
   {"setclslot", SetClSlot, parseR3, "rX := setclslot rY rZ"},
   {"getclslot", GetClSlot, parseR3, "rX := getclslot rY rZ"},
   {"boolof", BoolOf, parseR2, "boolof rX rY" },
-  {"=", RegAssign, parseR2, "rX := rY"},
+  {"=", RegCopy, parseR2, "rX := rY"},
   {"swap", Swap, parseR2, "rX, rY := rY, rX"},
   {"+imm", PlusImm, parseR2U8, "rX := rY + IMM"},
 
