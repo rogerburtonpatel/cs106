@@ -61,11 +61,11 @@ struct
                   string ANormalForm.exp list error *)
 
     val AN_of_KN =
-    Error.mapList ANTranslate.exp (* string ANormalForm.exp list error *)
+    List.map ANTranslate.exp (* string ANormalForm.exp list error *)
 
   val AN_of_file: instream -> string ANormalForm.exp list error =
     KN_of_file                        (* string KNormalForm.exp list error *)
-    >=> AN_of_KN                      (* string ANormalForm.exp list error *)
+    >>> Error.map AN_of_KN            (* string ANormalForm.exp list error *)
 
   (**** Support for materialization ****)
   
@@ -89,8 +89,8 @@ struct
 
   val VS_of_KN : string KNormalForm.exp list ->
                  AssemblyCode.instr list error
-    = Error.mapList ANTranslate.exp 
-    >=> Error.mapList (ANRename.mapx ANRename.regOfName) 
+    = AN_of_KN
+    >>> Error.mapList (ANRename.mapx ANRename.regOfName) 
     >>> ! VS_of_AN  (* AssemblyCode.instr list *)
 
 

@@ -6,7 +6,7 @@
 structure ANTranslate :> sig
   type reg = ObjectCode.reg
   (* val value : KNormalForm.value -> ANormalForm.literal *)
-  val exp   : string KNormalForm.exp -> string ANormalForm.exp Error.error
+  val exp   : string KNormalForm.exp -> string ANormalForm.exp
 end 
   = 
 struct
@@ -37,6 +37,7 @@ struct
 
 (* val exp   : UnambiguousVScheme.exp -> string ANormalForm.exp Error.error *)
 
+fun freshName name = "y"
 
 
   (* fun value (X.SYM s) = A.STRING s
@@ -45,21 +46,33 @@ struct
     | value (X.BOOLV b) = A.BOOL b
     | value  X.EMPTYLIST = A.EMPTYLIST *)
 
-  fun normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
-                normalize (A.LETX (y, ey, (A.LETX (x, ey', ex'))))
-    | normalize (K.LETX (x, (K.IFX (e, e1, e1)), ex')) = 
-                normalize (A.LETX (y, e, (A.IFX ())
-    | normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
-                normalize (A.LETX (y, ey, (A.LETX (x, ey', ex'))))
-    | normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
-                normalize (A.LETX (y, ey, (A.LETX (x, ey', ex'))))                                                
+            (* 1     a  b                                *)
+(* A[[let x = (if y e1 e2) in ex']]        = A[[(if y     a
+                                              (let x = e1 in ex')
+                                                        b
+                                              (let x = e2 in ex'))]] *)
 
-  fun exp (K.LITERAL l) = succeed (A.SIMPLE (A.LITERAL l))
+  fun normalize (K.LETX (x, (K.LETX (y, ey, ey')), ex')) = 
+                normalize (K.LETX (y, ey, (K.LETX (x, ey', ex'))))
+    | normalize (K.LETX (x, (K.IFX (y, e1, e2)), ex')) = 
+                normalize (K.IFX (y, (K.LETX (x, e1, ex')), (K.LETX (x, e2, ex'))))
+    | normalize (K.LETX (x, (K.WHILEX (y, e, e')), ex')) = 
+                Impossible.impossible "let-while"
+    | normalize (K.LETX (x, (K.BEGIN (e1, e2)), ex')) = 
+                normalize (K.BEGIN (e1, (K.LETX (x, e2, ex'))))
+
+    (* | normalize (K.IFX (y, (A.LETX))) *)
+    | normalize _ = Impossible.impossible "not here yet"                                       
+
+  fun exp (K.LITERAL l) = (A.SIMPLE (A.LITERAL l))
+    | exp _ = Impossible.impossible "other kn-an translations"
+
+  (* fun exp (K.LITERAL l) = succeed (A.SIMPLE (A.LITERAL l))
     | exp (K.NAME n)    = succeed (A.SIMPLE (A.NAME n))
     | exp (K.VMOP (p, ns)) = succeed (A.SIMPLE (A.VMOP (p, ns)))
     | exp (K.VMOPLIT (p, ns, l)) = A.SIMPLE <$> (curry3 A.VMOPLIT <$> (succeed p) <*> 
                                              (succeed ns) <*> (succeed l))
-    | exp _ = error "nope"
+    | exp _ = error "nope" *)
 (*
        | A.FUNCALL (n, ns) => curry A.FUNCALL <$> f n <*> errorList (map f ns)
        | A.BEGIN (e, e') => curry A.BEGIN <$> mapx f e <*> mapx f e'
@@ -129,8 +142,8 @@ struct
   fn e => curry3 A.LETX <$> (succeed t) 
                         <*> (curry A.FUNCODE <$> (succeed xs) <*> exp e)
                         <*> (curry AU.setglobal <$> (succeed f) <*> asName t') *)
-  fun list nil     = succeed nil 
-  | list (p::ps) = curry op :: <$> p <*> list ps
+  (* fun list nil     = succeed nil 
+  | list (p::ps) = curry op :: <$> p <*> list ps *)
 
   (* val lt' : 'a parser list -> 'b parser -> ('a list * 'b) parser
   val lambda' : 'a parser -> (name list * exp) parser

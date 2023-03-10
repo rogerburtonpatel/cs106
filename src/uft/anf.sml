@@ -13,6 +13,7 @@ structure ANormalForm = struct
                           instantiated as `string` or `ObjectCode.reg` *)
     = IFX     of 'a * 'a exp * 'a exp 
     | LETX    of 'a * 'a simple_exp * 'a exp
+    | BEGIN   of 'a exp * 'a exp 
     | WHILEX  of 'a * 'a exp * 'a exp 
     | SIMPLE  of 'a simple_exp
 
@@ -22,7 +23,6 @@ structure ANormalForm = struct
   | VMOP of vmop * 'a list
   | VMOPLIT of vmop * 'a list * literal
   | FUNCALL of 'a * 'a list 
-  | BEGIN   of 'a exp * 'a exp 
   | SET     of 'a * 'a exp
   | FUNCODE of 'a list * 'a exp
 
