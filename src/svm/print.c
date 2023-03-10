@@ -80,30 +80,6 @@ void vbprint(Printbuf output, const char *fmt, va_list_box *box) {
 }
 
 
-void printunicode(Printbuf output, va_list_box *box)
-{
-    unsigned code_point = va_arg(box->ap, unsigned);
-
-    if ((code_point & 0x1fffff) != code_point)
-        runerror(NULL, "%d does not represent a Unicode code point", 
-                        (int)code_point);
-    if (code_point > 0xffff) {     // 21 bits
-        bufput(output, 0xf0 |  (code_point >> 18));
-        bufput(output, 0x80 | ((code_point >> 12) & 0x3f));
-        bufput(output, 0x80 | ((code_point >>  6) & 0x3f));
-        bufput(output, 0x80 | ((code_point      ) & 0x3f));
-    } else if (code_point > 0x7ff) { // 16 bits
-        bufput(output, 0xe0 | (code_point >> 12));
-        bufput(output, 0x80 | ((code_point >> 6) & 0x3f));
-        bufput(output, 0x80 | ((code_point     ) & 0x3f));
-    } else if (code_point > 0x7f) { // 12 bits
-        bufput(output, 0xc0 | (code_point >> 6));
-        bufput(output, 0x80 | (code_point & 0x3f));
-    } else {                        // 7 bits
-        bufput(output, code_point);
-    }
-}
-
 void fprint_utf8(FILE *output, unsigned code_point)
 {
     fprint(output, "%U", code_point);

@@ -23,8 +23,6 @@
 
 
 typedef struct VMState *VMState;
-#define NUM_REGISTERS 256
-
 
 struct VMState {
 
@@ -43,17 +41,6 @@ struct VMState {
   uint16_t num_globals;
 
    // store is the vmheap
-};
-
-struct VMState {
-   // counter-- indexer into instructions array. 
-    uint64_t counter;
-   // regs
-   Value registers[NUM_REGISTERS];
-   // literals- read-only
-   Seq_T literals;   // globals
-   Seq_T globals;
-   // store is the heap!
 };
 
 VMState newstate(void);       // allocate and initialize (to empty)
