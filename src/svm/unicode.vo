@@ -1,0 +1,5 @@
+.load module 4
+loadliteral 1 𝚯
+print 1
+println 1
+printu 1

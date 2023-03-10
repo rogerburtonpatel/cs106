@@ -1,0 +1,8 @@
+.load module 7
+loadliteral 0 1
+neg 0
+inc 0
+not 0
+check 0 string 2 45 49
+expect 0 string 2 45 49
+halt

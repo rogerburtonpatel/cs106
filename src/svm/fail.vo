@@ -1,0 +1,7 @@
+.load module 6
+loadliteral 10 666
+boolof 0 10
+loadliteral 9 false
+check 0 string 10 98 111 111 108 111 102 32 54 54 54
+expect 9 string 5 102 97 108 115 101
+halt
