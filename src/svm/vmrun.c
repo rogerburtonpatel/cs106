@@ -77,7 +77,10 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             case Printu:
                 print("%U", (unsigned)AS_NUMBER(vm, registers[uX(curr_instr)]));
-                break;                
+                break;     
+            case Error:
+                runerror_p(vm, "%v", registers[uX(curr_instr)]);
+                break;                              
             case Check: {
                 v = literal_value(vm, uYZ(curr_instr));
                 check(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
@@ -155,12 +158,36 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
             /* BOOLEAN LOGIC- R3 */
             case Eq:
-            // TODO: THIS WILL BE MORE COMPLEX. HEHE
                 registers[uX(curr_instr)] = 
                 mkBooleanValue(
-                    AS_NUMBER(vm, registers[uY(curr_instr)]) 
-                    == AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                    eqvalue(registers[uY(curr_instr)], 
+                            registers[uZ(curr_instr)]));
                 break;
+
+            case Gt:
+                registers[uX(curr_instr)] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) > 
+                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                break;
+
+            case Lt:
+                registers[uX(curr_instr)] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) <
+                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                break;
+
+            case Ge:
+                registers[uX(curr_instr)] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) >= 
+                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                break;
+            
+            case Le:
+                registers[uX(curr_instr)] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) <=
+                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                break;
+
             /* UNARY ARITH- R1 */
             case Inc:
                 registers[uX(curr_instr)] = 
