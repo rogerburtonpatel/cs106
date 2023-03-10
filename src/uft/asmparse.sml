@@ -110,8 +110,8 @@ struct
             | L.NAME "#t" => SOME (O.BOOL true)
             | L.NAME "false" => SOME (O.BOOL false)
             | L.NAME "#f" => SOME (O.BOOL false)
-            | L.NAME "emptylist" => SOME (O.EMPTYLIST)
-            | L.NAME "nil" => SOME (O.NIL)
+            | L.NAME "emptylist" => SOME O.EMPTYLIST
+            | L.NAME "nil" => SOME O.NIL
             | L.STRING s => SOME (O.STRING s)
             | _ => NONE
 
