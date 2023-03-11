@@ -55,7 +55,40 @@ fun freshName name = "y"
                                    
 (* TODO: good to break up normalize/exp/simpleExp like this, or squash? 
 can't really squash simpleExp, but other two could- i like the errors though *)
-  fun exp e = 
+
+  fun exp (K.LITERAL l) = A.SIMPLE (A.LITERAL l)
+    | exp (K.NAME n)    = A.SIMPLE (A.NAME n)
+    | exp (K.VMOP (p, ns)) = A.SIMPLE (A.VMOP (p, ns))
+    | exp (K.VMOPLIT (p, ns, l)) = A.SIMPLE (A.VMOPLIT (p, ns, l))
+    | exp (K.FUNCALL (n, ns)) = A.SIMPLE (A.FUNCALL (n, ns))
+    | exp (K.FUNCODE (ns, e)) = A.SIMPLE (A.FUNCODE (ns, exp e))
+    | exp (K.LETX (x, e, e')) = normalizeLet x (exp e) (exp e')
+    
+    | exp  _ = Impossible.impossible "simpleExp used on non-simple expr!"
+  and normalizeLet x (A.LETX (y, ey, ey')) ex' = 
+                  
+
+
+                normalizeLet (A.LETX (y, ey, (A.LETX (x, ey', ex'))))
+    | normalizeLet (A.LETX (x, (A.IFX (y, e1, e2)), ex')) = 
+                normalizeLet (A.IFX (y, (A.LETX (x, e1, ex')), (A.LETX (x, e2, ex'))))
+    | normalizeLet (A.LETX (x, (A.WHILEX (y, e, e')), ex')) = 
+                Impossible.impossible "let-while"
+    | normalizeLet (A.LETX (x, (A.BEGIN (e1, e2)), ex')) = 
+                normalizeLet (A.BEGIN (e1, (A.LETX (x, e2, ex'))))
+    | normalizeLet (A.LETX   (x, A.SIMPLE e, e'))  = A.LETX   (x, e, exp e')                                    
+    
+    (* float ifs *)
+    (* float whiles *)
+    (* float begins *)
+
+    (* base cases- must come after recursive cases *)
+                      (* A.SIMPLE here!  *)
+    (* | normalize (A.WHILEX (x, e, e'))  = A.WHILEX (x, exp e, exp e')                                       
+    | normalize (A.IFX    (y, e1, e2)) = A.IFX    (y, exp e1, exp e2)                                       
+    | normalize (A.BEGIN  (e1, e2))    = A.BEGIN  (exp e1, exp e2) 
+    | normalize _ = Impossible.impossible "normalize called on simple expr!" *)
+  (* fun exp e = 
     (case e 
     (* each has its own normalize fn *)
       of K.LETX   _ => normalize e
@@ -106,7 +139,7 @@ let x = (let y = e in (set z y)) in ex'
     | normalize (K.WHILEX (x, e, e'))  = A.WHILEX (x, exp e, exp e')                                       
     | normalize (K.IFX    (y, e1, e2)) = A.IFX    (y, exp e1, exp e2)                                       
     | normalize (K.BEGIN  (e1, e2))    = A.BEGIN  (exp e1, exp e2) 
-    | normalize _ = Impossible.impossible "normalize called on simple expr!"      
+    | normalize _ = Impossible.impossible "normalize called on simple expr!"       *)
 
   (* fun exp (K.LITERAL l) = succeed (A.SIMPLE (A.LITERAL l))
     | exp (K.NAME n)    = succeed (A.SIMPLE (A.NAME n))
