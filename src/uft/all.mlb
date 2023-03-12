@@ -71,7 +71,7 @@ $(SML_LIB)/basis/basis.mlb
   anf.sml      
 
   anembed.sml      
-  antranslate.sml
+  anproject.sml
   anrename.sml
 
 

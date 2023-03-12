@@ -77,15 +77,17 @@ fun translateCall dest r rs =
            | K.NAME r    => S (A.copyreg dest r)
            | K.VMOP (p as P.SETS_REGISTER _, rs) => S (A.setreg dest p rs)
            | K.VMOP (P.HAS_EFFECT _, _) => forEffectK' ex
-           | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
-                                                    S (A.setregLit dest p rs l) 
+           | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => Impossible.impossible "toregsetk"
+                                                    (* S (A.setregLit dest p rs l)  *)
            | K.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectK' ex
            | K.FUNCALL (r, rs) => translateCall dest r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 (toRegK' dest)
             (* Floatables *)
            | K.LETX (r, e, e') => (toRegK' r e) o (toRegK' dest e')
            | K.BEGIN (e1, e2)  => (forEffectK' e1) o (toRegK' dest e2)
-           | K.SET (r, e)      => (toRegK' r e) o S (A.copyreg dest r)
+           | K.SET (r, e)      => 
+           (* Impossible.impossible "toregsetk" *)
+           (toRegK' r e) o S (A.copyreg dest r)
            | K.WHILEX _        => (forEffectK' ex)
                                     o S (A.loadlit dest (K.BOOL false))
            | K.FUNCODE (rs, e) =>
@@ -104,7 +106,9 @@ fun translateCall dest r rs =
 
            | K.LETX  (r, e, e')  => (toRegK' r e) o (forEffectK' e')
            | K.BEGIN (e1, e2)    => (forEffectK' e1) o (forEffectK' e2)
-           | K.SET   (r, e)      => (toRegK' r e)
+           | K.SET   (r, e)      => 
+           (* Impossible.impossible "foreffectsetk" *)
+           (toRegK' r e)
            | K.WHILEX (r, e, e') => 
              let val lab  = A.newlabel ()
                  val lab' = A.newlabel ()
@@ -119,7 +123,9 @@ fun translateCall dest r rs =
            | K.IFX (r, e1, e2) => translateifK r e1 e2 toReturnK'
            | K.LETX (r, e1, e') => toRegK' r e1 o toReturnK' e'
            | K.BEGIN (e1, e2) => forEffectK' e1 o toReturnK' e2
-           | K.SET (r, ex) => toRegK' r ex o S (A.return r)
+           | K.SET (r, ex) => 
+           (* Impossible.impossible "toreturnsetk" *)
+           toRegK' r ex o S (A.return r)
            | K.WHILEX (r, ex, ex') => toRegK' 0 e o S (A.return 0)
            | K.FUNCALL (reg, reglist) => 
                                   S (A.tailcall reg (List.last (reg::reglist))) 
@@ -143,7 +149,9 @@ fun translateCall dest r rs =
             (* Floatables *)
            | AN.LETX (r, e, e') => (toRegA' r e) o (toRegA' dest e')
            | AN.BEGIN (e1, e2)  => (forEffectA' e1) o (toRegA' dest e2)
-           | AN.SET (r, e)      => (toRegA' r e) o S (A.copyreg dest r)
+           | AN.SET (r, e)      => 
+           (* Impossible.impossible "toregseta" *)
+           (toRegA' r e) o S (A.copyreg dest r)
            | AN.WHILEX _        => (forEffectA' ex)
                                     o S (A.loadlit dest (AN.BOOL false))
            | AN.FUNCODE (rs, e) =>
@@ -161,7 +169,9 @@ fun translateCall dest r rs =
            | AN.IFX (r, e1, e2) => translateifA r e1 e2 forEffectA'
            | AN.LETX  (r, e, e')  => (toRegA' r e) o (forEffectA' e')
            | AN.BEGIN (e1, e2)    => (forEffectA' e1) o (forEffectA' e2)
-           | AN.SET   (r, e)      => (toRegA' r e)
+           | AN.SET   (r, e)      => 
+           (* Impossible.impossible "foreffectseta" *)
+           (toRegA' r e)
            | AN.WHILEX (r, e, e') => 
              let val lab  = A.newlabel ()
                  val lab' = A.newlabel ()
@@ -179,7 +189,9 @@ fun translateCall dest r rs =
            | AN.IFX (r, e1, e2) => translateifA r e1 e2 toReturnA'
            | AN.LETX (r, e1, e') => toRegA' r e1 o toReturnA' e'
            | AN.BEGIN (e1, e2) => forEffectA' e1 o toReturnA' e2
-           | AN.SET (r, ex) => toRegA' r ex o S (A.return r)
+           | AN.SET (r, ex) => 
+           (* Impossible.impossible "toreturnsetk" *)
+           toRegA' r ex o S (A.return r)
            | AN.WHILEX (r, ex, ex') => toRegA' 0 e o S (A.return 0)
            | AN.FUNCALL (reg, reglist) => 
                                   S (A.tailcall reg (List.last (reg::reglist))) 

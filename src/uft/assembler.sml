@@ -87,7 +87,7 @@ struct
                     Error.ERROR (label ^ "not defined in environment")
       end
 
-  val _ = mkGoto : (ObjectCode.instr list -> ObjectCode.instr) * ObjectCode.instr list ERROR.error
+  (* val _ = mkGoto : (ObjectCode.instr list -> ObjectCode.instr) * ObjectCode.instr list error *)
 
     fun labelElim instrs envir = 
         let fun g (n, asminstr, objinstrs) =

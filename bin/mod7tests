@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 # 
 # Purpose: runs tests from mod 7 test code. 
 # 
@@ -16,71 +16,64 @@ BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
-TESTDIR=$BASEDIR/tests/tests07
+TESTDIR=$BASEDIR/tests/mod7tests
 
-build () {
-    cd $SVMDIR
-    make 
-    if [[ "$?" -ne "0" ]]; then
+build ()
+{
+    target="$1"
+    cd "$BASEDIR/src/$target"
+
+    make | grep -v "Nothing to be done" # silences already-built make output
+    if [[ "$?" -ne "1" ]]; then
         echo "Exiting on compilation failure."
         exit 1
     fi
 
-    cd $UFTDIR
-    make 
-    if [[ "$?" -ne "0" ]]; then
-        echo "Exiting on compilation failure."
-        exit 1
-    fi
 }
 
 numtests=0
 numfail=0
-FAILING=1
 
 # for people wanting to make changes: $1, $2 are arguments to a function
 update_failure () { 
     failure=$1
     testname=$2
     out=$3
+    
     if [[ "$failure" -ne "0" ]]; then 
         >&2 echo "Failed test $testname"
         >&2 echo "Output: "
         >&2 echo "$out"
+        numfail=$((numfail + 1))
     fi
-    numfail=$((numfail + $failure))
+    
 }
 
-run_tests () {
-    
+run_one_test ()
+{
+    local operation=$1
 
-    for file in $TESTDIR/*vo; do
         numtests=$((numtests + 1))
-        out=$(svm $file 2>&1)
+        out=$(bash -c "$operation" 2>&1)
         update_failure $? $file "$out"
         echo $out | grep -Eq 'The only test passed|Both tests passed|All tests passed'
-        update_failure $? $file $out
+        update_failure $? $file "$out"
                                                   # grep returns 0 if found; 
                                                   # the whole line will return
                                                   # nonzero if not OR if 
                                                   # svm fails
                                                   
+}
+
+
+run_tests () {
+    for file in $TESTDIR/*.vo; do
+        run_one_test "svm $file"
     done
 
-
-    for file in $TESTDIR/*vs; do
-        numtests=$((numtests + 1))
-        out=$(uft vs-vo $file | svm 2>&1)
-        update_failure $? $file "$out"
-        echo $out | grep -Eq 'The only test passed|Both tests passed|All tests passed'
-        update_failure $? $file $out
-                                                             # this returns 0 if
-                                                             # found; line will 
-                                                             # return nonzero if
-                                                             # not OR if uft or
-                                                             # svm fail
-        update_failure $? $file
-
+    for file in $TESTDIR/*.vs; do
+        run_one_test "uft vs-vo \"$file\" | svm" # you need these escape quotes
+                                                 # for pipes. trust me. 
     done
 
     if [[ "$numfail" -eq "0" ]]; then 
@@ -89,11 +82,13 @@ run_tests () {
         numpassed=$((numtests - $numfail))
         echo "$numpassed / $numtests tests passed. \
 See above output for details."
+        exit 1
     fi
 }
 
 main () {
-    build
+    build "svm"
+    build "uft"
     run_tests
 }
 

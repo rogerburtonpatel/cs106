@@ -1,58 +1,100 @@
 #!/bin/bash
 # 
-# Purpose: runs tests from .vo files
+# Purpose: makes a testing file for some 106 operation
 # 
 
-## Usage: votests
+## Usage: mktester <name-of-test-suite>
 ## 
 ## 
 ## 
 ## 
 ## author: rab
-## date:  Mon Jan 30 16:04:53 EST 2023
+## date:  Sun Mar 12 03:30:21 EDT 2023
 
-# TODO: use grep conditional capture to print failing tests.
 
-BASEDIR=/h/rburto03/106/student-2023s
+BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
 
 SVMDIR=$BASEDIR/src/svm
-TESTDIR=$BASEDIR/tests/vo-tests
+UFTDIR=$BASEDIR/src/uft
+TESTDIR=$BASEDIR/tests/votests
 
 
-cd $SVMDIR
 
-# compile if needed
-if [[ ! -e $BASEDIR/bin/svm ]]; then
-    echo "No svm executable found; compiling..."
-    make
-    if [[ "$?" -ne "0" ]]; then
+build ()
+{
+    target="$1"
+    cd "$BASEDIR/src/$target"
+
+    make | grep -v "Nothing to be done" # silences already-built make output
+    if [[ "$?" -ne "1" ]]; then
         echo "Exiting on compilation failure."
         exit 1
     fi
-fi
 
-# run tests
-run_tests () {
+}
+
+numtests=0
+numfail=0
+FAILING=1
+
+# for people wanting to make changes: $1, $2 are arguments to a function
+update_failure () { 
+    failure=$1
+    testname=$2
+    out=$3
     
-    numfail=0
+    if [[ "$failure" -ne "0" ]]; then 
+        >&2 echo "Failed test $testname"
+        >&2 echo "Output: "
+        >&2 echo "$out"
+        numfail=$((numfail + 1))
+    fi
+    
+}
 
-    for file in $TESTDIR/to-fail/*; do
-        svm $file 2>&1 | grep "fail" > /dev/null # grep returns 0 if found
-        numfail=$((numfail + $?))
-        echo $numfail
+run_one_test ()
+{
+    local operation=$1
+
+        numtests=$((numtests + 1))
+        out=$(bash -c "$operation" 2>&1)
+        update_failure $? $file "$out"
+                                                  # grep returns 0 if found; 
+                                                  # the whole line will return
+                                                  # nonzero if not OR if 
+                                                  # svm fails
+                                                  
+}
+
+
+run_tests () {
+
+    for file in $TESTDIR/to-pass/*.vo; do
+        run_one_test "svm $file"
     done
 
-    for file in $TESTDIR/to-pass/*; do
-        svm $file | grep -v "fail" > /dev/null
-        numfail=$((numfail + $?))
+    for file in $TESTDIR/to-fail/*.vo; do
+        run_one_test "svm $file"
     done
+
+    # for file in $TESTDIR/*.vs; do
+    #     run_one_test "uft vs-vo \"$file\" | svm" # you need these escape quotes
+    #                                              # for pipes. trust me. 
+    # done
+
     if [[ "$numfail" -eq "0" ]]; then 
         echo "All tests passed."
+    else 
+        numpassed=$((numtests - $numfail))
+        echo "$numpassed / $numtests tests passed. \
+See above output for details."
+        exit 1
     fi
 }
 
 main () {
-
+    build "svm"
+    build "uft"
     run_tests
 }
 
