@@ -16,7 +16,7 @@ BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
-TESTDIR=$BASEDIR/tests/kntests
+TESTDIR=$BASEDIR/tests/idemp
 
 
 
@@ -27,7 +27,7 @@ build ()
 
     make | grep -v "Nothing to be done" # silences already-built make output
     if [[ "$?" -ne "1" ]]; then
-        echo "Exiting on compilation failure."
+        echo "Exiting on $target compilation failure."
         exit 1
     fi
 
@@ -57,9 +57,7 @@ run_one_test ()
     local operation=$1
 
         numtests=$((numtests + 1))
-        out=$(bash -c "$operation" 2>&1)
-        update_failure $? $file "$out"
-        echo $out | grep -Eq 'The only test passed|Both tests passed|All [0-9]+ tests passed'
+        out=$(bash -ce "$operation")
         update_failure $? $file "$out"
                                                   # grep returns 0 if found; 
                                                   # the whole line will return
@@ -70,16 +68,13 @@ run_one_test ()
 
 
 run_tests () {
-
-    # Put tests here and remove echo. Some examples: 
     for file in $TESTDIR/*.scm; do
-        run_one_test "uft kn-vo \"$file\" | svm 2>&1"
+        run_one_test "diff <(uft kn-kn $file 2>&1) <(uft kn-kn $file| uft kn-kn)"
     done
 
-    # for file in $TESTDIR/*.vs; do
-    #     run_one_test "uft vs-vo \"$file\" | svm" # you need these escape quotes
-    #                                              # for pipes. trust me. 
-    # done
+    for file in $TESTDIR/*.scm; do
+        run_one_test "diff <(uft kn-vs $file 2>&1) <(uft kn-vs $file | uft vs-vs)"
+    done
 
     if [[ "$numfail" -eq "0" ]]; then 
         echo "All tests passed."
