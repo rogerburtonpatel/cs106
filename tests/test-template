@@ -16,7 +16,7 @@ BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
-TESTDIR=$BASEDIR/tests/kntests
+TESTDIR=$BASEDIR/tests/TESTDIR_PLACEHOLDER
 
 
 
@@ -35,7 +35,6 @@ build ()
 
 numtests=0
 numfail=0
-FAILING=1
 
 # for people wanting to make changes: $1, $2 are arguments to a function
 update_failure () { 
@@ -59,8 +58,9 @@ run_one_test ()
         numtests=$((numtests + 1))
         out=$(bash -c "$operation" 2>&1)
         update_failure $? $file "$out"
-        echo $out | grep -Eq 'The only test passed|Both tests passed|All [0-9]+ tests passed'
+        echo $out | grep -Eq 'The only test passed|Both tests passed|All tests passed'
         update_failure $? $file "$out"
+        # TODO change this grep
                                                   # grep returns 0 if found; 
                                                   # the whole line will return
                                                   # nonzero if not OR if 
@@ -72,9 +72,10 @@ run_one_test ()
 run_tests () {
 
     # Put tests here and remove echo. Some examples: 
-    for file in $TESTDIR/*.scm; do
-        run_one_test "uft kn-vo \"$file\" | svm 2>&1"
-    done
+    echo "Empty testing file!"
+    # for file in $TESTDIR/*.vo; do
+    #     run_one_test "svm $file"
+    # done
 
     # for file in $TESTDIR/*.vs; do
     #     run_one_test "uft vs-vo \"$file\" | svm" # you need these escape quotes
@@ -87,7 +88,7 @@ run_tests () {
         numpassed=$((numtests - $numfail))
         echo "$numpassed / $numtests tests passed. \
 See above output for details."
-        exit 1
+    exit 1
     fi
 }
 

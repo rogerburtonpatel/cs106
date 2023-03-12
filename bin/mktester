@@ -1,0 +1,54 @@
+#!/bin/bash
+# 
+# Purpose: makes a testing file and directory for some 106 operation. 
+# Details: makes a testing directory in $TESTDIR and a testing file with the
+#          same name in $BINDIR. The testing file can immediately be run from
+#          anywhere (assuming $BINDIR is in your $PATH), but you'll want to edit
+#          it first to put in your tests. 
+# 
+
+## Usage: mktester <name-of-test-suite>
+## 
+## 
+## 
+## 
+## author: rab
+## date:  Sun Mar 12 03:30:21 EDT 2023
+
+
+BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
+BINDIR=$BASEDIR/bin
+TESTDIR=$BASEDIR/tests
+TEMPLATE=$TESTDIR/test-template
+
+# change if your sed is different! on halligan this will be /usr/bin/sed. 
+SED=/opt/homebrew/bin/gsed
+
+usage () 
+{
+    if [[ "$#" -ne "1" ]]; then 
+        echo "Usage: $0 name-of-tester."
+        exit 1
+    fi 
+}
+
+mktester ()
+{
+    local testername="$1" 
+    if [ -f "$BINDIR/$testername" ]; then 
+        echo "Testing file $BINDIR/$testername already exists! Exiting"
+        exit 1
+    fi 
+    mkdir -p $TESTDIR/$testername
+    $SED "s#TESTDIR_PLACEHOLDER#$testername#g" $TEMPLATE > $BINDIR/$testername
+    chmod +x $BINDIR/$testername
+}
+
+
+main () {
+    usage $@
+    local testername="$1"
+    mktester "$testername"
+}
+
+main $@

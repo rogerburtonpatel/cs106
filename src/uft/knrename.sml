@@ -37,7 +37,7 @@ struct
       | K.IFX (n, e1, e2) => curry3 K.IFX <$> f n <*> mapx f e1 <*> mapx f e2
       | K.LETX (n, e1, e2) => curry3 K.LETX <$> f n <*> mapx f e1 <*> mapx f e2
       | K.BEGIN (e, e') => curry K.BEGIN <$> mapx f e <*> mapx f e'
-      | K.SET (n, e) => curry K.SET <$> f n <*> mapx f e
+      | K.SET (n, e) => curry K.SET <$> f n <*> mapx f e 
       | K.WHILEX (n, e, e') => curry3 K.WHILEX <$> f n <*> mapx f e 
                                                                   <*> mapx f e'
       | K.FUNCODE (ns, e) => curry K.FUNCODE <$> errorList (map f ns) 
