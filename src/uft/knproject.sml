@@ -47,31 +47,29 @@ struct
     | exp (X.GLOBAL x) = succeed (KU.getglobal x)
     | exp (X.IFX (e1, e2, e3)) =
       curry3 K.IFX <$> asName e1 <*> exp e2 <*> exp e3
-    | exp (X.LETX (X.LET, nes, e)) =
-      (case nes
-        of [(n, e')] => curry3 K.LETX <$> (succeed n) <*> exp e' <*> exp e
-         | _ => error "let must have only one binding in projection to \
-                                                          \K-Normal form!")
+    | exp (X.LETX (X.LET, [(n, e')], e)) = 
+                            curry3 K.LETX <$> (succeed n) <*> exp e' <*> exp e
+    | exp (X.LETX (X.LET, xs, e)) = 
+                     error "let must have exactly one binding in projection to \
+                                                                \K-Normal form!"    
     | exp (X.LETX (X.LETREC, nes, e)) = error "no letrec dingus"
-    | exp (X.WHILEX (e, e')) = 
-      (case e
-        of X.LETX (X.LET, [(n, e1)], e2) => 
+    | exp (X.WHILEX (X.LETX (X.LET, [(n, e1)], e2), e')) = 
           if eqnames n (asName e2)
           then curry3 K.WHILEX <$> (succeed n) <*> exp e1 <*> exp e2
           else error "while name bound in let must be the one called in \
                                                   \projection to K-Normal form!"
-        | _ => error "ill-formed let binding in while expression") 
-    | exp (X.BEGIN (es)) = 
-      (case es 
-        of [e1, e2] => curry K.BEGIN <$> exp e1 <*> exp e2
-         | _ => error "begin must have only two expressions in projection to \
-                                                              \K-Normal form!")
+    | exp (X.WHILEX _) = error "ill-formed let binding in while expression"
+    | exp (X.BEGIN ([e1, e2])) = curry K.BEGIN <$> exp e1 <*> exp e2
+    | exp (X.BEGIN _) = error "begin must have only two expressions in \
+                                                \projection to K-Normal form!"
     | exp (X.SETLOCAL (x, e))   = curry K.SET <$> (succeed x) <*> exp e
-    | exp (X.SETGLOBAL (x, x')) = 
-                                curry KU.setglobal <$> (succeed x) <*> asName x'
-                                                       (* todo: why a name, 
-                                                          when setglobal takes
-                                                          a register? *)
+    | exp (X.SETGLOBAL (x, X.LOCAL x')) = 
+            curry K.BEGIN <$> 
+                          (curry KU.setglobal <$> (succeed x) <*> (succeed x')) 
+                          <*> succeed (K.NAME x')
+    | exp (X.SETGLOBAL (x, _)) = error ("cannot set global " ^ x ^ " to \
+                      \non-register expression in projection to K-Normal form!")
+                                                    (* todo: is this correct? *)
     | exp (X.FUNCALL (e, es)) = curry K.FUNCALL <$> asName e 
                                               <*> errorList (List.map asName es) 
     | exp (X.PRIMCALL (p, es)) = 
