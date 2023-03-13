@@ -112,6 +112,7 @@ Instruction parseR1LIT(VMState vm, Opcode opcode, Tokens operands, unsigned *max
     return eR1U16(opcode, reg, litslot);
 }
 
+
 /* Encode global variable declaration instruction */
 Instruction parseR1GLO(VMState vm, Opcode opcode, Tokens operands, unsigned *maxreg) {
     initnames();

@@ -51,6 +51,7 @@ structure AsmGen :> sig
   val return : reg -> instruction
   val tailcall :  reg -> reg -> instruction
                      (* fun, last *)
+  val mkerror : string -> instruction
 
 
   val mkblock : reg -> reg -> int -> instruction
@@ -127,10 +128,14 @@ struct
   fun tailcall  function lastarg = regs "tailcall" [function, lastarg]
   fun return r   = i O.REGS ("return", [r])
 
+  (* we reference register 0 as a placeholder here, but it isn't used *)
+  fun mkerror s = i O.REGSLIT ("error", [0], O.STRING s)
+
   val rec areConsecutive : ObjectCode.reg list -> bool
     = fn []  => true
        | [n] => true
        | n :: m :: ms => m = n + 1 andalso areConsecutive (m :: ms)
+  
 
   fun mkblock      x y k = i O.REGINT ("mkblock", x, y, k)
   fun setblockslot x k y = i O.REGINT ("setblockslot", x, y, k)
