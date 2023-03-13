@@ -59,7 +59,7 @@ struct
           else error "while name bound in let must be the one called in \
                                                   \projection to K-Normal form!"
     | exp (X.WHILEX _) = error "ill-formed let binding in while expression"
-    | exp (X.BEGIN ([e1, e2])) = curry K.BEGIN <$> exp e1 <*> exp e2
+    | exp (X.BEGIN [e1, e2]) = curry K.BEGIN <$> exp e1 <*> exp e2
     | exp (X.BEGIN _) = error "begin must have only two expressions in \
                                                 \projection to K-Normal form!"
     | exp (X.SETLOCAL (x, e))   = curry K.SET <$> (succeed x) <*> exp e
