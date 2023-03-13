@@ -83,7 +83,7 @@ struct
     else 
     S (A.loadlit 0 
         (K.STRING ("bad number of arguments in primitive " ^ P.name p)))
-    (* o A.effect P.error [0]  *)
+    o S (A.effect P.error [0])
 
   fun toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
         (case ex

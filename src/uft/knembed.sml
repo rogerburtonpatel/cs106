@@ -33,6 +33,7 @@ struct
   fun nameFrom (K.STRING s) = s
     | nameFrom _          = Impossible.impossible "misused function"
 
+
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
     | exp (K.NAME x)       = S.VAR x
     | exp (K.VMOP (p, ns)) = S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
@@ -52,10 +53,21 @@ struct
           else lt' n (exp e) (exp (K.NAME n'))
           (* 𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
     | exp (K.LETX (n, e1, e2)) = lt' n (exp e1) (exp e2)
-    | exp (K.BEGIN (e1, e2)) = S.BEGIN [exp e1, exp e2]
+    (* | exp (K.BEGIN (K.VMOPLIT (P.setglobal, rs, l), e2)) = S.SET ()] TODO: re-embed set for idempotency  *)
+    | exp (K.BEGIN (e1, e2)) = setIfSetGlobalElseBegin e1 e2
     | exp (K.SET (n, e)) = S.SET (n, exp e)
     | exp (K.WHILEX (n, e1, e2)) = S.WHILEX ((lt' n (exp e1) (S.VAR n)), exp e2)
     | exp (K.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
+
+  and setIfSetGlobalElseBegin e1 e2 = 
+    (case (e1, e2)
+      of (K.VMOPLIT (p, [localname], ObjectCode.STRING globalname), 
+          K.NAME localname') =>
+        if P.name p = "setglobal" andalso localname = localname'
+        then S.SET (globalname, S.VAR localname)
+        else S.BEGIN [exp e1, exp e2]
+      | _ => S.BEGIN [exp e1, exp e2])
+  
   val _ = exp : VScheme.name KNormalForm.exp -> VScheme.exp 
 
   fun def e = VScheme.EXP (exp e)
