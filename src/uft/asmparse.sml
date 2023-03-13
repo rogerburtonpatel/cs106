@@ -33,7 +33,7 @@ struct
   infix 1 <|>      val op <|> = P.<|>
   infix 3 >>       val op >> = P.>>
 
-  infixr 0 $         fun f $ g = f o g
+  infixr 0 $         fun f $ g = f g
 
   val succeed = P.succeed
   val curry = P.curry
@@ -158,12 +158,11 @@ struct
     in regs operator regargs
     end
     
-   
-  
 
   fun eRL operator r1 lit   = regslit operator [r1] lit
-  fun eLR operator lit r1   = eRL operator r1 lit
+  fun eLR operator = flip $ eRL operator
 
+  fun eL operator lit = regslit operator [] lit
 
   (***** Example parser for you to extend *****)
 
@@ -226,7 +225,7 @@ struct
   val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
                 "null?", "nil?", "car", "cdr", "hash"]
-  val oneops = ["print", "println", "printu", "error", 
+  val oneops = ["print", "println", "printu", 
                 "inc", "dec", "neg", "not"]
 
   (* val parseBinops = parseOps binopParser *)
@@ -266,6 +265,8 @@ struct
     <|> parseOps unopParser unops
 
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
+
+    <|> eRL "error" <$> reg <*> string'
     
     (* <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" 
       TODO decide if using ^ *)
@@ -481,6 +482,8 @@ struct
             spaceSep [reg x, ":=", unparse_lit l]
           | ("check", [x], l) => 
             spaceSep ["check", unparse_lit l, reg x]
+          | ("error", _, l) => (* we ignore the register here *)
+            spaceSep ["error", unparse_lit l]
           | ("expect", [x], l) => 
             spaceSep ["expect", unparse_lit l, reg x]
           | ("getglobal", [x], name) =>

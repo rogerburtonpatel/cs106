@@ -61,12 +61,18 @@ struct
                                    o S (A.deflabel lab')
     end
 
-fun translateCall dest r rs = 
+  fun translateCall dest r rs = 
         if A.areConsecutive (r::rs)
         then S (A.call dest r (List.last (r::rs)))
         else 
         Impossible.impossible ("non-consecutive " ^
         "registers in call to dest " ^ Int.toString dest)
+
+  fun succeedIfArityMatch p rs extra good = 
+    if P.arity p = List.length rs + extra
+    then good ()
+    else S (A.mkerror ("bad number of arguments in primitive " ^ P.name p))
+
 
 
 
@@ -75,10 +81,11 @@ fun translateCall dest r rs =
         (case ex
           of K.LITERAL l => S (A.loadlit dest l)
            | K.NAME r    => S (A.copyreg dest r)
-           | K.VMOP (p as P.SETS_REGISTER _, rs) => S (A.setreg dest p rs)
+           | K.VMOP (p as P.SETS_REGISTER _, rs) => 
+                  succeedIfArityMatch p rs 0 (fn () => (S (A.setreg dest p rs))) 
            | K.VMOP (P.HAS_EFFECT _, _) => forEffectK' ex
-           | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => Impossible.impossible "toregsetk"
-                                                    (* S (A.setregLit dest p rs l)  *)
+           | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
+             succeedIfArityMatch p rs 1 (fn () => (S (A.setregLit dest p rs l))) 
            | K.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectK' ex
            | K.FUNCALL (r, rs) => translateCall dest r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 (toRegK' dest)
@@ -91,16 +98,19 @@ fun translateCall dest r rs =
            | K.WHILEX _        => (forEffectK' ex)
                                     o S (A.loadlit dest (K.BOOL false))
            | K.FUNCODE (rs, e) =>
-                       S (A.loadfunc dest (List.length rs) ((toReturnK' e []))))
+                       S (A.loadfunc dest (List.length rs) (toReturnK' e [])))
   and forEffectK' (ex: reg KNormalForm.exp) : instruction hughes_list  =
 (case ex
           of K.LITERAL _ => empty
            | K.NAME _    => empty
-           | K.VMOP (p as P.SETS_REGISTER _, _) => empty 
-           | K.VMOP (p as P.HAS_EFFECT _, ns) => S (A.effect p ns)
-           | K.VMOPLIT (p as P.SETS_REGISTER _, _, _) => empty
-           | K.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
-
+           | K.VMOP (p as P.SETS_REGISTER _, rs) => 
+                                    succeedIfArityMatch p rs 0 (fn () => empty)
+           | K.VMOP (p as P.HAS_EFFECT _, rs) => 
+                                    succeedIfArityMatch p rs 0 (fn () => S (A.effect p rs))
+           | K.VMOPLIT (p as P.SETS_REGISTER _, rs, _) => 
+                                      succeedIfArityMatch p rs 1 (fn () => empty)
+           | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
+                    succeedIfArityMatch p rs 1 (fn () => S (A.effectLit p rs l))
            | K.FUNCALL (r, rs) => translateCall 0 r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
 
