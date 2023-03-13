@@ -68,24 +68,32 @@ struct
         Impossible.impossible ("non-consecutive " ^
         "registers in call to dest " ^ Int.toString dest)
 
-  fun succeedIfArityMatch p rs extra good = 
-    if P.arity p = List.length rs + extra
-    then good ()
-    else S (A.mkerror ("bad number of arguments in primitive " ^ P.name p))
+    (* let binding to error *)
+    
 
 
 
 
 (* TODO ADD GLOBALS *)
+(* todo change to instruction instead of continuation *)
+(* think about 'thing or error' template *)
+  fun succeedIfArityMatch p rs extra good = 
+    if P.arity p = List.length rs + extra
+    then good
+    else 
+    S (A.loadlit 0 
+        (K.STRING ("bad number of arguments in primitive " ^ P.name p)))
+    (* o A.effect P.error [0]  *)
+
   fun toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
         (case ex
           of K.LITERAL l => S (A.loadlit dest l)
            | K.NAME r    => S (A.copyreg dest r)
            | K.VMOP (p as P.SETS_REGISTER _, rs) => 
-                  succeedIfArityMatch p rs 0 (fn () => (S (A.setreg dest p rs))) 
-           | K.VMOP (P.HAS_EFFECT _, _) => forEffectK' ex
+                  succeedIfArityMatch p rs 0 (S (A.setreg dest p rs))
+           | K.VMOP (P.HAS_EFFECT _, _) => forEffectK' ex (* todo add  succeedif *)
            | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
-             succeedIfArityMatch p rs 1 (fn () => (S (A.setregLit dest p rs l))) 
+             succeedIfArityMatch p rs 1 (S (A.setregLit dest p rs l))
            | K.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectK' ex
            | K.FUNCALL (r, rs) => translateCall dest r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 (toRegK' dest)
@@ -104,13 +112,13 @@ struct
           of K.LITERAL _ => empty
            | K.NAME _    => empty
            | K.VMOP (p as P.SETS_REGISTER _, rs) => 
-                                    succeedIfArityMatch p rs 0 (fn () => empty)
+                                    succeedIfArityMatch p rs 0 empty
            | K.VMOP (p as P.HAS_EFFECT _, rs) => 
-                                    succeedIfArityMatch p rs 0 (fn () => S (A.effect p rs))
+                                    succeedIfArityMatch p rs 0 (S (A.effect p rs))
            | K.VMOPLIT (p as P.SETS_REGISTER _, rs, _) => 
-                                      succeedIfArityMatch p rs 1 (fn () => empty)
+                                      succeedIfArityMatch p rs 1 empty
            | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
-                    succeedIfArityMatch p rs 1 (fn () => S (A.effectLit p rs l))
+                    succeedIfArityMatch p rs 1 (S (A.effectLit p rs l))
            | K.FUNCALL (r, rs) => translateCall 0 r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
 
