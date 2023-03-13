@@ -72,7 +72,7 @@ run_one_test ()
 run_tests () {
 
     # Put tests here and remove echo. Some examples: 
-    for file in $TESTDIR/*.scm; do
+    for file in $TESTDIR/*.kn; do
         run_one_test "uft kn-vo \"$file\" | svm 2>&1"
     done
 
