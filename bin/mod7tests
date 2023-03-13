@@ -12,7 +12,7 @@
 ## date:  Mon Jan 30 16:04:53 EST 2023
 
 # TODO for non-roger folks using this: update these dirs! :)
-BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
+BASEDIR=$DIR106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
@@ -23,11 +23,13 @@ build ()
     target="$1"
     cd "$BASEDIR/src/$target"
 
-    make | grep -v "Nothing to be done" # silences already-built make output
-    if [[ "$?" -ne "1" ]]; then
-        echo "Exiting on compilation failure."
+    output=`make 2>&1`
+    if [[ "$?" -ne "0" ]]; then
+        echo $output
+        echo "Exiting on $target compilation failure."
         exit 1
     fi
+
 
 }
 

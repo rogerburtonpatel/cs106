@@ -16,7 +16,7 @@
 ## date:  Sun Mar 12 03:30:21 EDT 2023
 
 
-BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
+BASEDIR=$DIR106
 BINDIR=$BASEDIR/bin
 TESTDIR=$BASEDIR/tests
 TEMPLATE=$TESTDIR/test-template
