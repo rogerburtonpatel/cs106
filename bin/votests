@@ -25,11 +25,13 @@ build ()
     target="$1"
     cd "$BASEDIR/src/$target"
 
-    make | grep -v "Nothing to be done" # silences already-built make output
-    if [[ "$?" -ne "1" ]]; then
-        echo "Exiting on compilation failure."
+    output=`make 2>&1`
+    if [[ "$?" -ne "0" ]]; then
+        echo $output
+        echo "Exiting on $target compilation failure."
         exit 1
     fi
+
 
 }
 
