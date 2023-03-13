@@ -16,12 +16,10 @@ to load and run code. This goal is to implement two machine instructions, one to
   the compiler and load the results. These instructions can be tested now, and 
   then by the time of module 4, they can be used to implement a use function.
 
-set as begin
-higher-order testing
+todo:
+set as begin embed
 
-idempotency test- can we acheive idempotency, when set gets floated to a begin
-with a set in it?
-
+qs: 
 Projection to KNF should probably reject SETGLOBAL in a value (toReg) context.
 
 ^ ask abt

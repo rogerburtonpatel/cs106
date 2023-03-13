@@ -225,7 +225,7 @@ struct
   val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
                 "null?", "nil?", "car", "cdr", "hash"]
-  val oneops = ["print", "println", "printu", 
+  val oneops = ["print", "println", "printu", "error",
                 "inc", "dec", "neg", "not"]
 
   (* val parseBinops = parseOps binopParser *)
@@ -266,7 +266,6 @@ struct
 
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
 
-    <|> eRL "error" <$> reg <*> string'
     
     (* <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" 
       TODO decide if using ^ *)

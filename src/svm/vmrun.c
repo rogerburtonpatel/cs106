@@ -76,8 +76,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 print("%U", (unsigned)AS_NUMBER(vm, registers[uX(curr_instr)]));
                 break;     
             case Error:
-                runerror_p(vm, "%v", 
-                                literal_value(vm, uYZ(curr_instr)));
+                runerror_p(vm, "%v", registers[uX(curr_instr)]);
                 break;                              
             case Check: {
                 v = literal_value(vm, uYZ(curr_instr));
