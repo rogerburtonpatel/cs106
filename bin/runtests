@@ -11,7 +11,7 @@
 ## author: rab
 ## date:  Sun Mar 12 05:02:05 EDT 2023
 
-BASEDIR=/Users/rogerburtonpatel/home/tufts/comp/cs106
+BASEDIR=$DIR106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
