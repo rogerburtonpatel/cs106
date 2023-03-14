@@ -11,7 +11,7 @@
   (set the_worst_zero_youve_ever_seen $r0))
 
 (begin
-   (let* ([$r0 the_worst_zero_youve_ever_seen] [$r1 5] [$r0 ($r0 $r1)]) 
+   (let* ([$r0 the_worst_zero_youve_ever_seen] [$r1 50000] [$r0 ($r0 $r1)]) 
    (check $r0 '4-zeroed))
    (let* ([$r0 0]) (expect $r0 'zero)))
 
