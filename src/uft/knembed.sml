@@ -13,11 +13,11 @@ struct
   structure SU = VSchemeUtils
   structure P  = Primitive
 
-  fun lt' x e' e = S.LETX (S.LET, [(x, e')], e)   (* useful helper
+  fun lt' x e' e = S.LETX (S.LET, [(x, e')], e)   (* useful helper.
                                                     I renamed this
                                                     because having
                                                     something 
-                                                    named 'let'
+                                                    named let'
                                                     REALLY 
                                                     messes up 
                                                     the syntax
@@ -31,7 +31,17 @@ struct
     | value  K.NIL       = S.BOOLV false
 
   fun nameFrom (K.STRING s) = s
-    | nameFrom _          = Impossible.impossible "misused function"
+    | nameFrom _          = Impossible.impossible 
+                            "internal error: misused function nameFrom"
+
+  fun setIfSetGlobalElseBegin e1 e2 = 
+    (case (e1, e2)
+      of (K.VMOPLIT (p, [localname], ObjectCode.STRING globalname), 
+          K.NAME localname') =>
+        if P.name p = "setglobal" andalso localname = localname'
+        then SOME (S.SET (globalname, S.VAR localname))
+        else NONE
+      | _ => NONE)
 
 
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
@@ -41,7 +51,7 @@ struct
       (case (P.name p, ns, v)
         of ("getglobal", [], K.STRING s)  => S.VAR s
          | ("setglobal", [n], K.STRING s) => S.SET (s, S.VAR n)
-                              (* want to ask about this one *)
+                              (* todo want to ask about this one *)
          | (pn, names, v)       => S.APPLY (S.VAR pn, (List.map S.VAR names)
                                                        @ [S.LITERAL (value v)]))
     | exp (K.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)
@@ -51,22 +61,16 @@ struct
           if n = n'
           then exp e 
           else lt' n (exp e) (exp (K.NAME n'))
-          (* 𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
+    (* 𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
     | exp (K.LETX (n, e1, e2)) = lt' n (exp e1) (exp e2)
-    (* | exp (K.BEGIN (K.VMOPLIT (P.setglobal, rs, l), e2)) = S.SET ()] TODO: re-embed set for idempotency  *)
-    | exp (K.BEGIN (e1, e2)) = setIfSetGlobalElseBegin e1 e2
+    | exp (K.BEGIN (e1, e2)) = (case setIfSetGlobalElseBegin e1 e2
+                                 of SOME e => e
+                                  | NONE => S.BEGIN [exp e1, exp e2])
     | exp (K.SET (n, e)) = S.SET (n, exp e)
     | exp (K.WHILEX (n, e1, e2)) = S.WHILEX ((lt' n (exp e1) (S.VAR n)), exp e2)
     | exp (K.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
 
-  and setIfSetGlobalElseBegin e1 e2 = 
-    (case (e1, e2)
-      of (K.VMOPLIT (p, [localname], ObjectCode.STRING globalname), 
-          K.NAME localname') =>
-        if P.name p = "setglobal" andalso localname = localname'
-        then S.SET (globalname, S.VAR localname)
-        else S.BEGIN [exp e1, exp e2]
-      | _ => S.BEGIN [exp e1, exp e2])
+
   
   val _ = exp : VScheme.name KNormalForm.exp -> VScheme.exp 
 

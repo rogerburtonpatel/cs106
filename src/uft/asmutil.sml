@@ -51,7 +51,7 @@ structure AsmGen :> sig
   val return : reg -> instruction
   val tailcall :  reg -> reg -> instruction
                      (* fun, last *)
-  val mkerror : string -> instruction
+  val mkerror : string -> instruction list
 
 
 end
@@ -122,8 +122,10 @@ struct
   fun tailcall  function lastarg = regs "tailcall" [function, lastarg]
   fun return r   = i O.REGS ("return", [r])
 
-  (* we reference register 0 as a placeholder here, but it isn't used *)
-  fun mkerror s = i O.REGSLIT ("error", [0], O.STRING s)
+  (* we use register 0 as a placeholder here; it's killed alongside all other
+     registers after a call to 'error'. *)
+  fun mkerror msg = [(loadlit 0 
+        (KNormalForm.STRING msg)), (effect P.error [0])]
 
   val rec areConsecutive : ObjectCode.reg list -> bool
     = fn []  => true

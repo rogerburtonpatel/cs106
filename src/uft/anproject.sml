@@ -78,9 +78,7 @@ struct
     | exp (X.SETLOCAL (x, e))   = curry A.SET <$> (succeed x) <*> exp e
     | exp (X.SETGLOBAL (x, x')) = 
                                 curry AU.setglobal <$> (succeed x) <*> asName x'
-                                                       (* todo: why a name, 
-                                                          when setglobal takes
-                                                          a register? *)
+
     | exp (X.FUNCALL (e, es)) = curry A.FUNCALL <$> asName e 
                                               <*> errorList (List.map asName es) 
     | exp (X.PRIMCALL (p, es)) = 
