@@ -78,9 +78,8 @@ struct
 
 
 (* TODO ADD GLOBALS *)
-(* todo change to instruction instead of continuation *)
 (* think about 'thing or error' template *)
-  fun succeedIfArityMatch p rs extra good = 
+  fun instrOrErrorIfArityMismatch p rs extra good = 
     if P.arity p = List.length rs + extra
     then good
     else 
@@ -93,19 +92,19 @@ struct
           of K.LITERAL l => S (A.loadlit dest l)
            | K.NAME r    => S (A.copyreg dest r)
            | K.VMOP (p as P.SETS_REGISTER _, rs) => 
-                  succeedIfArityMatch p rs 0 (S (A.setreg dest p rs))
-           | K.VMOP (P.HAS_EFFECT _, _) => forEffectK' ex (* todo add  succeedif *)
+                  instrOrErrorIfArityMismatch p rs 0 (S (A.setreg dest p rs))
+           | K.VMOP (p as P.HAS_EFFECT _, rs) => 
+                  instrOrErrorIfArityMismatch p rs 0 (forEffectK' ex)
            | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
-             succeedIfArityMatch p rs 1 (S (A.setregLit dest p rs l))
-           | K.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectK' ex
+             instrOrErrorIfArityMismatch p rs 1 (S (A.setregLit dest p rs l))
+           | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
+                  instrOrErrorIfArityMismatch p rs 1 (forEffectK' ex)
            | K.FUNCALL (r, rs) => translateCall dest r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 (toRegK' dest)
             (* Floatables *)
            | K.LETX (r, e, e') => (toRegK' r e) o (toRegK' dest e')
            | K.BEGIN (e1, e2)  => (forEffectK' e1) o (toRegK' dest e2)
-           | K.SET (r, e)      => 
-           (* Impossible.impossible "toregsetk" *)
-           (toRegK' r e) o S (A.copyreg dest r)
+           | K.SET (r, e)      => (toRegK' r e) o S (A.copyreg dest r)
            | K.WHILEX _        => (forEffectK' ex)
                                     o S (A.loadlit dest (K.BOOL false))
            | K.FUNCODE (rs, e) =>
@@ -115,13 +114,13 @@ struct
           of K.LITERAL _ => empty
            | K.NAME _    => empty
            | K.VMOP (p as P.SETS_REGISTER _, rs) => 
-                                    succeedIfArityMatch p rs 0 empty
+                          instrOrErrorIfArityMismatch p rs 0 empty
            | K.VMOP (p as P.HAS_EFFECT _, rs) => 
-                                    succeedIfArityMatch p rs 0 (S (A.effect p rs))
+                          instrOrErrorIfArityMismatch p rs 0 (S (A.effect p rs))
            | K.VMOPLIT (p as P.SETS_REGISTER _, rs, _) => 
-                                      succeedIfArityMatch p rs 1 empty
+                          instrOrErrorIfArityMismatch p rs 1 empty
            | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
-                    succeedIfArityMatch p rs 1 (S (A.effectLit p rs l))
+                    instrOrErrorIfArityMismatch p rs 1 (S (A.effectLit p rs l))
            | K.FUNCALL (r, rs) => translateCall 0 r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
 
@@ -138,8 +137,10 @@ struct
             end
            | K.FUNCODE (rs, e) => empty)
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
+        let val r0 = 0 
+        in
         (case e
-          of K.FUNCODE (reglist, ex) => (toRegK' 0 e) o (S (A.return 0))
+          of K.FUNCODE (reglist, ex) => (toRegK' r0 e) o (S (A.return r0))
            | K.NAME n => S (A.return n)
            | K.IFX (r, e1, e2) => translateifK r e1 e2 toReturnK'
            | K.LETX (r, e1, e') => toRegK' r e1 o toReturnK' e'
@@ -147,14 +148,14 @@ struct
            | K.SET (r, ex) => 
            (* Impossible.impossible "toreturnsetk" *)
            toRegK' r ex o S (A.return r)
-           | K.WHILEX (r, ex, ex') => toRegK' 0 e o S (A.return 0)
+           | K.WHILEX (r, ex, ex') => toRegK' r0 e o S (A.return r0)
            | K.FUNCALL (reg, reglist) => 
                                   S (A.tailcall reg (List.last (reg::reglist))) 
           (* 'wildcard' *)
-           | K.LITERAL _ => (toRegK' 0 e) o (S (A.return 0))
-           | K.VMOP _ => (toRegK' 0 e) o (S (A.return 0))
-           | K.VMOPLIT _ => (toRegK' 0 e) o (S (A.return 0)))
-
+           | K.LITERAL _ => (toRegK' r0 e) o (S (A.return r0))
+           | K.VMOP _ => (toRegK' r0 e) o (S (A.return r0))
+           | K.VMOPLIT _ => (toRegK' r0 e) o (S (A.return r0)))
+          end
   fun toRegA' (dest : reg) (ex : reg ANormalForm.exp) : instruction hughes_list =
         (case ex
           of AN.LITERAL l => S (A.loadlit dest l)
@@ -163,7 +164,7 @@ struct
            | AN.VMOP (P.HAS_EFFECT _, _) => forEffectA' ex
            | AN.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
                                                     S (A.setregLit dest p rs l) 
-           | AN.VMOPLIT (P.HAS_EFFECT _, rs, l) => forEffectA' ex
+           | AN.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => forEffectA' ex
            | AN.FUNCALL (r, rs) => translateCall dest r rs
            | AN.IFX (r, e1, e2) => translateifA r e1 e2 (toRegA' dest)
 
@@ -176,7 +177,7 @@ struct
            | AN.WHILEX _        => (forEffectA' ex)
                                     o S (A.loadlit dest (AN.BOOL false))
            | AN.FUNCODE (rs, e) =>
-                       S (A.loadfunc dest (List.length rs) ((toReturnA' e []))))
+                       S (A.loadfunc dest (List.length rs) (toReturnA' e [])))
   and forEffectA' (ex: reg ANormalForm.exp) : instruction hughes_list  =
 (case ex
           of AN.LITERAL _ => empty
