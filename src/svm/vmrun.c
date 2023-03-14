@@ -307,21 +307,19 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 // We'd like to do this up top, but we need to make sure the 
                 // function exists first so we can print a helpful 
                 // debug message with a name we know to be valid!
+                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                 if (vm->stackpointer == MAX_STACK_FRAMES) {
-                    // TODO: I'd like to print the name of the offending 
-                    // function, but lastglobalset isn't necessarily going
-                    // to work. 
-                    // const char *funname = lastglobalset(vm, r0, fun, pc);
-
+                    fprintf(stderr, "Offending function:");
+                    fprintfunname(stderr, vm, mkVMFunctionValue(func));
                     runerror(vm, 
                         "attempting to call function in register %hhu"
                         " caused a Stack Overflow", r0);
                 }
-                // TODO Ask
-                // fprintf(stderr, "vm->R_window_start + r0 + 255: %u", vm->R_window_start + r0 + 255);
-                if (vm->R_window_start + r0 + 255 >= NUM_REGISTERS) {
-                    // TODO same here
-                    // const char *funname = lastglobalset(vm, r0, fun, pc);
+
+
+                if (vm->R_window_start + r0 + func->nregs > NUM_REGISTERS) {
+                    fprintf(stderr, "Offending function:");
+                    fprintfunname(stderr, vm, mkVMFunctionValue(func));
                     runerror(vm, 
                         "attempting to call function in register %hhu"
                         " caused a Register Window Overflow", r0);
@@ -332,7 +330,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 vm->Stack[vm->stackpointer++] = a;
 
 
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                 // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
 
                 assert(func->arity == n);
@@ -365,9 +362,12 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     "nil and was last set to function \"%s\".", r0, funname);
                     }
                 }
+
+                struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
+
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
-                    // TODO same here-- see Call
-                    // const char *funname = lastglobalset(vm, r0, fun, pc);
+                    fprintf(stderr, "Offending function:");
+                    fprintfunname(stderr, vm, mkVMFunctionValue(func));
                     runerror(vm, 
                       "attempting to tailcall function in register %hhu"
                       "caused a Register Window Overflow", r0);
@@ -378,7 +378,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     registers[i] = registers[r0 + i];
                 }
 
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
                 // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
                 assert(func->arity == n);
 

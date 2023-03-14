@@ -267,8 +267,6 @@ struct
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
 
     
-    (* <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" 
-      TODO decide if using ^ *)
 
     (* Accepted call syntax (in order): *)
     (* rX := call rY (rY+1, ..., rZ) *)
@@ -281,17 +279,18 @@ struct
     <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
             <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")"             
     <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> reg <~> the ")" 
+    <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many1 reg <~> the ")" 
     <|> eR2to3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <~> the ")" 
     <|> eR2to3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg
 
     <|> eR1 "return" <$> (the "return" >> reg)
+    
     (* Accepted tailcall syntax (in order): *)
     (* tailcall rX (rX+1, ..., rY) *)
     (* tailcall rX (rX+1 - rY) *)
     (* tailcall rX (rY) *)
     (* tailcall rX () *)
     (* tailcall rX  *)
-
     <|> eR2 "tailcall" <$> (the "tailcall" >> reg)
             <~> the "(" <~> reg <~> the "," <~> the "..." <~> the "," <*> reg <~> the ")" 
     <|> eR2 "tailcall" <$> (the "tailcall" >> reg)
@@ -301,15 +300,6 @@ struct
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
             <~> the "(" <~> the ")" 
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
-
-    (* <|> eRMany "tailcall" <$> (the "tailcall" >> reg) <~> the "(" <*> many reg <~> the ")" TODO AS THIS HAS TO BE BETTER *)
-    (* <|> eR2 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
-    <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> reg <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
-     (* <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
-            <~> the "(" <~> reg <~> the "," <~> the "...," <*> reg <~> the ")" TODO AS THIS HAS TO BE BETTER *)
-    <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many reg <~> the ")" (* TODO AS THIS HAS TO BE BETTER *)
-    <|> eR1 "return" <$> (the "return" >> reg)
-    <|> eRMany "tailcall" <$> (the "tailcall" >> reg) <~> the "(" <*> many reg <~> the ")" TODO AS THIS HAS TO BE BETTER *)
 
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence

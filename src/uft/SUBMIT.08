@@ -2,50 +2,71 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - I'm pattern-matching more at the top level, making good and sparse use of 
+    helpers, and generally working to understand the tools given. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - knproject.sml:128: I'm still using a random register here. I'd like to talk
+                       about what to put here instead, or if this waits until 
+                       k-normalization. 
+
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+  - knembed.sml:53-56: I've been wondering if these is correct: the "getglobal", 
+                      "setglobal", and final cases. Semantically they line up,
+                    and I've done them out by hand, but I wanted to check and 
+                    make sure they look sound. Thanks so much. 
+
+  - I still am not sure about my goto. File infinite.vo should infinitely loop,
+    and it does. I remember goto -1 being an infinite loop from a previous spec.
+    The gotos in the module 7 tests were all still 1 too far for 
+    me, so I'm still curious. 
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - Matt gave me his idea to lift 'if' translation into a 'translateIf' 
+    function in codegen.sml:46-61. Vivian and Stephanie were in OH asking 
+    the same primitive 'error' question as me, and their ideas, along with nr's,
+    helped form mine in knembed.sml:37-44. 
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
+  - I changed function-name printing using fprintfunname in vmrun.c:313, 322, 
+    370. 
+
+    I'm submitting a file re: the comment-under-function-in-assembly bug. It's
+    src/uft/comment-bug.vs, and my uft vs-vs fails on it. 
 
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - Yes
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - I'd like to see if anyone created a way to print a function name in a 
+    runerror message. Seperately, I'd like to see the goto semantics of others,
+    and if my vo files are consistent with theirs. 
 
 Again supposing you are not selected to present, are you willing to
 serve on the review panel? (Or if there are more than one of you, who
 is willing to serve?)
 
-  - 
+  - Yes! 
