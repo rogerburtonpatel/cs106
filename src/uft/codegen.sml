@@ -140,17 +140,18 @@ struct
             end
            | K.FUNCODE (rs, e) => empty)
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
+        (* toRegK' 255 e o S (A.return 255) *)
         (case e
-          of K.FUNCODE (reglist, ex) => (toRegK' r0 e) o (S (A.return r0))
-           | K.NAME n => S (A.return n)
+          of K.NAME n => S (A.return n)
            | K.IFX (r, e1, e2) => translateifK r e1 e2 toReturnK'
            | K.LETX (r, e1, e') => toRegK' r e1 o toReturnK' e'
            | K.BEGIN (e1, e2) => forEffectK' e1 o toReturnK' e2
            | K.SET (r, ex) => toRegK' r ex o S (A.return r)
-           | K.WHILEX (r, ex, ex') => toRegK' r0 e o S (A.return r0)
            | K.FUNCALL (reg, reglist) => 
                                   S (A.tailcall reg (List.last (reg::reglist))) 
           (* 'wildcard' *)
+           | K.WHILEX _ => toRegK' r0 e o S (A.return r0)
+           | K.FUNCODE _ => (toRegK' r0 e) o (S (A.return r0))
            | K.LITERAL _ => (toRegK' r0 e) o (S (A.return r0))
            | K.VMOP _ => (toRegK' r0 e) o (S (A.return r0))
            | K.VMOPLIT _ => (toRegK' r0 e) o (S (A.return r0)))

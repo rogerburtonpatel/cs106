@@ -1,0 +1,231 @@
+1. To claim this point, identify every line of code in codegen.sml
+that pattern matches on a K-normal form expression of the form if
+x then e₁ else e₂.  At each such line, analyze the roles of
+subexpressions e₁ and e₂, and answer these two questions:
+
+At that line, are e₁ and e₂ always in tail position, never in tail
+position, or potentially some of each?
+
+How do you know?
+
+> 
+    codgen.sml:105 -- never in tail position. 
+                      Here, `if` is being used in a register-setting context, 
+                      and therefore so are its children (we see this in the 
+                      tranlation with the passing of `toRegK'` to 
+                      `translateIfK`). A register assignment can never occur
+                      in tail position, because the terminating cases of tail
+                      position must always be a `call`, `return`, or `tailcall`.
+                      No matter how many times we branch off the base case
+                      of the body of a `funcode` into different forms like
+                      `if`, `let`, `begin`, or others, we must always terminate
+                      with a name (to return), a `call`, or a `tailcall`-
+                      otherwise we'd have an invalid function. 
+                      Ergo, because `if` is here being used in a register-
+                      setting context, it cannot be in tail position, and 
+                      because its children are being used in the same 
+                      inhereted context, neither can they.  
+
+    codegen.sml:127 -- never in tail position. 
+                    Very, very similar to above. Formally:
+                      Here, `if` is being used in an effectful context, 
+                      and therefore so are its children (we see this in the 
+                      tranlation with the passing of `forEffectK'` to 
+                      `translateIfK`). An effectful expression can never occur
+                      in tail position, because the terminating cases of tail
+                      position must always be a `call`, `return`, or `tailcall`.
+                      No matter how many times we branch off the base case
+                      of the body of a `funcode` into different forms like
+                      `if`, `let`, `begin`, or others, we must always terminate
+                      with a name (to return), a `call`, or a `tailcall`-
+                      otherwise we'd have an invalid function. 
+                      Ergo, because `if` is here being used in an effectful
+                     context, it cannot be in tail position, and 
+                      because its children are being used in the same 
+                      inhereted context, neither can they.  
+
+    codegen.sml:143 -- always in tail position. 
+                       Here we can look to the inductive definition of tail
+                       position. If we're arriving at this code, it means
+                       we're already looking at an expression in tail position:
+                       we must have come from 
+                       a) the only external call to toReturnK', at 
+                       codegen.sml:113-- this is the base case of a `funcode`'s
+                       body. 
+                       b) another call to `toReturnK'`: the inductive case. 
+                       Either way, we're arriving from a translation of an 
+                       expression we know to be in tail position. So, we know 
+                       that this `if` we're translating is also in tail 
+                       position. When we look to the proof, we find: 
+                       
+                       If if x then e₁ else e₂ is in tail position, 
+                       then both e₁ and e₂ are in tail position.
+
+                       Ergo, since we can prove that the `if` is in tail 
+                       position, we can prove that e₁ and e₂ are always in 
+                       tail position. 
+
+2. To claim this point, point to your code for part C of step
+6 (forEffect applied to a function-call form). In a sentence or
+two, explain which register you use as the destination register and
+why you chose that register.
+
+> 
+    codgen.sml:126. 
+        I know I can choose r0, because that's where the function itself 
+        will live during its execution; effectively, r0 is being killed by 
+        the call anyway. So I can return whatever junk I want to it, knowing 
+        that that register is already dead and I can't kill it any further. 
+
+3. To claim this point, identify the lines of your code that handle
+the case where an effectful primitive is used to set a register
+(part G in step 9).  Explain what behavior you chose and why.
+
+> 
+    codegen.sml:97-98, 102-103. Here, we do the special 
+    `let r0 := "error-msg" in (error r0)`. 
+
+    Initially, I had the code just throw the primitive to `forEffectK'`. But
+    I realized that if I wrote bad KNF this would be much harder to debug. 
+    A register intended to be set never would be, and my code might exhibit
+    some wonky undefined behavior. So I'm choosing for it to be a runtime error,
+    in Scheme fashion: maybe the bad code will never be reached! 
+
+4. Suppose that toReturn’ does not use any special rules and simply
+delegates to toReg’ as follows:
+
+fun toReturn e = toReg returnReg e  o  S (A.return returnReg) where
+returnReg can be any register that won’t be overwritten by toReg.
+To claim this point,
+
+Say what changes in the generated code.
+
+> 
+    You'd never get tailcalls! You couldn't generate the `tailcall` instruction, 
+    because you'd just evaluate `e` instead of checking its form and generating
+    special cases (most importantly tailcall from `FUNCALL` code) based on that. 
+
+
+
+Say what Scheme program you would write to observe the effect of
+the change at run time.
+
+> 
+    My submitted overtail.kn gets a lot more stack-overflowy if you make this 
+    change and pass in a large argument. Here it is again if needed: 
+
+(let ([$r0 (lambda ($r1)
+         (let* ([$r2 0]
+                [$r3 (= $r1 $r2)])
+               (if $r3
+                   $r2
+                  (let* ([$r2 1]
+                         [$r3 (- $r1 $r2)]
+                         [$r2 the_worst_zero_youve_ever_seen])
+                  ($r2 $r3)
+                      ))))])
+  (set the_worst_zero_youve_ever_seen $r0))
+
+(begin
+   (let* ([$r0 the_worst_zero_youve_ever_seen] [$r1 50000] [$r0 ($r0 $r1)]) 
+   (check $r0 '4-zeroed))
+   (let* ([$r0 0]) (expect $r0 'zero)))
+
+This is because we're making a `call` instead of a `tailcall`, quickly filling
+up the stack with nearly-identical frames. 
+
+You also get some strange lable generation with fallthorughs; 
+fact.kn exhibits this. 
+
+small side note: I really learned a lot from answering this question. 
+I appreciate you crafting the questions in our REFLECTIONs to help us find
+these insights. 
+
+5. To claim this point, identify one thing you changed in step 10 to
+ensure that your code generator is total. If all you had to do was
+add calls, refer back to the code you submitted for module 6 and
+note that the only uncovered cases were for calls.
+
+> 
+    Adding calls, paired with filling out `toReturnK'` to be able to 
+    generate sophisticated cases, including `tailcall`. I looked back on 
+    my module 6 code; every other change since then is beautification 
+    or slight behavior change, but nothing that would change the 
+    completeness of the code generator. The change is most visible at
+    codegen.sml:64-69, 104, 126 (calls), 140-153 (toReturnK'). 
+
+    small side note 2: I'm putting this version of A-normal form to rest 
+    and spending that time working on the other version in my seperate branch.
+    So I'm not explicitly talking about it in my REFLECTION, and treating 
+    my uft as though it only had KNF until I pull in the complete ANF branch.
+
+6. This term we split code generation over two modules (6 and 8), with
+the implementation of call instructions (module 7) in between. I’m
+considering alternatives:
+
+The course as it is:
+
+K-normal form 
+Code generation without calls or returns 
+Function calls in the SVM 
+Code generation for calls and returns 
+
+Do SVM calls first:
+
+Function calls in the SVM 
+K-normal form 
+Code generation, including calls and returns 
+Depth points (or other use of a free week) 
+
+Do UFT calls first:
+
+K-normal form 
+Code generation, including calls and returns 
+Function calls in the SVM 
+Depth points (or other use of a free week) 
+
+To claim this point, you must say which of the potential alternatives 
+might improve on your current experience and why. 
+And if you prefer either of the alternatives that free up a week,
+you must say where in the semester that free week should be placed—
+and why.
+
+You must explain your reasoning in enough depth that I get some
+insight into your experience.
+
+> 
+    After thinking on this, I believe the course is best structured the way it
+    is, for these reasons: 
+
+    - Codgen is a hefty module with the amount of translation-rule-based-coding
+      in addition to the testing. 
+      They're skills we get from the type homeworks in 105, but they still take
+      a while. 
+      To add returns might push the module from fun to tedious. 
+      The alternative would be to have Codgen be a 2-week module, but this 
+      would disrupt the workflow of the course. 
+
+    - The 2nd option would mean doing function calls after assembly and before
+      KNF; calls don't relate to either at the time we would get to them. 
+      I think they would feel very out of place. 
+    
+    - The 3rd option is the best outside of keeping things as they are, but 
+      has the problem of the codgen week being very heavy and then having 
+      an airy week for depth points, which I don't right now feel is needed:
+      the lighter svm function and call-codgen weeks for modules 7 and 8 
+      have given time to do depth points on the side. 
+
+    All that said, I know you mentioned wanting to address this since people 
+    were asking about it, and we all have talked and said we really appreciate
+    it. I think having more notes in the codgen spec that specifically 
+    address the problem cases, and why/how they'll be addressed later: 
+    
+    K.FUNCALL 
+    Arity mismatching
+    Primitives in the wrong context
+
+    I think all of these can be handled by moving some items, like step 9
+    of module 8, to module 6, and by adding some assurances that all that 
+    isn't covered now will be in the future. 
+
+    Thanks!
