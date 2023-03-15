@@ -55,10 +55,20 @@ fun freshName name = "y"
 (* A[[let x = (while y := e do e') in ex']] = 
    ((while y := e do e'); let x = #f in ex') *)
 
-                                   
-(* TODO: good to break up normalize/exp/simpleExp like this, or squash? 
-can't really squash simpleExp, but other two could- i like the errors though *)
+(* A[[let x = (e1; e2) in ex']] = 
+   (e1; let x = e2 in ex') *)
 
+(* A[[let x = (y := e) in ex']] = 
+   (y := e; let x = y in ex') *)
+
+
+(* let y = (let x = e in e’) in body
+≡ { provided y ≠ x and x ∉ fv(body) }
+  let x = e in (let y = e’ in body) *)
+
+(* MAJOR TODOS: 
+   1. check over function structure 
+   2. free variables *)
   fun exp (K.LITERAL l) = A.SIMPLE (A.LITERAL l)
     | exp (K.NAME n)    = A.SIMPLE (A.NAME n)
     | exp (K.VMOP (p, ns)) = A.SIMPLE (A.VMOP (p, ns))
