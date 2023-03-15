@@ -52,6 +52,9 @@ fun freshName name = "y"
                                                         b
                                               (let x = e2 in ex'))]] *)
 
+(* A[[let x = (while y := e do e') in ex']] = 
+   ((while y := e do e'); let x = #f in ex') *)
+
                                    
 (* TODO: good to break up normalize/exp/simpleExp like this, or squash? 
 can't really squash simpleExp, but other two could- i like the errors though *)
@@ -62,22 +65,48 @@ can't really squash simpleExp, but other two could- i like the errors though *)
     | exp (K.VMOPLIT (p, ns, l)) = A.SIMPLE (A.VMOPLIT (p, ns, l))
     | exp (K.FUNCALL (n, ns)) = A.SIMPLE (A.FUNCALL (n, ns))
     | exp (K.FUNCODE (ns, e)) = A.SIMPLE (A.FUNCODE (ns, exp e))
+    
+    | exp (K.SET (n, e)) = A.SET (n, exp e)
+    
     | exp (K.LETX (x, e, e')) = normalizeLet x (exp e) (exp e')
+    | exp (K.IFX (x, e1, e2)) = normalizeIf x (exp e1) (exp e2)
+    | exp (K.BEGIN (e1, e2)) = normalizeBegin (exp e1) (exp e2)
+    | exp (K.WHILEX (x, e, e')) = normalizeWhile x (exp e) (exp e')
+
+  and normalize (A.SIMPLE e) = A.SIMPLE e
+                      (* todo again, ask- do we need this delegator function? *)
+    | normalize (A.LETX (x, e, e'))   = normalizeLet x (A.SIMPLE e) e'
+    | normalize (A.SET (x, e))        = normalizeSet x e
+    | normalize (A.IFX (x, e1, e2))   = normalizeIf x e1 e2
+    | normalize (A.BEGIN (e1, e2))    = normalizeBegin e1 e2
+    | normalize (A.WHILEX (x, e, e')) = normalizeWhile x e e'
     
-    | exp  _ = Impossible.impossible "simpleExp used on non-simple expr!"
+    (* https://www.cs.tufts.edu/cs/106/modules/06Atranslation.html#translations-of-let-bindings *)
+
   and normalizeLet x (A.LETX (y, ey, ey')) ex' = 
-                  
-
-
-                normalizeLet (A.LETX (y, ey, (A.LETX (x, ey', ex'))))
-    | normalizeLet (A.LETX (x, (A.IFX (y, e1, e2)), ex')) = 
-                normalizeLet (A.IFX (y, (A.LETX (x, e1, ex')), (A.LETX (x, e2, ex'))))
-    | normalizeLet (A.LETX (x, (A.WHILEX (y, e, e')), ex')) = 
-                Impossible.impossible "let-while"
-    | normalizeLet (A.LETX (x, (A.BEGIN (e1, e2)), ex')) = 
-                normalizeLet (A.BEGIN (e1, (A.LETX (x, e2, ex'))))
-    | normalizeLet (A.LETX   (x, A.SIMPLE e, e'))  = A.LETX   (x, e, exp e')                                    
-    
+                                    (* todo: this simple wrapping ok? *)
+                     normalizeLet y (A.SIMPLE ey) (normalizeLet x ey' ex')
+                     (* normalizeLet (A.LETX (y, ey, (A.LETX (x, ey', ex')))) *)
+    | normalizeLet x (A.IFX (y, e1, e2)) ex' = 
+                     normalizeIf y (normalizeLet x e1 ex') (normalizeLet x e2 ex')
+                (* normalizeLet (A.IFX (y, (A.LETX (x, e1, ex')), (A.LETX (x, e2, ex')))) *)
+    | normalizeLet x (A.WHILEX (y, e, e')) ex' = 
+            normalizeBegin (normalizeWhile y (normalize e) (normalize e'))
+                          (normalizeLet x (A.SIMPLE (A.LITERAL (A.BOOL false))) 
+                                          (normalize ex'))
+    | normalizeLet x (A.BEGIN (e1, e2)) ex' = 
+                normalizeBegin e1 (normalizeLet x e2 ex')
+    | normalizeLet x (A.SET (n, e)) ex' = 
+                normalizeBegin (A.SET (n, e)) (normalizeLet x (A.SIMPLE (A.NAME n)) ex')
+                (* normalizeLet (A.BEGIN (e1, (A.LETX (x, e2, ex')))) *)
+                (* TODO need to normalize e' ? *)
+                (* to talk about: we normalize e' bc it might have illegal forms *)
+                (* look at a test that might prove this! *)
+    | normalizeLet x (A.SIMPLE e) e'  = A.LETX (x, e, normalize e')                            
+  and normalizeIf x e1 e2   = A.IFX (x, normalize e1, normalize e2)
+  and normalizeSet x e      = A.SET (x, normalize e)
+  and normalizeBegin e1 e2  = A.BEGIN (normalize e1, normalize e2)
+  and normalizeWhile x e e' = A.WHILEX (x, normalize e, normalize e')
     (* float ifs *)
     (* float whiles *)
     (* float begins *)

@@ -1,0 +1,53 @@
+; base let case 
+(let ([r0 2]) (println r0))
+; one nested let 
+(let ([r0 
+    (let ([r1 2]) r1)]) 
+(println r0))
+; two nested lets 
+(let ([r0 
+    (let ([r1 
+        (let ([r2 2]) r2)]) r1)]) 
+(println r0))
+
+; let with bad case in the tail 
+(let ([r3 2]) 
+    (let ([r0 
+        (let ([r1 2]) (+ r3 r3))]) 
+(println r0)))
+
+; let with double bad case in the tail 
+(let ([r0 2]) 
+    (let ([r0 
+        (let ([r1 
+            (let ([r2 4]) r2)]) r1)]) 
+(println r0)))
+
+; really awful stuff
+(let (
+    [r0 (let (
+        [r1 (let ([r2 2]) r2)]) r1)]) 
+(let ([r0 
+    (let ([r1 
+        (let ([r2 4]) r2)]) r1)]) (println r0)))
+
+; base if case
+(let* (
+    [r0 0] 
+    [r1 1] 
+    [r2 2]) 
+(if r0 r1 r2))
+; ; one nested if
+(let* (
+    [r0 0] 
+    [r1 1] 
+    [r2 2] 
+    [r3 (if r0 r1 r2)]) 
+(println r3))
+
+; if, set, begin, and while
+
+(let* (
+    [r1 1]
+    [r0 (set r1 r1)])
+(begin (println r1) (println r0)))
