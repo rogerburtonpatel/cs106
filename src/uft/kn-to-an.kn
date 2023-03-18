@@ -51,3 +51,9 @@
     [r1 1]
     [r0 (set r1 r1)])
 (begin (println r1) (println r0)))
+
+
+(let* (
+    [r1 1])
+
+(begin (begin (println r1) (println r1)) (println r1)))

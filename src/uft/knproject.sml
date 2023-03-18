@@ -61,7 +61,7 @@ struct
           else error "while name bound in let must be the one called in \
                                                   \projection to K-Normal form!"
         | _ => error "ill-formed let binding in while expression") 
-    | exp (X.BEGIN (es)) = 
+    | exp (X.BEGIN es) = 
       (case es 
         of [e1, e2] => curry K.BEGIN <$> exp e1 <*> exp e2
          | _ => error "begin must have only two expressions in projection to \

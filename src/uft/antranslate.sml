@@ -37,7 +37,7 @@ struct
 
 (* val exp   : UnambiguousVScheme.exp -> string ANormalForm.exp Error.error *)
 
-fun freshName name = "y"
+fun freshName name freeNames = "y"
 
 
   (* fun value (X.SYM s) = A.STRING s
@@ -69,54 +69,64 @@ fun freshName name = "y"
 (* MAJOR TODOS: 
    1. check over function structure 
    2. free variables *)
-  fun exp (K.LITERAL l) = A.SIMPLE (A.LITERAL l)
-    | exp (K.NAME n)    = A.SIMPLE (A.NAME n)
-    | exp (K.VMOP (p, ns)) = A.SIMPLE (A.VMOP (p, ns))
+  fun exp (K.LITERAL l)          = A.SIMPLE (A.LITERAL l)
+    | exp (K.NAME n)             = A.SIMPLE (A.NAME n)
+    | exp (K.VMOP (p, ns))       = A.SIMPLE (A.VMOP (p, ns))
     | exp (K.VMOPLIT (p, ns, l)) = A.SIMPLE (A.VMOPLIT (p, ns, l))
-    | exp (K.FUNCALL (n, ns)) = A.SIMPLE (A.FUNCALL (n, ns))
-    | exp (K.FUNCODE (ns, e)) = A.SIMPLE (A.FUNCODE (ns, exp e))
+    | exp (K.FUNCALL (n, ns))    = A.SIMPLE (A.FUNCALL (n, ns))
+    | exp (K.FUNCODE (ns, e))    = A.SIMPLE (A.FUNCODE (ns, exp e))
     
     | exp (K.SET (n, e)) = A.SET (n, exp e)
     
-    | exp (K.LETX (x, e, e')) = normalizeLet x (exp e) (exp e')
-    | exp (K.IFX (x, e1, e2)) = normalizeIf x (exp e1) (exp e2)
-    | exp (K.BEGIN (e1, e2)) = normalizeBegin (exp e1) (exp e2)
+    | exp (K.LETX (x, e, e'))   = normalizeLet x (exp e) (exp e')
+    | exp (K.IFX (x, e1, e2))   = normalizeIf x (exp e1) (exp e2)
+    | exp (K.BEGIN (e1, e2))    = normalizeBegin (exp e1) (exp e2)
     | exp (K.WHILEX (x, e, e')) = normalizeWhile x (exp e) (exp e')
 
-  and normalize (A.SIMPLE e) = A.SIMPLE e
+  (* and normalize (A.SIMPLE e) = A.SIMPLE e
                       (* todo again, ask- do we need this delegator function? *)
     | normalize (A.LETX (x, e, e'))   = normalizeLet x (A.SIMPLE e) e'
     | normalize (A.SET (x, e))        = normalizeSet x e
     | normalize (A.IFX (x, e1, e2))   = normalizeIf x e1 e2
     | normalize (A.BEGIN (e1, e2))    = normalizeBegin e1 e2
-    | normalize (A.WHILEX (x, e, e')) = normalizeWhile x e e'
+    | normalize (A.WHILEX (x, e, e')) = normalizeWhile x e e' *)
     
     (* https://www.cs.tufts.edu/cs/106/modules/06Atranslation.html#translations-of-let-bindings *)
 
+  (* TODO needs freein check *)
   and normalizeLet x (A.LETX (y, ey, ey')) ex' = 
-                                    (* todo: this simple wrapping ok? *)
-                     normalizeLet y (A.SIMPLE ey) (normalizeLet x ey' ex')
-                     (* normalizeLet (A.LETX (y, ey, (A.LETX (x, ey', ex')))) *)
+                      let val _ = TextIO.output (TextIO.stdOut, "normalizing on outer " ^ x ^ ", inner "  ^ y ^ "\n")
+                      in 
+                      (A.LETX (y, ey, normalizeLet x ey' ex'))
+                      end
+                     (* ask about where to look for free variables: if you 
+                        keep normalizing and floating, can it affect the 
+                        upper levels? *)
+  (* TODO needs freein check *)
     | normalizeLet x (A.IFX (y, e1, e2)) ex' = 
-                     normalizeIf y (normalizeLet x e1 ex') (normalizeLet x e2 ex')
-                (* normalizeLet (A.IFX (y, (A.LETX (x, e1, ex')), (A.LETX (x, e2, ex')))) *)
+                     A.IFX (y, (normalizeLet x e1 ex'), (normalizeLet x e2 ex'))
+
+  (* TODO needs freein check *)
     | normalizeLet x (A.WHILEX (y, e, e')) ex' = 
-            normalizeBegin (normalizeWhile y (normalize e) (normalize e'))
-                          (normalizeLet x (A.SIMPLE (A.LITERAL (A.BOOL false))) 
-                                          (normalize ex'))
+            A.BEGIN ((normalizeWhile y e e'),
+                          (normalizeLet x 
+                                        (A.SIMPLE (A.LITERAL (A.BOOL false))))
+                                        ex'
+                    )
     | normalizeLet x (A.BEGIN (e1, e2)) ex' = 
-                normalizeBegin e1 (normalizeLet x e2 ex')
+                A.BEGIN( e1, (normalizeLet x e2 ex'))
     | normalizeLet x (A.SET (n, e)) ex' = 
-                normalizeBegin (A.SET (n, e)) (normalizeLet x (A.SIMPLE (A.NAME n)) ex')
-                (* normalizeLet (A.BEGIN (e1, (A.LETX (x, e2, ex')))) *)
-                (* TODO need to normalize e' ? *)
-                (* to talk about: we normalize e' bc it might have illegal forms *)
-                (* look at a test that might prove this! *)
-    | normalizeLet x (A.SIMPLE e) e'  = A.LETX (x, e, normalize e')                            
-  and normalizeIf x e1 e2   = A.IFX (x, normalize e1, normalize e2)
-  and normalizeSet x e      = A.SET (x, normalize e)
-  and normalizeBegin e1 e2  = A.BEGIN (normalize e1, normalize e2)
-  and normalizeWhile x e e' = A.WHILEX (x, normalize e, normalize e')
+                A.BEGIN ((A.SET (n,  e)), 
+                        (normalizeLet x (A.SIMPLE (A.NAME n)) ex'))
+
+    | normalizeLet x (A.SIMPLE e) e'  = A.LETX (x, e, e')  
+
+  (* todo make these more interesting *)
+  and normalizeIf x e1 e2   = A.IFX (x, e1, e2)
+  and normalizeSet x e      = A.SET (x, e)
+  and normalizeBegin (A.BEGIN (e1, e2)) e3 = normalizeBegin e1 (normalizeBegin e2 e3)
+    | normalizeBegin e1 e2 = A.BEGIN (e1, e2)
+  and normalizeWhile x e e' = A.WHILEX (x, e, e')
     (* float ifs *)
     (* float whiles *)
     (* float begins *)
