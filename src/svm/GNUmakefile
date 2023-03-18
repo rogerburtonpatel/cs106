@@ -3,9 +3,12 @@ TOP := ../..
 BUILD = $(TOP)/build
 BIN = $(TOP)/bin
 
+TESTERS = arraylist bignums
+
 UNITS = testfuns vmheap vmrun vmstate vmrun vmstring value iformat \
         printbuf print check-expect testfuns vmerror argparse
 MAINS = svm-test
+
 
 # LDLIBS = -lcii40
 
@@ -19,6 +22,9 @@ MAINS += svm svm-loader-instructions
 
 MAINS += svm-dis
 
+MAINS += test-arraylist test-bignums
+
+TESTOBJ := $(TESTERS:%=$(BUILD)/%.o)
 
 OBJ := $(UNITS:%=$(BUILD)/%.o)
 MOBJ := $(MAINS:%=$(BUILD)/%.o)
@@ -38,7 +44,7 @@ all: $(EXE)
 obj: $(OBJ) $(MOBJ)
 
 clean:
-	rm -f $(OBJ) $(MOBJ) $(DEPS) $(EXE)
+	rm -f $(OBJ) $(MOBJ) $(DEPS) $(EXE) $(TESTOBJ)
 
 
 .PHONY: show
@@ -52,6 +58,17 @@ svm-test: $(BIN)/svm-test
 $(BIN)/svm-test: $(OBJ) $(BUILD)/svm-test.o
 	gcc $(CFLAGS) -o $@ $^ -lm
 
+.PHONY: test-arraylist
+test-arraylist: $(BIN)/test-arraylist
+
+$(BIN)/test-arraylist: $(TESTOBJ) $(BUILD)/test-arraylist.o
+	gcc $(CFLAGS) -o $@ $^ -lm
+
+.PHONY: test-bignums
+test-bignums: $(BIN)/test-bignums 
+
+$(BIN)/test-bignums: $(TESTOBJ) $(BUILD)/test-bignums.o
+	gcc $(CFLAGS) -o $@ $^ -lm
 
 .PHONY: svm
 

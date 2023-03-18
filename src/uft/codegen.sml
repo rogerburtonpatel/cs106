@@ -82,10 +82,6 @@ struct
     else L (A.mkerror ("bad number of arguments in primitive " ^ P.name p))
 
 
-    (* S (A.loadlit r0 
-        (K.STRING ("bad number of arguments in primitive " ^ P.name p)))
-    o S (A.effect P.error [r0]) *)
-
 (* TODO ADD GLOBALS IF NEEDED? ask *)
   fun toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
         (case ex
@@ -144,6 +140,7 @@ struct
            | K.LETX (r, e1, e') => toRegK' r e1 o toReturnK' e'
            | K.BEGIN (e1, e2) => forEffectK' e1 o toReturnK' e2
            | K.SET (r, ex) => toRegK' r ex o S (A.return r)
+           (* TODO here we'll add tail recursion optimization *)
            | K.FUNCALL (reg, reglist) => 
                                   S (A.tailcall reg (List.last (reg::reglist))) 
           (* 'wildcard' *)
