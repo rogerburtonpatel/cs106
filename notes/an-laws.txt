@@ -1,3 +1,8 @@
+TODO ASK: 
+In our own compiler, we are going to arrange things upstream so that nested let expressions can be floated without renaming x.
+
+So, how much freeIn checking do we need to do? 
+
 
 𝒜⟦let x = e in e'⟧ = normalizeLet ⟦x⟧ (𝒜⟦e⟧)  (𝒜⟦e'⟧)
 normalizeLet ⟦x⟧ ⟦let y = e₁ in e₂⟧ ⟦e₃⟧ = ⟦let y = e₁ in $(normalizeLet ⟦x⟧ ⟦e₂⟧ ⟦e₃⟧)⟧, where y is not free in e₃
