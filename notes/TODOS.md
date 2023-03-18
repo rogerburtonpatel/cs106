@@ -6,8 +6,6 @@ Ask about setting globals to literals
 
 comment parser broken-- what's wrong with my code?
 
-testing for check-error
-
 qs: 
 Projection to KNF should probably reject SETGLOBAL in a value (toReg) context.
 
@@ -17,6 +15,28 @@ Projection to KNF should probably reject SETGLOBAL in a value (toReg) context.
 knproject.sml:71
 
 
+
+# Depth
+
+# Bignums 
+1. build bignums module 
+   - new, free
+   - add, sub, mult, div, idiv, mod. 
+   - print
+   - ask about floating point
+
+
+Dynamic compilation and loading [2 points]. 
+μScheme and vScheme both have a use syntactic form, which tells the interpreter 
+to load and run code. This goal is to implement two machine instructions, one to
+ call popen and read from a pipe, and one to load a list of modules from an open
+  file descriptor. These two instructions can then eventually be used to call 
+  the compiler and load the results. These instructions can be tested now, and 
+  then by the time of module 4, they can be used to implement a use function.
+
+
+
+# A-Normal Form
 
 # Depth
 
@@ -89,11 +109,17 @@ have illegal forms?
 # Random todos
 Add <:> operator : curry op cons + <$>
 Ask about literal after @: can we have it, bc we use regs?
+# Random todos
+Add <:> operator : curry op cons + <$>
+Ask about literal after @: can we have it, bc we use regs?
 
 
 
 # Intel
 
+I recommend that your loader call svmdebug_value("unparse") to see if unparsing 
+is requested, and if so, have get_instruction call printasm on every 
+instruction that the loader reads.
 I recommend that your loader call svmdebug_value("unparse") to see if unparsing 
 is requested, and if so, have get_instruction call printasm on every 
 instruction that the loader reads.
@@ -109,10 +135,11 @@ If you want a rant on the topic, ask me. re: parsing. Maybe?
             //     vmb->nslots = 0;
 
             // }
+            // }
 
 
 
-# Quotes
+# # Quotes
 
 "All of the words you said sounded sensible, but there were so many of them 
 I can't hold them all in my head at once."
