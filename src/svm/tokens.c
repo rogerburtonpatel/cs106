@@ -197,6 +197,7 @@ Tokens tokens(const char *s) {
       ;
     char *t;                        // first nondigit in s
     errno = 0;
+    // TODO add bignums here
     long long l = strtoll(s, &t, 0);      // value of digits in s, if any
     if (t == q && t > p) {          // the token is all digits
         if (errno == ERANGE) {
