@@ -17,7 +17,6 @@ structure ANormalForm = struct
     | WHILEX  of 'a * 'a exp * 'a exp 
     | SET     of 'a * 'a exp
     | SIMPLE  of 'a simple_exp
-(* TODO move set to non-simple *)
   and 'a simple_exp
   = LITERAL of literal 
   | NAME of 'a 

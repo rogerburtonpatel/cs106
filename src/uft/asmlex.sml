@@ -35,7 +35,7 @@ struct
   datatype shape = datatype AsmToken.shape
   datatype token = datatype AsmToken.token
 
-  val dq = #"\""   (* double quote *)
+  val dq = #"\""   (* double quote  *) 
 
   fun ceeMinus #"~" = #"-"
     | ceeMinus c    = c

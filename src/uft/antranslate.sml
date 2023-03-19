@@ -37,7 +37,10 @@ struct
 
 (* val exp   : UnambiguousVScheme.exp -> string ANormalForm.exp Error.error *)
 
-fun freshName name freeNames = "y"
+fun freshName name badnames = "y"
+(* use regOfName, and search with actual name *)
+      (* we'll reconstruct the actual name for efficient search *)
+
 
 
   (* fun value (X.SYM s) = A.STRING s
@@ -69,6 +72,52 @@ fun freshName name freeNames = "y"
 (* MAJOR TODOS: 
    1. check over function structure 
    2. free variables *)
+
+  fun member y []      = false
+    | member y (z::zs) = y = z orelse member y zs
+
+fun freeIn exp y =
+  let fun member y []        = false
+        | member y (z::zs)   = y = z orelse member y zs
+      fun free (A.SIMPLE e) = 
+        (case e 
+          of A.LITERAL _         => false
+          | A.NAME n             => n = y
+          | A.VMOP (p, ns)       => member y ns
+          | A.VMOPLIT (p, ns, l) => member y ns
+          | A.FUNCALL (n, ns)    => member y (n::ns)
+          | A.FUNCODE (ns, body) => (not (member y ns)) andalso free body)
+
+        | free (A.SET (n, e))        = n = y orelse free e
+        | free (A.IFX (n, e1, e2))   = n = y orelse free e1 orelse free e2
+        | free (A.WHILEX (n, e, e')) = n = y orelse free e orelse free e'
+        | free (A.BEGIN (e1, e2))    = free e1 orelse free e2
+        | free (A.LETX (n, e, e'))   = free (A.SIMPLE e) orelse 
+                                        (n <> y andalso free e')
+  in  free exp
+  end
+
+
+fun freeVars (A.IFX (_, e1, e2)) = freeVars e1 @ freeVars e2
+  | freeVars (A.LETX (x, se, e)) = freeVars (A.SIMPLE se) @ 
+                                   List.filter (fn y => x <> y) (freeVars e)
+  | freeVars (A.BEGIN (e1, e2)) = freeVars e1 @ freeVars e2
+  | freeVars (A.WHILEX (_, e1, e2)) = freeVars e1 @ freeVars e2
+  | freeVars (A.SET (_, e)) = freeVars e
+    
+  | freeVars (A.SIMPLE se) =
+    (case se 
+      of A.LITERAL(_) => []
+       | A.NAME(x) => [x]
+       (* TODO: are all these names free? *)
+       | A.VMOP(_, xs) => xs
+       | A.VMOPLIT(_, xs, _) => xs
+       | A.FUNCALL(x, xs) => (x::xs)
+       | A.FUNCODE(xs, e) => List.filter (fn y => 
+                                           not (member y xs))
+                                         (freeVars e))
+
+
   fun exp (K.LITERAL l)          = A.SIMPLE (A.LITERAL l)
     | exp (K.NAME n)             = A.SIMPLE (A.NAME n)
     | exp (K.VMOP (p, ns))       = A.SIMPLE (A.VMOP (p, ns))
@@ -96,8 +145,12 @@ fun freshName name freeNames = "y"
   (* TODO needs freein check *)
   and normalizeLet x (A.LETX (y, ey, ey')) ex' = 
                       let val _ = TextIO.output (TextIO.stdOut, "normalizing on outer " ^ x ^ ", inner "  ^ y ^ "\n")
+                      val freevars = freeVars ex'
+                      val y_name = if x <> y andalso (not (member y freevars))
+                                   then y
+                                   else freshName y (x::freevars)
                       in 
-                      (A.LETX (y, ey, normalizeLet x ey' ex'))
+                      (A.LETX (y_name, ey, normalizeLet x ey' ex'))
                       end
                      (* ask about where to look for free variables: if you 
                         keep normalizing and floating, can it affect the 
