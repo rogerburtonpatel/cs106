@@ -98,12 +98,12 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 expect(vm, AS_CSTRING(vm, v), mkBooleanValue(false));
                 break;
             }
-            case BeginErrorCheck: {
+            case BeginCheckError: {
                 begin_error_check(vm);
                 pc++; /* SKIP THE GOTO: TODO REMOVE IF LABEL ELIM */
                 break;
             }            
-            case CheckError: {
+            case EndCheckError: {
                 v = literal_value(vm, uYZ(curr_instr));
                 check_error(vm, AS_CSTRING(vm, v));
                 break;
