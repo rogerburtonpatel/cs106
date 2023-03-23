@@ -104,6 +104,17 @@ Instruction parseR1LIT(VMState vm, Opcode opcode, Tokens operands, unsigned *max
     return eR1U16(opcode, reg, litslot);
 }
 
+/* Encode load literal instruction but with no register involved */
+Instruction parseLIT(VMState vm, Opcode opcode, Tokens operands, unsigned *maxreg)
+{
+    (void)maxreg;
+    initnames(); // before comparing names, you must call this function
+    Value litv = get_literal(&operands, NULL);
+    uint32_t litslot = literal_slot(vm, litv);
+    assert(litslot == (uint16_t) litslot);
+    assert(operands == NULL);
+    return eR1U16(opcode, 0, litslot);
+}
 
 /* Encode global variable declaration instruction */
 Instruction parseR1GLO(VMState vm, Opcode opcode, Tokens operands, unsigned *maxreg) {

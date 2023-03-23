@@ -252,6 +252,10 @@ struct
 
     <|> eLR "check" <$> (the "check" >> string') <~> optional (the ",") <*> reg
     <|> eLR "expect" <$> (the "expect" >> string') <~> optional (the ",") <*> reg
+
+    <|> succeed (eR0 "begin-check-error") <~> the "begin-check-error"
+    <|> eL "end-check-error" <$> (the "end-check-error" >> string')
+    (* <|> eR1 "begin-check-error" <$> reg *)
                             
     <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
     <|> succeed (eR0 "halt") <~> the "halt"
@@ -265,6 +269,8 @@ struct
     <|> parseOps unopParser unops
 
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
+
+
 
     
 
@@ -369,9 +375,9 @@ struct
 
 (* factor out binops/unops if you can. also factor out object code wrapper *)
 
-  fun unparse1 (A.OBJECT_CODE (rs)) =
+  fun unparse1 (A.OBJECT_CODE rs) =
       (case rs 
-        of (O.REGS (opAndRegs)) =>
+        of (O.REGS opAndRegs) =>
           (case opAndRegs 
             of ("+", [x, y, z]) =>
               spaceSep [reg x, ":=", reg y, "+", reg z]
@@ -451,21 +457,23 @@ struct
                   then ""
                   else if z = y + 1
                   then reg z
-                  else spaceSep ([reg (y + 1) , "-", reg z])
-              in spaceSep([reg x, ":=", "call", reg y, "(", args, ")"])
+                  else spaceSep [reg (y + 1) , "-", reg z]
+              in spaceSep [reg x, ":=", "call", reg y, "(", args, ")"]
               end
 
             | ("return", [x]) =>
-              spaceSep (["return", reg x])
+              spaceSep ["return", reg x]
             | ("tailcall", [x]) =>
-              spaceSep (["tailcall", reg x, "( )"])
+              spaceSep ["tailcall", reg x, "( )"]
             | ("tailcall", (x::ys)) =>
               spaceSep (["tailcall", reg x, "("] @ map reg ys @ [")"])
 
+            | ("begin-check-error", []) => "begin-check-error"
+            
             | ("halt", []) => "halt"
             | _ => 
               "an unknown register-based assembly-code instruction") 
-        | (O.REGSLIT (regAndLit)) =>
+        | (O.REGSLIT regAndLit) =>
           (case regAndLit 
           of ("loadliteral", [x], l) =>
             spaceSep [reg x, ":=", unparse_lit l]
@@ -479,6 +487,9 @@ struct
             spaceSep [reg x, ":=", "_G[", unparse_lit name, "]"]
           | ("setglobal", [x], name) =>
             spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
+          | ("end-check-error", [], name) =>
+            spaceSep ["end-check-error", unparse_lit name]
+
           | _ => "an unknown register-string based assembly-code instruction")
         | _ => "an unknown assembly-code instruction")
     | unparse1 (A.DEFLABEL s) =
