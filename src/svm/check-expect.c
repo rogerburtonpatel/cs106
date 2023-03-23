@@ -15,11 +15,14 @@
 #include "print.h"
 
 #include "vmstate.h"
+#include "vmerror.h"
 
 static char *checks;
 
 static int ntests = 0;
 static int npassed = 0;
+
+extern jmp_buf testjmp;
 
 static char *copy(const char *s) {
   int n = strlen(s);
@@ -58,6 +61,33 @@ void check_assert(const char *source, Value v) {
   } else {
     npassed++;
   }
+}
+
+void begin_error_check(struct VMState *vm)
+{
+    ntests++;
+    NHANDLERS++;
+    /* if not familiar with the arcane setjmp/longjmp form: 
+       this will return 0 when we make the 'jump-to point,' and 
+       nonzero if we jump to it with longjmp. */
+    int havejumped = setjmp(testjmp);
+    if (havejumped) {
+        npassed++;
+    } else {
+        // push special frame
+    }
+}
+
+/* if we get here, the test has failed. 
+    gives a nice error msg and uninstalls handler so
+   subsequent errors will crash if they should. */
+void check_error(struct VMState *vm, const char *source)
+{
+    (void) vm;
+    fprintf(stderr, "Check-error failed: evaluating \"%s\" was expected to "
+                    "produce an error, but evaluation terminated "
+                    "normally.\n", source);
+    NHANDLERS--;
 }
 
 void report_unit_tests(void) {

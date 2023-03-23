@@ -31,6 +31,10 @@
 
 #define CANDUMP 1
 
+// TODO remove if not needed
+// /* used for runerror stack rewinding */
+// int ERRORNO = -1;
+
 void vmrun(VMState vm, struct VMFunction *fun) {
     
     if (fun->size < 1) {
@@ -94,7 +98,16 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 expect(vm, AS_CSTRING(vm, v), mkBooleanValue(false));
                 break;
             }
-
+            case BeginErrorCheck: {
+                begin_error_check(vm);
+                pc++; /* SKIP THE GOTO: TODO REMOVE IF LABEL ELIM */
+                break;
+            }            
+            case CheckError: {
+                v = literal_value(vm, uYZ(curr_instr));
+                check_error(vm, AS_CSTRING(vm, v));
+                break;
+            }
             /* ARITH- R3 */
             case Add:
                 registers[uX(curr_instr)] = 
@@ -270,6 +283,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 Activation a = vm->Stack[--vm->stackpointer];
+                
+                if (a.dest_reg_idx < 0) {
+                    runerror(vm, "attempting to return register %hhu, "
+                                 "off of an error frame", uX(curr_instr));
+                }
 
                 Value return_value = registers[uX(curr_instr)];
 
@@ -288,7 +306,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint8_t rn = uZ(curr_instr);
                 uint8_t n  = rn - r0;
 
-                uint32_t dest_reg_idx = uX(curr_instr);
+                uint8_t dest_reg_idx = uX(curr_instr);
 
 
                 // check for invalid function 

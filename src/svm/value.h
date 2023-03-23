@@ -175,7 +175,7 @@ struct CFunction { // a closure
 #define GCVALIDATE(E) (E) // in module 11, will replace with actual validation
 #endif
 
-extern _Noreturn void typeerror(VMState state, const char *expected, Value got,
+extern void typeerror(VMState state, const char *expected, Value got,
                                 const char *file, int line);
 
 
