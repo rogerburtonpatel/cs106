@@ -288,7 +288,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint8_t rn = uZ(curr_instr);
                 uint8_t n  = rn - r0;
 
-                uint32_t dest_reg_idx = uX(curr_instr);
+                uint8_t dest_reg_idx = uX(curr_instr);
 
 
                 // check for invalid function 
