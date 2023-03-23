@@ -14,13 +14,18 @@
 #include "vmstate.h"
 #include "value.h"
 
+/*
+ * Only after writing these did I realize norman did it first. 
+ */
+extern uint64_t NHANDLERS;
+
 // Checked run-time errors: print a message and halt the computation.
 
-extern _Noreturn void typeerror(VMState state, const char *expected, Value got,
+extern void typeerror(VMState state, const char *expected, Value got,
                                 const char *file, int line);
-extern _Noreturn void runerror(VMState state, const char *format, ...);
+extern void runerror(VMState state, const char *format, ...);
   // takes arguments as for `printf`, not `print`
-extern _Noreturn void runerror_p(VMState state, const char *format, ...);
+extern void runerror_p(VMState state, const char *format, ...);
   // takes arguments as for `print`, not `printf`
 
 #endif

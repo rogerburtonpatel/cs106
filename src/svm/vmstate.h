@@ -8,8 +8,9 @@
 #define VMSTATE_INCLUDED
 
 #include <stdint.h>
-// #include <seq.h>
+#include <setjmp.h>
 
+#include "print.h"
 #include "value.h"
 #include "vmstack.h"
 #include "name.h"

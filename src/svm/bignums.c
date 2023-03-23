@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "bignums.h"
 
 struct BNUM_T {
@@ -41,12 +42,12 @@ BNUM_T BNUM_div(BNUM_T dividend, BNUM_T divisior);
 // BNUM_T BNUM_idiv(BNUM_T dividend, BNUM_T divisior); TODO ASK
 BNUM_T BNUM_mod(BNUM_T dividend, BNUM_T divisior);
 
-BNUM_T BNUM_print(BNUM_T bn)
+void BNUM_print(BNUM_T bn)
 {
     assert(bn && bn->numarr);
-    uint32_t *arr = bn->numarr;
-    size_t len = arr->length();
-    for (size_t i = len - 1; i >= 0; --i) {
-        printf("%u", arr[i]);
+    Arraylist_T arr = bn->numarr;
+    long long len = length(arr);
+    for (long long i = len - 1; i >= 0; --i) {
+        printf("%u", Arraylist_at(arr, i));
     }
 }
