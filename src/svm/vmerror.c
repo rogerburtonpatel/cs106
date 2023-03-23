@@ -36,7 +36,7 @@ void stackunwind(VMState state, const char *format, ...)
 
 void runerror(VMState state, const char *format, ...)
 {
-    stackunwind(state, "");
+    // stackunwind(state, "");
 
    if (!errorbuf) {
         errorbuf = printbuf();

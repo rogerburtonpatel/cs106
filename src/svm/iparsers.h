@@ -38,6 +38,7 @@ Instruction parseR1U16(VMState, Opcode, Tokens, unsigned *maxregp);
 Instruction parseR0I24(VMState, Opcode, Tokens, unsigned *maxregp);
 Instruction parseR1LIT(VMState, Opcode, Tokens, unsigned *maxregp);
 Instruction parseU8LIT(VMState, Opcode, Tokens, unsigned *maxregp);
+Instruction parseLIT  (VMState, Opcode, Tokens, unsigned *maxreg);
 Instruction parseR1GLO(VMState, Opcode, Tokens, unsigned *maxregp);
 
 #endif
