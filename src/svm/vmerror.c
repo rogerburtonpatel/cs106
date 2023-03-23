@@ -13,33 +13,84 @@
 #include "value.h"
 #include "vmerror.h"
 
-void runerror(VMState state, const char *format, ...) {
-  (void)state;
-  fprintf(stderr, "Run-time error:\n    ");
-  va_list args;
-  va_start(args, format);
-  vfprintf(stderr, format, args);
-  va_end(args);
-  fprintf(stderr, "\n");
-  abort();
+uint64_t NHANDLERS = 0;
+
+
+/* Only after writing these did I realize norman did it first. */
+
+jmp_buf errorjmp; /* right now, we don't use this, but we will if we change how
+                   we handle errors */
+jmp_buf testjmp;
+
+Printbuf errorbuf;
+
+/* rewind the stack */
+
+void stackunwind(VMState state, const char *format, ...)
+{
+    (void) state;
+    (void) format;
+    fprintf(stderr, "todo: stackunwind\n");
+    abort();
 }
 
-void runerror_p(VMState state, const char *format, ...) {
-  (void) state;
-  fprintf(stderr, "Run-time error:\n    ");
-  assert(format);
-  va_list_box box;
-  va_start(box.ap, format);
-  vfprint(stderr, format, &box);
-  va_end(box.ap);
-  fprintf(stderr, "\n");
-  abort();
+void runerror(VMState state, const char *format, ...)
+{
+    stackunwind(state, "");
+
+   if (!errorbuf) {
+        errorbuf = printbuf();
+   }
+    if (NHANDLERS == 0) {
+        fprintf(stderr, "Run-time error:\n    ");
+        va_list args;
+        va_start(args, format);
+        vfprintf(stderr, format, args);
+        va_end(args);
+        fprintf(stderr, "\n");
+        abort(); /* we can change this to a longjmp to errorbuf 
+                    if we don't want errors to crash our vm */
+    } else {
+        longjmp(testjmp, 1);
+    }
 }
 
-void typeerror(VMState state, const char *expected, Value got, const char *file, int line) {
-  (void)state;
-  fprintf(stderr, "Run-time error: expected %s, but got %s.\n"
-          "\t(Internal source at %s, line %d)\n",
-          expected, tagnames[got.tag], file, line);
-  abort();
+void runerror_p(VMState state, const char *format, ...)
+{
+    stackunwind(state, "");
+   
+   if (!errorbuf) {
+        errorbuf = printbuf();
+   }
+
+    if (NHANDLERS == 0) {
+        fprintf(stderr, "Run-time error:\n    ");
+        assert(format);
+        va_list_box box;
+        va_start(box.ap, format);
+        vfprint(stderr, format, &box);
+        va_end(box.ap);
+        fprintf(stderr, "\n");
+        abort(); /* we can change this to a longjmp to errorbuf 
+                    if we don't want errors to crash our vm */
+    } else {
+        longjmp(testjmp, 1);
+    }
+}
+
+void typeerror(VMState state, const char *expected, Value got, 
+                              const char *file, int line)
+{
+    stackunwind(state, "");
+
+    if (NHANDLERS == 0) {
+        fprintf(stderr, "Run-time error: expected %s, but got %s.\n"
+                        "\t(Internal source at %s, line %d)\n",
+                expected, tagnames[got.tag], file, line);
+        abort(); /* we can change this to a longjmp to errorbuf 
+                    if we don't want errors to crash our vm */
+    } else {
+        longjmp(testjmp, 1);
+    }
+
 }
