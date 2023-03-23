@@ -243,6 +243,7 @@ struct
 
     <|> parseOps oneParser oneops
 
+
     <|> eRL "getglobal" <$> reg <~> the ":=" <~> the "_G" <~> the "[" <*> string' <~> the "]"
     <|> eRL "getglobal"  <$> reg <~> the ":=" <~> the "global" <*> name'
 
@@ -306,6 +307,11 @@ struct
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
             <~> the "(" <~> the ")" 
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
+
+    (* debuggers *)
+
+    <|> eL "printl"   <$> (the "printl"   >> string')
+    <|> eL "printlnl" <$> (the "printlnl" >> string')
 
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence
@@ -469,7 +475,7 @@ struct
               spaceSep (["tailcall", reg x, "("] @ map reg ys @ [")"])
 
             | ("begin-check-error", []) => "begin-check-error"
-            
+
             | ("halt", []) => "halt"
             | _ => 
               "an unknown register-based assembly-code instruction") 
@@ -489,6 +495,11 @@ struct
             spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
           | ("end-check-error", [], name) =>
             spaceSep ["end-check-error", unparse_lit name]
+          
+          | ("printl", [], name) =>
+              spaceSep ["printl", unparse_lit name]
+          | ("printlnl", [], name) =>
+              spaceSep ["printlnl", unparse_lit name]
 
           | _ => "an unknown register-string based assembly-code instruction")
         | _ => "an unknown assembly-code instruction")

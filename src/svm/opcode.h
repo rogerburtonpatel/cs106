@@ -12,9 +12,8 @@
 
 typedef enum opcode { 
                       Halt, // R0
-                      Print, // R1
-                      Println, // R1
-                      Printu, // R1
+                      Print, Println, Printu, // R1
+                      Printl, Printlnl, // LIT
                       Error, // R1
                       BeginCheckError, // R0
                       Check, Expect, CheckAssert, EndCheckError, // R1LIT

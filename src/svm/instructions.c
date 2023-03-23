@@ -18,6 +18,8 @@ instruction_info instructions[] = {
   { "print", Print, parseR1, "print rX" },
   { "println", Println, parseR1, "println rX" },
   { "printu", Printu, parseR1, "printu rX" },
+  { "printl", Printl, parseLIT, "printl LIT" },
+  { "printlnl", Printlnl, parseLIT, "printlnl LIT" },
   { "error", Error, parseR1, "error rX" },
   { "loadliteral", LoadLiteral, parseR1LIT, "rX := LIT" },
   { "getglobal", GetGlobal, parseR1GLO, "rX := _G[YZ]" },
@@ -26,7 +28,7 @@ instruction_info instructions[] = {
   { "expect", Expect, parseR1LIT, "expect LIT, rX" },
   { "check-assert", CheckAssert, parseR1LIT, "check-assert LIT, rX" },
   { "begin-check-error", BeginCheckError, parseR0, "begin-check-error" },
-  { "end-check-error", EndCheckError, parseR1LIT, "end-check-error LIT" },
+  { "end-check-error", EndCheckError, parseLIT, "end-check-error LIT" },
 
 
   { "+",  Add,  parseR3, "add rX rY rZ" },
