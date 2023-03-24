@@ -6,6 +6,8 @@ Ask about setting globals to literals
 
 comment parser broken-- what's wrong with my code?
 
+testing for check-error
+
 qs: 
 Projection to KNF should probably reject SETGLOBAL in a value (toReg) context.
 
