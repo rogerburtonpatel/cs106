@@ -37,9 +37,9 @@ typedef enum opcode {
                       Call, // R3
                       Tailcall, // R2
                       MkClosure, SetClSlot, GetClSlot, // R2
-                      If, Goto, // R1
+                      If, // R1
+                      Goto, // iXYZ
                       Unimp, // stand-in for opcodes not yet implemented
-                      Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;
 
 bool isgetglobal(Opcode code); // update this for your SVM, in instructions.c

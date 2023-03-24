@@ -27,7 +27,7 @@ instruction_info instructions[] = {
   { "check", Check, parseR1LIT, "check LIT, rX" },
   { "expect", Expect, parseR1LIT, "expect LIT, rX" },
   { "check-assert", CheckAssert, parseR1LIT, "check-assert LIT, rX" },
-  { "begin-check-error", BeginCheckError, parseR0, "begin-check-error" },
+  { "begin-check-error", BeginCheckError, parseR0I24, "begin-check-error XYZ" },
   { "end-check-error", EndCheckError, parseLIT, "end-check-error LIT" },
 
 

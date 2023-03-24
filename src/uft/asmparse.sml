@@ -99,7 +99,8 @@ struct
   val reg       = P.maybe (fn (L.REGISTER n) => SOME n  | _ => NONE) one
   
   val string' : O.literal parser = O.STRING <$> string
-  val name' : O.literal parser = O.STRING <$> name
+  val int'    : O.literal parser = O.INT    <$> int
+  val name'   : O.literal parser = O.STRING <$> name
 
   fun token t = sat (P.eq t) one >> succeed () (* parse any token *)
   val eol = token L.EOL
@@ -254,7 +255,7 @@ struct
     <|> eLR "check" <$> (the "check" >> string') <~> optional (the ",") <*> reg
     <|> eLR "expect" <$> (the "expect" >> string') <~> optional (the ",") <*> reg
 
-    <|> succeed (eR0 "begin-check-error") <~> the "begin-check-error"
+    <|> eL "begin-check-error" <$> (the "begin-check-error" >> int')
     <|> eL "end-check-error" <$> (the "end-check-error" >> string')
     (* <|> eR1 "begin-check-error" <$> reg *)
                             
@@ -474,7 +475,6 @@ struct
             | ("tailcall", (x::ys)) =>
               spaceSep (["tailcall", reg x, "("] @ map reg ys @ [")"])
 
-            | ("begin-check-error", []) => "begin-check-error"
 
             | ("halt", []) => "halt"
             | _ => 
@@ -493,6 +493,8 @@ struct
             spaceSep [reg x, ":=", "_G[", unparse_lit name, "]"]
           | ("setglobal", [x], name) =>
             spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
+          | ("begin-check-error", [], offset) => 
+              spaceSep ["begin-check-error", unparse_lit offset]
           | ("end-check-error", [], name) =>
             spaceSep ["end-check-error", unparse_lit name]
           
