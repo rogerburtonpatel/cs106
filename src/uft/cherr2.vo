@@ -1,0 +1,8 @@
+.load module 7
+begin-check-error 5
+begin-check-error 3
+loadliteral 1 0
+/ 1 1 1
+end-check-error string 7 114 49 32 47 32 114 49
+end-check-error string 19 99 104 101 99 107 45 101 114 114 111 114 32 114 49 32 47 32 114 49
+printlnl string 10 119 101 39 114 101 32 100 111 110 101
