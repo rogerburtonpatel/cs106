@@ -23,7 +23,7 @@ static char *checks;
 static int ntests = 0;
 static int npassed = 0;
 
-extern jmp_buf testjmp;
+extern sigjmp_buf testjmp;
 
 static char *copy(const char *s) {
   int n = strlen(s);
@@ -76,11 +76,22 @@ void begin_error_check(struct VMState *vm, Instruction **pc, Value **registers,
     /* if not familiar with the arcane setjmp/longjmp form: 
        this will return 0 when we make the 'jump-to point,' and 
        nonzero if we jump to it with longjmp. */
+    fprintf(stderr, "outer p:%p\n", (void *)vm);
     int havejumped = sigsetjmp(testjmp, 1);
+    fprintf(stderr, "inner p 1:%p\n", (void *)vm);
+
+    /* Ensure that the function that calls sigsetjmp() does not return before 
+    you call the corresponding siglongjmp() function. Calling siglongjmp() 
+    after the function calling sigsetjmp() returns causes unpredictable 
+    program behavior. */
+
     if (havejumped) {
         npassed++;
         NHANDLERS--;
+        fprintf(stderr, "inner p 2:%p\n", (void *)vm);
         /* restore frame */
+        fprintf(stderr, "stackpointer: %hu\n", vm->stackpointer);
+        fprintf(stderr, "Stack[0].dest_reg_idx: %d\n", vm->Stack[0].dest_reg_idx);
         Activation a = vm->Stack[--vm->stackpointer];
         vm->R_window_start = a.R_window_start;
         *registers = vm->registers + a.R_window_start;
@@ -94,6 +105,7 @@ void begin_error_check(struct VMState *vm, Instruction **pc, Value **registers,
         }
         Activation a = {*pc, vm->R_window_start, ERROR_FRAME};
         vm->Stack[vm->stackpointer++] = a;
+
         /* continue with execution, now in error mode */
     }
     
