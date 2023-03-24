@@ -44,6 +44,7 @@ structure Primitive :> sig
   val check        : primitive   (* for converting check-expect to K-normal form *)
   val expect       : primitive   (* for converting check-expect to K-normal form *)
   val check_assert : primitive
+  (* TODO: check_error *)
 end
   =
 struct
