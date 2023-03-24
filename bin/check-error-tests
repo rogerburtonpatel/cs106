@@ -1,13 +1,14 @@
 #!/bin/bash
 # 
-# Purpose: TODO: fill in 
+# Purpose: tests the check-error changes
 # 
 
-## Usage: TODO: fill in
+## Usage: check-error-tests
 ## 
 ## 
 ## 
-## author: TODO: you
+## 
+## author: rab
 ## date:  Sun Mar 12 03:30:21 EDT 2023
 
 
@@ -15,7 +16,7 @@ BASEDIR=$DIR106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
-TESTDIR=$BASEDIR/tests/TESTDIR_PLACEHOLDER
+TESTDIR=$BASEDIR/tests/check-error-tests
 
 
 
@@ -58,8 +59,6 @@ run_one_test ()
         numtests=$((numtests + 1))
         out=$(bash -c "$operation" 2>&1)
         update_failure $? $file "$out"
-
-
         echo $out | grep -Eq 'The only test passed|Both tests passed|All tests passed'
         update_failure $? $file "$out"
         # TODO change this grep
@@ -74,15 +73,14 @@ run_one_test ()
 run_tests () {
 
     # Put tests here and remove echo. Some examples: 
-    echo "Empty testing file!"
     for file in $TESTDIR/*.vo; do
         run_one_test "svm $file"
     done
 
-    # for file in $TESTDIR/*.vs; do
-    #     run_one_test "uft vs-vo \"$file\" | svm" # you need these escape quotes
-    #                                              # for pipes. trust me. 
-    # done
+    for file in $TESTDIR/*.vs; do
+        run_one_test "uft vs-vo \"$file\" | svm" # you need these escape quotes
+                                                 # for pipes. trust me. 
+    done
 
     if [[ "$numtests" -eq "0" ]]; then
         echo "No tests run. Check why that might be"
