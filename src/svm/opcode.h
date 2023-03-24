@@ -15,8 +15,9 @@ typedef enum opcode {
                       Print, Println, Printu, // R1
                       Printl, Printlnl, // LIT
                       Error, // R1
-                      BeginCheckError, // R0
-                      Check, Expect, CheckAssert, EndCheckError, // R1LIT
+                      BeginCheckError, // iXYZ
+                      Check, Expect, CheckAssert, // R1LIT
+                      EndCheckError, // LIT
                       LoadLiteral, // R1LIT
                       GetGlobal, SetGlobal, // R1GLO
                       Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, Eq, // R3
@@ -33,9 +34,9 @@ typedef enum opcode {
                       Call, // R3
                       Tailcall, // R2
                       MkClosure, SetClSlot, GetClSlot, // R2
-                      If, Goto, // R1
+                      If, // R1
+                      Goto, // iXYZ
                       Unimp, // stand-in for opcodes not yet implemented
-                      Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;
 
 bool isgetglobal(Opcode code); // update this for your SVM, in instructions.c

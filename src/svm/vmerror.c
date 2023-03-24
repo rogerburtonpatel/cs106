@@ -28,15 +28,17 @@ Printbuf errorbuf;
 
 void stackunwind(VMState state, const char *format, ...)
 {
-    (void) state;
     (void) format;
-    fprintf(stderr, "todo: stackunwind\n");
-    abort();
+    Activation *Stack = state->Stack;
+    while (state->stackpointer > 0 
+           && Stack[state->stackpointer].dest_reg_idx != ERROR_FRAME) {
+        state->stackpointer--;
+    }
 }
 
 void runerror(VMState state, const char *format, ...)
 {
-    // stackunwind(state, "");
+    stackunwind(state, "");
 
    if (!errorbuf) {
         errorbuf = printbuf();

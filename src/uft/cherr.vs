@@ -1,6 +1,5 @@
-begin-check-error
-goto L
+begin-check-error 3
 r1 := 0
 r1 := r1 / r1
 end-check-error "r1 / r1"
-L:
+printlnl "we're done"

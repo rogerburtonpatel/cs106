@@ -21,7 +21,8 @@ struct VMState;
 void check       (struct VMState *vm, const char *source, Value v);
 void expect      (struct VMState *vm, const char *source, Value v);
 void check_assert(const char *source, Value v);
-void begin_error_check(struct VMState *vm);
+void begin_error_check(struct VMState *vm, Instruction **pc, Value **registers, 
+                                                             uint32_t jmp_amt);
 void check_error(struct VMState *vm, const char *source);
 
 
