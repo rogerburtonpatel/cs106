@@ -23,7 +23,7 @@ static char *checks;
 int ntests = 0;
 int npassed = 0;
 
-extern sigjmp_buf testjmp;
+extern jmp_buf testjmp;
 
 static char *copy(const char *s) {
   int n = strlen(s);
@@ -77,7 +77,7 @@ void begin_error_check(struct VMState *vm, Instruction **pc, Value **registers,
        this will return 0 when we make the 'jump-to point,' and 
        nonzero if we jump to it with longjmp. */
     fprintf(stderr, "outer p:%p\n", (void *)vm);
-    int havejumped = sigsetjmp(testjmp, 1);
+    int havejumped = setjmp(testjmp);
     fprintf(stderr, "inner p 1:%p\n", (void *)vm);
 
     /* Ensure that the function that calls sigsetjmp() does not return before 
