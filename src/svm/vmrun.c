@@ -50,8 +50,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     const char *dump_call   = svmdebug_value("call");
     (void) dump_call;  // make it OK not to use `dump_call`
 
-    vm->instructions = fun->instructions;
-    volatile Instruction *pc = vm->instructions; // todo change back to one line after volatile debugging
+    Instruction *pc = vm->instructions = fun->instructions;
 
     Instruction curr_instr;
     Value *registers = vm->registers; 
@@ -73,7 +72,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 /* I'm ok with having a counter variable external to the vmstate
                    and storing it when we Halt, because it saves a dereference
                    every time, and we only Halt once. */
-                vm->pc = (Instruction *)pc;
+                vm->pc = pc;
                 return;
             case Print:
                 print("%v", registers[uX(curr_instr)]);
@@ -130,7 +129,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
                     }
-                    Activation a = {(Instruction *)pc + iXYZ(curr_instr), 
+                    Activation a = {pc + iXYZ(curr_instr), 
                                      /* goto end of check-error */
                                         vm->R_window_start, ERROR_FRAME};
                     vm->Stack[vm->stackpointer++] = a;
@@ -347,7 +346,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 // check for invalid function 
                 if (registers[r0].tag == Nil) {
-                    const char *funname = lastglobalset(vm, r0, fun, (Instruction *)pc);
+                    const char *funname = lastglobalset(vm, r0, fun, pc);
                     if (funname == NULL) {
                         runerror(vm, 
                         "tried calling a function in register %hhu, \
@@ -380,7 +379,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 // call stack save
-                Activation a = {(Instruction *)pc, vm->R_window_start, 
+                Activation a = {pc, vm->R_window_start, 
                                  dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
 
@@ -406,7 +405,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint8_t n  = rn - r0;
 
                 if (registers[r0].tag == Nil) {
-                    const char *funname = lastglobalset(vm, r0, fun, (Instruction *)pc);
+                    const char *funname = lastglobalset(vm, r0, fun, pc);
                     if (funname == NULL) {
                         runerror(vm, 
                         "tried tailcalling a function in register %hhu, "
