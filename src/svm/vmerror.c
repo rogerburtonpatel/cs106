@@ -26,10 +26,8 @@ Printbuf errorbuf;
 
 /* rewind the stack */
 
-void stackunwind(VMState state, const char *format, ...)
+void stackunwind(VMState state)
 {
-    fprintf(stderr, "unwinding stack\n");
-    (void) format;
     Activation *Stack = state->Stack;
     while (state->stackpointer > 0 
            && Stack[state->stackpointer - 1].dest_reg_idx != ERROR_FRAME)  {
@@ -39,7 +37,7 @@ void stackunwind(VMState state, const char *format, ...)
 
 void runerror(VMState state, const char *format, ...)
 {
-    stackunwind(state, "");
+    stackunwind(state);
 
 //    if (!errorbuf) {
 //         errorbuf = printbuf();
@@ -60,7 +58,7 @@ void runerror(VMState state, const char *format, ...)
 
 void runerror_p(VMState state, const char *format, ...)
 {
-    stackunwind(state, "");
+    stackunwind(state);
    
 //    if (!errorbuf) {
 //         errorbuf = printbuf();
@@ -84,7 +82,7 @@ void runerror_p(VMState state, const char *format, ...)
 void typeerror(VMState state, const char *expected, Value got, 
                               const char *file, int line)
 {
-    stackunwind(state, "");
+    stackunwind(state);
 
     if (NHANDLERS == 0) {
         fprintf(stderr, "Run-time error: expected %s, but got %s.\n"
