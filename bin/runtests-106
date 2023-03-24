@@ -27,7 +27,7 @@ update_failure () {
     out=$3
     
     if [[ "$failure" -ne "0" ]]; then 
-        >&2 echo "Failed test $testname"
+        >&2 echo "Failed testing module $testname"
         >&2 echo "Output: "
         >&2 echo "$out"
         numfail=$((numfail + 1))
@@ -48,10 +48,10 @@ runtests ()
     done
 
     if [[ "$numfail" -eq "0" ]]; then 
-        echo "All tests passed."
+        echo "All testing modules passed."
     else 
         numpassed=$((numtests - $numfail))
-        echo "$numpassed / $numtests tests passed. \
+        echo "$numpassed / $numtests testing modules passed. \
 See above output for details."
         exit 1
     fi

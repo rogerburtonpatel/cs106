@@ -140,7 +140,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             }            
             case EndCheckError: {
                 v = literal_value(vm, uYZ(curr_instr));
-                check_error(vm, AS_CSTRING(vm, v));
+                    fprintf(stderr, "Check-error failed: evaluating \"%s\" was expected to "
+                    "produce an error, but evaluation terminated "
+                    "normally.\n", AS_CSTRING(vm, v));
+                NHANDLERS--;
+                vm->stackpointer--; /* to remove the error frame */
                 break;
             }
             /* ARITH- R3 */
@@ -362,8 +366,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 // debug message with a name we know to be valid!
                 struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                 if (vm->stackpointer == MAX_STACK_FRAMES) {
-                    fprintf(stderr, "Offending function:");
-                    fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                    if (NHANDLERS == 0) {
+                        fprintf(stderr, "Offending function:");
+                        fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                        fprintf(stderr, "\n");
+                    }
                     runerror(vm, 
                         "attempting to call function in register %hhu"
                         " caused a Stack Overflow", r0);
@@ -371,8 +378,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
 
                 if (vm->R_window_start + r0 + func->nregs > NUM_REGISTERS) {
-                    fprintf(stderr, "Offending function:");
-                    fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                    if (NHANDLERS == 0) {
+                        fprintf(stderr, "Offending function:");
+                        fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                        fprintf(stderr, "\n");
+                    }
                     runerror(vm, 
                         "attempting to call function in register %hhu"
                         " caused a Register Window Overflow", r0);
@@ -420,8 +430,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
 
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
-                    fprintf(stderr, "Offending function:");
-                    fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                    if (NHANDLERS == 0) {
+                        fprintf(stderr, "Offending function:");
+                        fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                        fprintf(stderr, "\n");
+                    }
                     runerror(vm, 
                       "attempting to tailcall function in register %hhu"
                       "caused a Register Window Overflow", r0);

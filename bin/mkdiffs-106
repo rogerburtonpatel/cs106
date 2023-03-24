@@ -1,0 +1,39 @@
+#!/bin/bash
+# 
+# Purpose: generates diffs for testing. 
+# 
+
+## Usage: mkdiffs-106 AFTER you have a testing file A and a dir A established
+##        by mktester. This error is checked. 
+## 
+## 
+## 
+## 
+## author: rab
+## date:  Fri Apr 15 20:04:01 EDT 2022
+
+
+BASEDIR=$DIR106
+
+SVMDIR=$BASEDIR/src/svm
+UFTDIR=$BASEDIR/src/uft
+TESTDIR=$BASEDIR/tests
+
+shopt -s nullglob
+
+
+for dir in $TESTDIR/*; do
+    for file in $dir/*.vo; do
+        name=`basename $file`
+        svm "$file" &> "$dir/${name}.1"
+    done
+    for file in $dir/*.vs; do
+        name=`basename $file`
+        uft vs-vo $file | svm &> "$dir/${name}.1"
+    done
+done
+
+
+echo "Done."
+
+shopt -u nullglob
