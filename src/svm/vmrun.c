@@ -125,6 +125,19 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 } else {
                     /* push special frame */
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
+                        if (vm->Stack[vm->stackpointer - 1].dest_reg_idx == -1)
+                           {
+                            fprintf(stderr, "You've hit the outstandingly rare"
+                                            " \nand almost definitely contrived"
+                                            " case \nwhere pushing an error"
+                                            " frame via check-error \ncaused a"
+                                            " stack overflow \nbut where that" 
+                                            " very overflow \nwas caught by"
+                                            " another check-error."
+                                            " \nWell done.\n");
+                           }
+
+                        NHANDLERS--; /* otherwise we don't unwind properly */
                         runerror(vm, 
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
