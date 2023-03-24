@@ -50,7 +50,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     const char *dump_call   = svmdebug_value("call");
     (void) dump_call;  // make it OK not to use `dump_call`
 
-    Instruction *pc = vm->instructions = fun->instructions;
+    vm->instructions = fun->instructions;
+    volatile Instruction *pc = vm->instructions; // todo change back to one line after volatile debugging
 
     Instruction curr_instr;
     Value *registers = vm->registers; 
@@ -58,8 +59,10 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     Value v;
 
     while(1) {
-        curr_instr = *pc;
-
+        curr_instr = *pc;                    
+        fprintf(stderr, "pc:%p\n", (void *)pc);
+        fprintf(stderr, "curr_instr:%u\n", curr_instr);
+        fprintf(stderr, "opcode:%u\n", opcode(curr_instr));
         if (CANDUMP && dump_decode) {
             idump(stderr, vm, (int64_t)pc, curr_instr, 0, 
             registers + uX(curr_instr), 
@@ -69,10 +72,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
         switch (opcode(curr_instr)) {
             /* BASIC */
             case Halt:
+            fprintf(stderr, "yep\n");
                 /* I'm ok with having a counter variable external to the vmstate
                    and storing it when we Halt, because it saves a dereference
                    every time, and we only Halt once. */
-                vm->pc = pc;
+                vm->pc = (Instruction *)pc;
                 return;
             case Print:
                 print("%v", registers[uX(curr_instr)]);
@@ -109,31 +113,45 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             }
             case BeginCheckError: {
+                    fprintf(stderr, "iXYZ: %hu\n", iXYZ(curr_instr));
+                    fprintf(stderr, "uYZ: %hu\n", uYZ(curr_instr));
                 ntests++;
                 NHANDLERS++;
                 /* if not familiar with the arcane setjmp/longjmp form: 
                 this will return 0 when we make the 'jump-to point,' and 
                 nonzero if we jump to it with longjmp. */
                 fprintf(stderr, "outer p:%p\n", (void *)vm);
-                int havejumped = setjmp(testjmp);
-                fprintf(stderr, "inner p 1:%p\n", (void *)vm);
+                // fprintf(stderr, "inner p 1:%p\n", (void *)vm);
 
                 /* Ensure that the function that calls sigsetjmp() does not return before 
                 you call the corresponding siglongjmp() function. Calling siglongjmp() 
                 after the function calling sigsetjmp() returns causes unpredictable 
                 program behavior. Same with setjmp and longjmp. */
+                    fprintf(stderr, "pc before jump:%p\n", (void *)pc);
+                    fprintf(stderr, "curr_instr before jump:%u\n", curr_instr);
 
-                if (havejumped) {
+                if (setjmp(testjmp)) {
+                    fprintf(stderr, "pc after jump:%p\n", (void *)pc);
+                    fprintf(stderr, "curr_instr after jump:%u\n", curr_instr);
                     npassed++;
                     NHANDLERS--;
                     fprintf(stderr, "inner p 2:%p\n", (void *)vm);
                     /* restore frame */
                     fprintf(stderr, "stackpointer: %hu\n", vm->stackpointer);
                     fprintf(stderr, "Stack[0].dest_reg_idx: %d\n", vm->Stack[0].dest_reg_idx);
+                    fprintf(stderr, "vm->Stack[vm->stackpointer - 1].dest_reg_idx: %d\n", vm->Stack[vm->stackpointer-1].dest_reg_idx);
                     Activation a = vm->Stack[--vm->stackpointer];
                     vm->R_window_start = a.R_window_start;
                     registers = vm->registers + a.R_window_start;
-                    pc = a.resume_loc + iXYZ(curr_instr); /* goto end of check-error */
+                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc)));
+                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc+1)));
+                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc+2)));
+                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc+3)));
+                    fprintf(stderr, "iXYZ: %u\n", iXYZ(curr_instr));
+                    fprintf(stderr, "uYZ: %hu\n", uYZ(curr_instr));
+                    pc = a.resume_loc;
+                    fprintf(stderr, "hi\n");
+                    fprintf(stderr, "opcode:%d\n", opcode(*(pc)));
                 } else {
                     /* push special frame */
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
@@ -141,7 +159,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
                     }
-                    Activation a = {pc, vm->R_window_start, ERROR_FRAME};
+                    Activation a = {(Instruction *)pc + iXYZ(curr_instr), /* goto end of check-error */
+                                        vm->R_window_start, ERROR_FRAME};
                     vm->Stack[vm->stackpointer++] = a;
 
                     /* continue with execution, now in error mode */
@@ -356,7 +375,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 // check for invalid function 
                 if (registers[r0].tag == Nil) {
-                    const char *funname = lastglobalset(vm, r0, fun, pc);
+                    const char *funname = lastglobalset(vm, r0, fun, (Instruction *)pc);
                     if (funname == NULL) {
                         runerror(vm, 
                         "tried calling a function in register %hhu, \
@@ -389,7 +408,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 // call stack save
-                Activation a = {pc, vm->R_window_start, dest_reg_idx};
+                Activation a = {(Instruction *)pc, vm->R_window_start, 
+                                 dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
 
 
@@ -414,7 +434,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint8_t n  = rn - r0;
 
                 if (registers[r0].tag == Nil) {
-                    const char *funname = lastglobalset(vm, r0, fun, pc);
+                    const char *funname = lastglobalset(vm, r0, fun, (Instruction *)pc);
                     if (funname == NULL) {
                         runerror(vm, 
                         "tried tailcalling a function in register %hhu, "

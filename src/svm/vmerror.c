@@ -41,9 +41,9 @@ void runerror(VMState state, const char *format, ...)
 {
     stackunwind(state, "");
 
-   if (!errorbuf) {
-        errorbuf = printbuf();
-   }
+//    if (!errorbuf) {
+//         errorbuf = printbuf();
+//    }
     if (NHANDLERS == 0) {
         fprintf(stderr, "Run-time error:\n    ");
         va_list args;
@@ -62,9 +62,9 @@ void runerror_p(VMState state, const char *format, ...)
 {
     stackunwind(state, "");
    
-   if (!errorbuf) {
-        errorbuf = printbuf();
-   }
+//    if (!errorbuf) {
+//         errorbuf = printbuf();
+//    }
 
     if (NHANDLERS == 0) {
         fprintf(stderr, "Run-time error:\n    ");
