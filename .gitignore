@@ -9,6 +9,8 @@
 /bin/svm-opcodes
 /bin/svm-test
 /bin/vscheme
+/bin/test-arraylist
+/bin/test-bignums
 /bin/vscheme.opt
 /bin/svm-debug-test
 /bin/svm-loader-instructions
