@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <setjmp.h>
 
 #include "check-expect.h"
 #include "print.h"
@@ -73,7 +74,7 @@ void begin_error_check(struct VMState *vm, Instruction **pc, Value **registers,
     /* if not familiar with the arcane setjmp/longjmp form: 
        this will return 0 when we make the 'jump-to point,' and 
        nonzero if we jump to it with longjmp. */
-    int havejumped = setjmp(testjmp);
+    int havejumped = sigsetjmp(testjmp, 1);
     if (havejumped) {
         npassed++;
         NHANDLERS--;
