@@ -31,9 +31,10 @@ void stackunwind(VMState state, const char *format, ...)
     (void) format;
     Activation *Stack = state->Stack;
     while (state->stackpointer > 0 
-           && Stack[state->stackpointer].dest_reg_idx != ERROR_FRAME) {
+           && Stack[state->stackpointer - 1].dest_reg_idx != ERROR_FRAME)  {
         state->stackpointer--;
     }
+    ;
 }
 
 void runerror(VMState state, const char *format, ...)
