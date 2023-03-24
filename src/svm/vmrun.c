@@ -59,10 +59,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     Value v;
 
     while(1) {
-        curr_instr = *pc;                    
-        fprintf(stderr, "pc:%p\n", (void *)pc);
-        fprintf(stderr, "curr_instr:%u\n", curr_instr);
-        fprintf(stderr, "opcode:%u\n", opcode(curr_instr));
+        curr_instr = *pc;
+
         if (CANDUMP && dump_decode) {
             idump(stderr, vm, (int64_t)pc, curr_instr, 0, 
             registers + uX(curr_instr), 
@@ -72,7 +70,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
         switch (opcode(curr_instr)) {
             /* BASIC */
             case Halt:
-            fprintf(stderr, "yep\n");
                 /* I'm ok with having a counter variable external to the vmstate
                    and storing it when we Halt, because it saves a dereference
                    every time, and we only Halt once. */
@@ -113,45 +110,19 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             }
             case BeginCheckError: {
-                    fprintf(stderr, "iXYZ: %hu\n", iXYZ(curr_instr));
-                    fprintf(stderr, "uYZ: %hu\n", uYZ(curr_instr));
                 ntests++;
                 NHANDLERS++;
                 /* if not familiar with the arcane setjmp/longjmp form: 
                 this will return 0 when we make the 'jump-to point,' and 
                 nonzero if we jump to it with longjmp. */
-                fprintf(stderr, "outer p:%p\n", (void *)vm);
-                // fprintf(stderr, "inner p 1:%p\n", (void *)vm);
-
-                /* Ensure that the function that calls sigsetjmp() does not return before 
-                you call the corresponding siglongjmp() function. Calling siglongjmp() 
-                after the function calling sigsetjmp() returns causes unpredictable 
-                program behavior. Same with setjmp and longjmp. */
-                    fprintf(stderr, "pc before jump:%p\n", (void *)pc);
-                    fprintf(stderr, "curr_instr before jump:%u\n", curr_instr);
-
                 if (setjmp(testjmp)) {
-                    fprintf(stderr, "pc after jump:%p\n", (void *)pc);
-                    fprintf(stderr, "curr_instr after jump:%u\n", curr_instr);
                     npassed++;
                     NHANDLERS--;
-                    fprintf(stderr, "inner p 2:%p\n", (void *)vm);
                     /* restore frame */
-                    fprintf(stderr, "stackpointer: %hu\n", vm->stackpointer);
-                    fprintf(stderr, "Stack[0].dest_reg_idx: %d\n", vm->Stack[0].dest_reg_idx);
-                    fprintf(stderr, "vm->Stack[vm->stackpointer - 1].dest_reg_idx: %d\n", vm->Stack[vm->stackpointer-1].dest_reg_idx);
                     Activation a = vm->Stack[--vm->stackpointer];
                     vm->R_window_start = a.R_window_start;
                     registers = vm->registers + a.R_window_start;
-                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc)));
-                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc+1)));
-                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc+2)));
-                    fprintf(stderr, "opcode before:%d\n", opcode(*(pc+3)));
-                    fprintf(stderr, "iXYZ: %u\n", iXYZ(curr_instr));
-                    fprintf(stderr, "uYZ: %hu\n", uYZ(curr_instr));
                     pc = a.resume_loc;
-                    fprintf(stderr, "hi\n");
-                    fprintf(stderr, "opcode:%d\n", opcode(*(pc)));
                 } else {
                     /* push special frame */
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
@@ -159,7 +130,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
                     }
-                    Activation a = {(Instruction *)pc + iXYZ(curr_instr), /* goto end of check-error */
+                    Activation a = {(Instruction *)pc + iXYZ(curr_instr), 
+                                     /* goto end of check-error */
                                         vm->R_window_start, ERROR_FRAME};
                     vm->Stack[vm->stackpointer++] = a;
 
