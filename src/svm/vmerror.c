@@ -20,7 +20,7 @@ uint64_t NHANDLERS = 0;
 
 jmp_buf errorjmp; /* right now, we don't use this, but we will if we change how
                    we handle errors */
-sigjmp_buf testjmp;
+jmp_buf testjmp;
 
 Printbuf errorbuf;
 
@@ -54,7 +54,7 @@ void runerror(VMState state, const char *format, ...)
         abort(); /* we can change this to a longjmp to errorbuf 
                     if we don't want errors to crash our vm */
     } else {
-        siglongjmp(testjmp, 1);
+        longjmp(testjmp, 1);
     }
 }
 
@@ -77,7 +77,7 @@ void runerror_p(VMState state, const char *format, ...)
         abort(); /* we can change this to a longjmp to errorbuf 
                     if we don't want errors to crash our vm */
     } else {
-        siglongjmp(testjmp, 1);
+        longjmp(testjmp, 1);
     }
 }
 
@@ -93,7 +93,7 @@ void typeerror(VMState state, const char *expected, Value got,
         abort(); /* we can change this to a longjmp to errorbuf 
                     if we don't want errors to crash our vm */
     } else {
-        siglongjmp(testjmp, 1);
+        longjmp(testjmp, 1);
     }
 
 }
