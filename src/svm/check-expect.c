@@ -63,7 +63,10 @@ void check_assert(const char *source, Value v) {
   }
 }
 
-void begin_error_check(struct VMState *vm)
+/* note: runerror will have unwound the stack at this point, so we
+    have an error frame on top */
+void begin_error_check(struct VMState *vm, Instruction **pc, Value **registers, 
+                                                             uint32_t jmp_amt)
 {
     ntests++;
     NHANDLERS++;
@@ -73,9 +76,24 @@ void begin_error_check(struct VMState *vm)
     int havejumped = setjmp(testjmp);
     if (havejumped) {
         npassed++;
+        NHANDLERS--;
+        /* restore frame */
+        Activation a = vm->Stack[--vm->stackpointer];
+        vm->R_window_start = a.R_window_start;
+        *registers = vm->registers + a.R_window_start;
+        *pc = a.resume_loc + jmp_amt; /* goto end of check-error */
     } else {
-        // push special frame
+        /* push special frame */
+        if (vm->stackpointer == MAX_STACK_FRAMES) {
+            runerror(vm, 
+                "attempting to push an error frame in check-error"
+                " caused a Stack Overflow");
+        }
+        Activation a = {*pc, vm->R_window_start, ERROR_FRAME};
+        vm->Stack[vm->stackpointer++] = a;
+        /* continue with execution, now in error mode */
     }
+    
 }
 
 /* if we get here, the test has failed. 

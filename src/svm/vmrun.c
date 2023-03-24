@@ -105,8 +105,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             }
             case BeginCheckError: {
-                begin_error_check(vm);
-                pc++; /* SKIP THE GOTO: TODO REMOVE IF LABEL ELIM */
+                begin_error_check(vm, &pc, &registers, iXYZ(curr_instr));
                 break;
             }            
             case EndCheckError: {
