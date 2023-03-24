@@ -31,6 +31,10 @@
 
 #define CANDUMP 1
 
+extern int ntests, npassed;
+extern jmp_buf testjmp;
+
+
 // TODO remove if not needed
 // /* used for runerror stack rewinding */
 // int ERRORNO = -1;
@@ -105,7 +109,43 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             }
             case BeginCheckError: {
-                begin_error_check(vm, &pc, &registers, iXYZ(curr_instr));
+                ntests++;
+                NHANDLERS++;
+                /* if not familiar with the arcane setjmp/longjmp form: 
+                this will return 0 when we make the 'jump-to point,' and 
+                nonzero if we jump to it with longjmp. */
+                fprintf(stderr, "outer p:%p\n", (void *)vm);
+                int havejumped = setjmp(testjmp);
+                fprintf(stderr, "inner p 1:%p\n", (void *)vm);
+
+                /* Ensure that the function that calls sigsetjmp() does not return before 
+                you call the corresponding siglongjmp() function. Calling siglongjmp() 
+                after the function calling sigsetjmp() returns causes unpredictable 
+                program behavior. Same with setjmp and longjmp. */
+
+                if (havejumped) {
+                    npassed++;
+                    NHANDLERS--;
+                    fprintf(stderr, "inner p 2:%p\n", (void *)vm);
+                    /* restore frame */
+                    fprintf(stderr, "stackpointer: %hu\n", vm->stackpointer);
+                    fprintf(stderr, "Stack[0].dest_reg_idx: %d\n", vm->Stack[0].dest_reg_idx);
+                    Activation a = vm->Stack[--vm->stackpointer];
+                    vm->R_window_start = a.R_window_start;
+                    registers = vm->registers + a.R_window_start;
+                    pc = a.resume_loc + iXYZ(curr_instr); /* goto end of check-error */
+                } else {
+                    /* push special frame */
+                    if (vm->stackpointer == MAX_STACK_FRAMES) {
+                        runerror(vm, 
+                            "attempting to push an error frame in check-error"
+                            " caused a Stack Overflow");
+                    }
+                    Activation a = {pc, vm->R_window_start, ERROR_FRAME};
+                    vm->Stack[vm->stackpointer++] = a;
+
+                    /* continue with execution, now in error mode */
+                }
                 break;
             }            
             case EndCheckError: {

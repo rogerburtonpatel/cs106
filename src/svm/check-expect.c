@@ -20,8 +20,8 @@
 
 static char *checks;
 
-static int ntests = 0;
-static int npassed = 0;
+int ntests = 0;
+int npassed = 0;
 
 extern sigjmp_buf testjmp;
 
