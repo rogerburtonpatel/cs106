@@ -254,6 +254,7 @@ struct
 
     <|> eLR "check" <$> (the "check" >> string') <~> optional (the ",") <*> reg
     <|> eLR "expect" <$> (the "expect" >> string') <~> optional (the ",") <*> reg
+    <|> eLR "check-assert" <$> (the "check-assert" >> string')  <~> optional (the ",") <*> reg
 
     <|> eL "begin-check-error" <$> (the "begin-check-error" >> int')
     <|> eL "end-check-error" <$> (the "end-check-error" >> string')

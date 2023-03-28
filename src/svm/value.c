@@ -110,20 +110,6 @@ bool eqtests(Value v1, Value v2) { // will not work for hashing!
     return eqvalue(v1, v2);
 }
 
-// returns false if v is nilValue or Value(false), true otherwise
-inline bool asBool(Value v) {
-    // Value boolval;
-    // boolval.tag = Boolean;
-    switch (v.tag) {
-        case Nil: 
-            return false;
-        case Boolean:
-            return v.b;
-        default:
-            return true;
-    }
-}
-
 /////////////////////////
 
 

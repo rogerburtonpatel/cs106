@@ -94,11 +94,14 @@ static inline struct VMClosure *asClosure_(VMState, Value, const char *file, int
 static inline struct VMFunction *asVMFunction_ 
                                           (VMState, Value, const char *file, int line);
 static inline struct VMString *asVMString_(VMState, Value, const char *file, int line);
+// returns false if v is nilValue or Value(false), true otherwise
+static inline bool              asBool_   (VMState, Value, const char *file, int line); 
 
 #define AS_BLOCK(VM, V)      asBlock_     ((VM), (V), __FILE__, __LINE__)
 #define AS_CONS_CELL(VM, V)  asCons_      ((VM), (V), __FILE__, __LINE__)
 #define AS_CSTRING(VM, V)    asCString_   ((VM), (V), __FILE__, __LINE__)
 #define AS_NUMBER(VM, V)     asNumber_    ((VM), (V), __FILE__, __LINE__)
+#define AS_BOOL(VM, V)       asBool_      ((VM), (V), __FILE__, __LINE__)
 #define AS_CLOSURE(VM, V)    asClosure_   ((VM), (V), __FILE__, __LINE__)
 #define AS_VMFUNCTION(VM, V) asVMFunction_((VM), (V), __FILE__, __LINE__)
 #define AS_VMSTRING(VM, V)   asVMString_  ((VM), (V), __FILE__, __LINE__)
@@ -194,6 +197,20 @@ static inline Number_T asNumber_(VMState vm, Value v, const char *file, int line
     typeerror(vm, "a number", v, file, line);
   return v.n;
 }
+static inline bool asBool_(VMState vm, Value v, const char *file, int line) {
+    (void)vm;
+    (void)file;
+    (void)line;
+    switch (v.tag) {
+        case Nil: 
+            return false;
+        case Boolean:
+            return v.b;
+        default:
+            return true;
+    }
+}
+
 static inline struct VMClosure *asClosure_(VMState vm, Value v, const char *file, int line) {
   if (v.tag != VMClosure)
     typeerror(vm, "a closure", v, file, line);

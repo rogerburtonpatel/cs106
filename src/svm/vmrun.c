@@ -31,6 +31,10 @@
 
 #define CANDUMP 1
 
+#define UX uX(curr_instr)
+#define UY uY(curr_instr)
+#define UZ uZ(curr_instr)
+
 extern int ntests, npassed;
 extern jmp_buf testjmp;
 
@@ -62,9 +66,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
         if (CANDUMP && dump_decode) {
             idump(stderr, vm, (int64_t)pc, curr_instr, 0, 
-            registers + uX(curr_instr), 
-            registers + uY(curr_instr), 
-            registers + uZ(curr_instr));
+            registers + UX, 
+            registers + UY, 
+            registers + UZ);
         }
         switch (opcode(curr_instr)) {
             /* BASIC */
@@ -75,13 +79,13 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 vm->pc = pc;
                 return;
             case Print:
-                print("%v", registers[uX(curr_instr)]);
+                print("%v", registers[UX]);
                 break;
             case Println:
-                print("%v\n", registers[uX(curr_instr)]);
+                print("%v\n", registers[UX]);
                 break;
             case Printu:
-                print("%U", (unsigned)AS_NUMBER(vm, registers[uX(curr_instr)]));
+                print("%U", (unsigned)AS_NUMBER(vm, registers[UX]));
                 break;
             }
             case Printl:
@@ -91,22 +95,22 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 print("%v\n", literal_value(vm, uYZ(curr_instr)));
                 break;     
             case Error:
-                runerror_p(vm, "%v", registers[uX(curr_instr)]);
+                runerror_p(vm, "%v", registers[UX]);
                 break;                              
             case Check: {
                 v = literal_value(vm, uYZ(curr_instr));
-                check(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
+                check(vm, AS_CSTRING(vm, v), registers[UX]);
                 break;
             }
             case Expect: {
                 v = literal_value(vm, uYZ(curr_instr));
-                expect(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
+                expect(vm, AS_CSTRING(vm, v), registers[UX]);
                 break;
             }
             case CheckAssert: {
                 v = literal_value(vm, uYZ(curr_instr));
-                check(vm, AS_CSTRING(vm, v), registers[uX(curr_instr)]);
-                expect(vm, AS_CSTRING(vm, v), mkBooleanValue(false));
+                check(vm, AS_CSTRING(vm, v), registers[UX]);
+                expect(vm, AS_CSTRING(vm, v), mkBooleanValue(true));
                 break;
             }
             case BeginCheckError: {
@@ -126,6 +130,19 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 } else {
                     /* push special frame */
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
+                        if (vm->Stack[vm->stackpointer - 1].dest_reg_idx == -1)
+                           {
+                            fprintf(stderr, "You've hit the outstandingly rare"
+                                            " \nand almost definitely contrived"
+                                            " case \nwhere pushing an error"
+                                            " frame via check-error \ncaused a"
+                                            " stack overflow \nbut where that" 
+                                            " very overflow \nwas caught by"
+                                            " another check-error."
+                                            " \nWell done.\n");
+                           }
+
+                        NHANDLERS--; /* otherwise we don't unwind properly */
                         runerror(vm, 
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
@@ -141,39 +158,40 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             }            
             case EndCheckError: {
                 v = literal_value(vm, uYZ(curr_instr));
-                    fprintf(stderr, "Check-error failed: evaluating \"%s\" was expected to "
-                    "produce an error, but evaluation terminated "
+                    fprintf(stderr, "Check-error failed: evaluating \"%s\" was "
+                    "expected to produce an error, but evaluation terminated "
                     "normally.\n", AS_CSTRING(vm, v));
+                    /* error if nhandlers is 0 */
                 NHANDLERS--;
                 vm->stackpointer--; /* to remove the error frame */
                 break;
             }
             /* ARITH- R3 */
             case Add:
-                registers[uX(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
-                                  + AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                registers[UX] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[UY]) 
+                                  + AS_NUMBER(vm, registers[UZ]));
                                                             
                 break;
             case Sub:
-                registers[uX(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
-                                  - AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                registers[UX] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[UY]) 
+                                  - AS_NUMBER(vm, registers[UZ]));
                 break;
             case Mult:
-                registers[uX(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) 
-                                  * AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                registers[UX] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[UY]) 
+                                  * AS_NUMBER(vm, registers[UZ]));
                 break;
 
             case Div: {
-                uint8_t rZ = uZ(curr_instr);
+                uint8_t rZ = UZ;
                 Number_T d = AS_NUMBER(vm, registers[rZ]);
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
-                registers[uX(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uY(curr_instr)]) / d);
+                registers[UX] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[UY]) / d);
                 break;
             }
             // Special case: need to cast to int64_t for idiv && mod since they
@@ -181,81 +199,81 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             // then cast back to Number_T for mkNumberValue. 
 
             case IDiv: {
-                uint8_t rZ = uZ(curr_instr);
+                uint8_t rZ = UZ;
                 Number_T d = (int64_t)AS_NUMBER(vm, registers[rZ]);
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
-                registers[uX(curr_instr)] = 
+                registers[UX] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
-                                                    registers[uY(curr_instr)]) 
+                                                    registers[UY]) 
                                             / d);
                 break;
             }
             case Mod: {
-                uint8_t rZ = uZ(curr_instr);
+                uint8_t rZ = UZ;
                 // coersion
                 int64_t d = AS_NUMBER(vm, registers[rZ]);
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
-                registers[uX(curr_instr)] = 
+                registers[UX] = 
                     mkNumberValue((int64_t)AS_NUMBER(vm, 
-                                                    registers[uY(curr_instr)]) 
+                                                    registers[UY]) 
                                             % d);
                 break;
             }
 
             /* BOOLEAN LOGIC- R3 */
             case Eq:
-                registers[uX(curr_instr)] = 
+                registers[UX] = 
                 mkBooleanValue(
-                    eqvalue(registers[uY(curr_instr)], 
-                            registers[uZ(curr_instr)]));
+                    eqvalue(registers[UY], 
+                            registers[UZ]));
                 break;
 
             case Gt:
-                registers[uX(curr_instr)] = 
-                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) > 
-                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                registers[UX] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[UY]) > 
+                            AS_NUMBER(vm, registers[UZ]));
                 break;
 
             case Lt:
-                registers[uX(curr_instr)] = 
-                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) <
-                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                registers[UX] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[UY]) <
+                            AS_NUMBER(vm, registers[UZ]));
                 break;
 
             case Ge:
-                registers[uX(curr_instr)] = 
-                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) >= 
-                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                registers[UX] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[UY]) >= 
+                            AS_NUMBER(vm, registers[UZ]));
                 break;
             
             case Le:
-                registers[uX(curr_instr)] = 
-                mkBooleanValue(AS_NUMBER(vm, registers[uY(curr_instr)]) <=
-                            AS_NUMBER(vm, registers[uZ(curr_instr)]));
+                registers[UX] = 
+                mkBooleanValue(AS_NUMBER(vm, registers[UY]) <=
+                            AS_NUMBER(vm, registers[UZ]));
                 break;
 
             /* UNARY ARITH- R1 */
             case Inc:
-                registers[uX(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) + 1);
+                registers[UX] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[UX]) + 1);
                 break;
             case Dec:
-                registers[uX(curr_instr)] = 
-                    mkNumberValue(AS_NUMBER(vm, registers[uX(curr_instr)]) - 1);
+                registers[UX] = 
+                    mkNumberValue(AS_NUMBER(vm, registers[UX]) - 1);
                 break;
             case Neg:
-                registers[uX(curr_instr)] = 
-                    mkNumberValue(-AS_NUMBER(vm, registers[uX(curr_instr)]));
+                registers[UX] = 
+                    mkNumberValue(-AS_NUMBER(vm, registers[UX]));
                 break;    
             // REV: Is this needed in vScheme?   
             case Not:
-                registers[uX(curr_instr)] = 
+                registers[UX] = 
                     mkNumberValue(~(int64_t)AS_NUMBER(
-                                                vm, registers[uX(curr_instr)]));
+                                                vm, registers[UX]));
                 break;       
             }
             case Call: {
@@ -326,50 +344,72 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             /* LITS <-> GLOBS <-> REGS */
             case LoadLiteral: 
-                registers[uX(curr_instr)] = vm->literals[uYZ(curr_instr)];
+                registers[UX] = vm->literals[uYZ(curr_instr)];
                 break;
             
             case GetGlobal:
-                registers[uX(curr_instr)] = vm->globals[uYZ(curr_instr)];
+                registers[UX] = vm->globals[uYZ(curr_instr)];
                 break;
 
             case SetGlobal:
-                vm->globals[uYZ(curr_instr)] = registers[uX(curr_instr)];
+                vm->globals[uYZ(curr_instr)] = registers[UX];
                 break;
 
             /* R2 */
             case BoolOf:
                 v.tag = Boolean;
-                v.b = asBool(registers[uY(curr_instr)]);
-                registers[uX(curr_instr)] = v;
+                v.b = AS_BOOL(vm, registers[UY]);
+                registers[UX] = v;
                 break;
             
 
             case RegCopy:
-                registers[uX(curr_instr)] = registers[uY(curr_instr)];
+                registers[UX] = registers[UY];
                 break;
 
             case Swap:
-                v = registers[uX(curr_instr)];
-                registers[uX(curr_instr)] = registers[uY(curr_instr)];
-                registers[uY(curr_instr)] = v;
+                v = registers[UX];
+                registers[UX] = registers[UY];
+                registers[UY] = v;
                 break;
             
             case Hash:
-                registers[uX(curr_instr)] = 
-                            mkNumberValue(hashvalue(registers[uY(curr_instr)]));
+                registers[UX] = mkNumberValue(hashvalue(registers[UY]));
                 break;
 
-            case PlusImm:
-                registers[uX(curr_instr)] = mkNumberValue(
-                            AS_NUMBER(vm, registers[uY(curr_instr)]) 
-                            + uZ(curr_instr));
+            case IsNil:
+                registers[UX] = mkBooleanValue(registers[UY].tag == Nil);
+                break;
+            case IsBoolean:
+                registers[UX] = mkBooleanValue(registers[UY].tag == Boolean);
+                break;
+            case IsNumber:
+                registers[UX] = mkBooleanValue(registers[UY].tag == Number);
+                break;
+            case IsSymbol:
+                registers[UX] = mkBooleanValue(registers[UY].tag == String);
+                break;
+            case IsNull:
+                registers[UX] = mkBooleanValue(registers[UY].tag == Emptylist);
+                break;
+            case IsPair:
+                registers[UX] = mkBooleanValue(registers[UY].tag == ConsCell);
+                break;
+            case IsFunction:
+                registers[UX] = 
+                    mkBooleanValue(   registers[UY].tag == VMFunction
+                                   || registers[UY].tag == VMClosure);
                 break;
             
+            /* Unusual R2U8 case */
+            case PlusImm:
+                registers[UX] = mkNumberValue(AS_NUMBER(vm, registers[UY]) 
+                                                                    + UZ);
+                break;
 
             /* (UN)CONDITIONAL MOVEMENT */
             case If: 
-                bool truth = asBool(registers[uX(curr_instr)]);
+                bool truth = AS_BOOL(vm, registers[UX]);
                 if (!truth) {
                     pc++; // If false, skip next instruction.
                 }
@@ -385,17 +425,17 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case Return: {
                 if (vm->stackpointer == 0) {
                     runerror(vm, "attempting to return register %hhu, "
-                                 "from non-function.", uX(curr_instr));
+                                 "from non-function.", UX);
                 }
 
                 Activation a = vm->Stack[--vm->stackpointer];
                 
                 if (a.dest_reg_idx < 0) {
                     runerror(vm, "attempting to return register %hhu, "
-                                 "off of an error frame", uX(curr_instr));
+                                 "off of an error frame", UX);
                 }
 
-                Value return_value = registers[uX(curr_instr)];
+                Value return_value = registers[UX];
 
                 // restore register window state and current instruction
                 vm->R_window_start = a.R_window_start;
@@ -408,11 +448,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             }
 
             case Call: {
-                uint8_t r0 = uY(curr_instr);
-                uint8_t rn = uZ(curr_instr);
+                uint8_t r0 = UY;
+                uint8_t rn = UZ;
                 uint8_t n  = rn - r0;
 
-                uint8_t dest_reg_idx = uX(curr_instr);
+                uint8_t dest_reg_idx = UX;
 
 
                 // check for invalid function 
@@ -477,8 +517,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             }
             case Tailcall: {
-                uint8_t r0 = uX(curr_instr);
-                uint8_t rn = uY(curr_instr);
+                uint8_t r0 = UX;
+                uint8_t rn = UY;
                 uint8_t n  = rn - r0;
 
                 if (registers[r0].tag == Nil) {
