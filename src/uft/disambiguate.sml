@@ -6,6 +6,8 @@
 
 (* You'll complete the disambiguator and ambiguator *)
 
+(* (check-error e) -> (X.PRIMCALL (check-error (X.LAMBDA [] e))) *)
+
 structure Disambiguate :> sig
   val disambiguate : VScheme.def -> UnambiguousVScheme.def
      (* N.B. Also eta-expands primitives in non-application position *)
