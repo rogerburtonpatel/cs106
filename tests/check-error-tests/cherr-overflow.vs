@@ -15,6 +15,5 @@
     begin-check-error 2
     r0 := call r0 (r1)
     end-check-error "calling a stack-overflowing function"
-    check "a really horrible zero function" r0
-    r0 := 0
-    expect "0" r0
+    r0 := function? r0
+    check-assert "r0 is a function, not a value." r0
