@@ -93,12 +93,23 @@ group is
 
 
 
+
   (********** CODE GENERATION ******)
 
   asmutil.sml       (* convenience functions to generate assembly code *)
   codegen.sml       (* translate KNF to assembly (written by students) *)
 
   knrename.sml      (* convert names to registers in KNF (for testing) *)
+
+
+  (************ K-NORMALIZATION ***************)
+
+  foscheme.sml      (* source language "first-order Scheme" *)
+  foutil.sml        (* embedding/projection for foscheme <-> vscheme *)
+
+  knormalize.sml    (* K-normalizer *)
+     (* translates foscheme in module 9, then clscheme in module 10 *)
+
 
 
   (*********** UNIVERSAL FORWARD TRANSLATOR **********)
