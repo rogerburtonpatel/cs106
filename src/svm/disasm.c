@@ -135,7 +135,6 @@ void fprintfunname(FILE *fp, VMState vm, Value v) {
       // for an `i` such that `identical(global number i, v)` holds.
       // If you find one, print " ($NAME)" where $NAME is
       // the name of global number `i`.
-      fprintf(fp, " (disassembler incomplete: see %s, line %d)", __FILE__, __LINE__);
     default:
       break;
   }
