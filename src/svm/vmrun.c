@@ -65,7 +65,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
         curr_instr = *pc;
 
         if (CANDUMP && dump_decode) {
-            idump(stderr, vm, (int64_t)pc, curr_instr, 0, 
+            idump(stderr, 
+            vm, 
+            ((int64_t)pc - (int64_t)vm->instructions) / 4, 
+            curr_instr, 
+            0, 
             registers + UX, 
             registers + UY, 
             registers + UZ);
