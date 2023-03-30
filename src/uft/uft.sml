@@ -66,6 +66,9 @@ struct
   val KN_of_file: instream -> string KNormalForm.exp list error =
     schemexOfFile >=> Error.mapList KNProject.def
 
+  val FO_of_file: instream -> FirstOrderScheme.def list error =
+    schemexOfFile >=> Error.mapList FOUtil.project
+
   val AN_of_file: instream -> string ANormalForm.exp list error =
     schemexOfFile >=> Error.mapList ANProject.def
 
@@ -110,8 +113,13 @@ struct
     | CL_of ES     = ES_of ES     >>> ! (map ClosureConvert.close)
     | CL_of inLang = FO_of inLang >>> ! (map FOCLUtil.embed)
 
+  fun FO_of FO = FO_of_file
+    | FO_of _  = raise Backward
+
   fun KN_reg_of KN = KN_of_file 
                      >=> Error.mapList (KNRename.mapx KNRename.regOfName)
+    | KN_reg_of FO = FO_of_file 
+                     >>> ! (List.map KNormalize.def)
     | KN_reg_of inLang = raise NoTranslationTo KN
 
   fun AN_reg_of AN = AN_of_file 
@@ -148,6 +156,8 @@ struct
 
   fun emitHO outfile = app (emitScheme outfile o Disambiguate.ambiguate)
 
+  fun emitFO outfile = app (emitScheme outfile o FOUtil.embed)
+
   fun emitKN outfile = app (emitScheme outfile o KNEmbed.def)
   
   fun emitAN outfile = app (emitScheme outfile o ANEmbed.def)
@@ -164,6 +174,7 @@ struct
         | AN => AN_of      inLang >>> ! (emitAN outfile)
         | HO => HO_of      inLang >>> ! (emitHO outfile)
         | ES => ES_of      inLang >>> ! (emitHO outfile)
+        | FO => FO_of      inLang >>> ! (emitFO outfile)
         | _  => raise NoTranslationTo outLang
     ) infile
     handle Backward => raise NotForward (inLang, outLang)

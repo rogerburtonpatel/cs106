@@ -11,8 +11,6 @@ $(SML_LIB)/basis/basis.mlb
   
 
   languages.sml   
-
-
   
 
   
@@ -75,14 +73,14 @@ $(SML_LIB)/basis/basis.mlb
   anrename.sml
 
 
-
+  foscheme.sml
+  foutil.sml
+  knormalize.sml
   
 
   asmutil.sml       
   codegen.sml       
 
   knrename.sml      
-
-
   
   uft.sml
