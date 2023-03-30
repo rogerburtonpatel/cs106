@@ -1,0 +1,65 @@
+#!/bin/bash
+# 
+# Purpose: tests all 106 code based on testing files in bin
+# 
+
+## Usage: runtests
+## 
+## 
+## 
+## 
+## author: rab
+## date:  Sun Mar 12 05:02:05 EDT 2023
+
+BASEDIR=$DIR106
+
+SVMDIR=$BASEDIR/src/svm
+UFTDIR=$BASEDIR/src/uft
+BINDIR=$BASEDIR/bin
+TESTDIR=$BASEDIR/tests
+
+numtests=0
+numfail=0
+
+update_failure () { 
+    failure=$1
+    testname=$2
+    out=$3
+    
+    if [[ "$failure" -ne "0" ]]; then 
+        >&2 echo "Failed testing module $testname"
+        >&2 echo "Output: "
+        >&2 echo "$out"
+        numfail=$((numfail + 1))
+    fi
+    
+}
+
+runtests ()
+{
+    for dir in $TESTDIR/*/; do
+        tester=$(basename $dir)
+        if [ -f $BINDIR/$tester ]; then 
+            # echo "Running $tester:"
+            numtests=$((numtests + 1))
+            out=$($tester)
+            update_failure $? "$tester" "$out"
+        fi
+    done
+
+    if [[ "$numfail" -eq "0" ]]; then 
+        echo "All testing modules passed."
+    else 
+        numpassed=$((numtests - $numfail))
+        echo "$numpassed / $numtests testing modules passed. \
+See above output for details."
+        exit 1
+    fi
+}
+
+main ()
+{
+    runtests
+}
+
+main
