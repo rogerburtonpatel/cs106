@@ -89,4 +89,9 @@ int literal_count(VMState state);
 const char *global_name(VMState state, unsigned index);
   // Return the name of the global at the given index.
 
+
+/* some nice error functions */
+extern void nilfunerror(VMState vm, const char *funname, 
+                 const char *offending_op, uint8_t r0);
+
 #endif /* VMSTATE_INCLUDED */

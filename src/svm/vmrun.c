@@ -117,13 +117,25 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 expect(vm, AS_CSTRING(vm, v), mkBooleanValue(true));
                 break;
             }
-            case BeginCheckError: {
+            case CheckError: {
+                uint8_t r0 = UX;
+                if (registers[r0].tag == Nil) {
+                    const char *funname = lastglobalset(vm, r0, fun, pc);
+                    nilfunerror(vm, funname, "check-error", r0);
+                }
+                // TODO: UYZ is TEST FAIL MSG
                 ntests++;
                 NHANDLERS++;
-                /* if not familiar with the arcane setjmp/longjmp form: 
-                this will return 0 when we make the 'jump-to point,' and 
-                nonzero if we jump to it with longjmp. */
-                if (setjmp(testjmp)) {
+                // set up jump. if we're 1st time, 
+                // push special frame and call func. 
+                // otherwise unwind stack, restore program like return. 
+                // TODO update return to fail a test. 
+
+                /* this 'goto' convention re-initializes the buffer
+                   if we have multiple jumps (e.g. from multiple 
+                   check-error instructions) */
+                initbuf:
+                if(setjmp(testjmp)) {
                     npassed++;
                     NHANDLERS--;
                     /* restore frame */
@@ -131,8 +143,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     vm->R_window_start = a.R_window_start;
                     registers = vm->registers + a.R_window_start;
                     pc = a.resume_loc;
-                } else {
-                    /* push special frame */
+                    goto initbuf;
+                    /* then move on with our lives */
+                } else /* we're not here from a jump */ {
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
                         if (vm->Stack[vm->stackpointer - 1].dest_reg_idx == -1)
                            {
@@ -151,25 +164,72 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
                     }
-                    Activation a = {pc + iXYZ(curr_instr), 
-                                     /* goto end of check-error */
-                                        vm->R_window_start, ERROR_FRAME};
-                    vm->Stack[vm->stackpointer++] = a;
 
+                    struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
+                    assert(func->arity == 0); /* this can NEVER have args */
+                    /* push special frame */
+                    Activation a = {pc, vm->R_window_start, ERROR_FRAME};
+                    vm->Stack[vm->stackpointer++] = a;
+                    
+                    pc = &func->instructions[0] - 1;
                     /* continue with execution, now in error mode */
                 }
                 break;
-            }            
-            case EndCheckError: {
-                v = literal_value(vm, uYZ(curr_instr));
-                    fprintf(stderr, "Check-error failed: evaluating \"%s\" was "
-                    "expected to produce an error, but evaluation terminated "
-                    "normally.\n", AS_CSTRING(vm, v));
-                    /* error if nhandlers is 0 */
-                NHANDLERS--;
-                vm->stackpointer--; /* to remove the error frame */
-                break;
             }
+                
+            // case BeginCheckError: {
+            //     ntests++;
+            //     NHANDLERS++;
+            //     /* if not familiar with the arcane setjmp/longjmp form: 
+            //     this will return 0 when we make the 'jump-to point,' and 
+            //     nonzero if we jump to it with longjmp. */
+            //     if (setjmp(testjmp)) {
+            //         npassed++;
+            //         NHANDLERS--;
+                    /* restore frame */
+                    // Activation a = vm->Stack[--vm->stackpointer];
+                    // vm->R_window_start = a.R_window_start;
+                    // registers = vm->registers + a.R_window_start;
+                    // pc = a.resume_loc;
+            //     } else {
+                //     /* push special frame */
+                //     if (vm->stackpointer == MAX_STACK_FRAMES) {
+                //         if (vm->Stack[vm->stackpointer - 1].dest_reg_idx == -1)
+                //            {
+                //             fprintf(stderr, "You've hit the outstandingly rare"
+                //                             " \nand almost definitely contrived"
+                //                             " case \nwhere pushing an error"
+                //                             " frame via check-error \ncaused a"
+                //                             " stack overflow \nbut where that" 
+                //                             " very overflow \nwas caught by"
+                //                             " another check-error."
+                //                             " \nWell done.\n");
+                //            }
+
+                //         NHANDLERS--; /* otherwise we don't unwind properly */
+                //         runerror(vm, 
+                //             "attempting to push an error frame in check-error"
+                //             " caused a Stack Overflow");
+                //     }
+                //     Activation a = {pc + iXYZ(curr_instr), 
+                //                      /* goto end of check-error */
+                //                         vm->R_window_start, ERROR_FRAME};
+                //     vm->Stack[vm->stackpointer++] = a;
+
+                //     /* continue with execution, now in error mode */
+                // }
+                // break;
+            // }            
+            // case EndCheckError: {
+            //     v = literal_value(vm, uYZ(curr_instr));
+            //         fprintf(stderr, "Check-error failed: evaluating \"%s\" was "
+            //         "expected to produce an error, but evaluation terminated "
+            //         "normally.\n", AS_CSTRING(vm, v));
+            //         /* error if nhandlers is 0 */
+            //     NHANDLERS--;
+            //     vm->stackpointer--; /* to remove the error frame */
+            //     break;
+            // }
             /* ARITH- R3 */
             case Add:
                 registers[UX] = 
@@ -433,11 +493,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 Activation a = vm->Stack[--vm->stackpointer];
-                
-                if (a.dest_reg_idx < 0) {
-                    runerror(vm, "attempting to return register %hhu, "
-                                 "off of an error frame", UX);
-                }
+
 
                 Value return_value = registers[UX];
 
@@ -446,11 +502,16 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers = vm->registers + a.R_window_start;
                 pc = a.resume_loc;
 
-                // set final return
-                registers[a.dest_reg_idx] = return_value;
+                if (a.dest_reg_idx < 0) {
+                /* we've failed a check-error test if this happens. */                
+                    NHANDLERS--;
+                } else {
+                    // set final return
+                    registers[a.dest_reg_idx] = return_value;
+                }
                 break;
             }
-
+            // TODO pull out more error messaging into vmstate helper funs
             case Call: {
                 uint8_t r0 = UY;
                 uint8_t rn = UZ;
@@ -462,15 +523,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 // check for invalid function 
                 if (registers[r0].tag == Nil) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
-                    if (funname == NULL) {
-                        runerror(vm, 
-                        "tried calling a function in register %hhu, \
-                        which is nil and was never set to a function.\n", r0);
-                    } else {
-                        runerror(vm, 
-                        "tried calling a function in register %hhu, which is \
-                          nil and was last set to function %s.\n", r0, funname);
-                    }
+                    nilfunerror(vm, funname, "call", r0);
                 }
                 // We'd like to do this up top, but we need to make sure the 
                 // function exists first so we can print a helpful 
@@ -527,15 +580,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
                 if (registers[r0].tag == Nil) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
-                    if (funname == NULL) {
-                        runerror(vm, 
-                        "tried tailcalling a function in register %hhu, "
-                        "which is nil and was never set to a function.", r0);
-                    } else {
-                        runerror(vm, 
-                    "tried tailcalling a function in register %hhu, which is "
-                    "nil and was last set to function \"%s\".", r0, funname);
-                    }
+                    nilfunerror(vm, funname, "tailcall", r0);
                 }
 
                 struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
