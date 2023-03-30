@@ -91,7 +91,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
             case Printu:
                 print("%U", (unsigned)AS_NUMBER(vm, registers[UX]));
                 break;
-            }
             case Printl:
                 print("%v", literal_value(vm, uYZ(curr_instr)));
                 break;
@@ -338,74 +337,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[UX] = 
                     mkNumberValue(~(int64_t)AS_NUMBER(
                                                 vm, registers[UX]));
-                break;       
-            }
-            case Call: {
-                uint32_t dest_reg_idx = uX(curr_instr);
-                uint8_t r0 = uY(curr_instr);
-                uint8_t rn = uZ(curr_instr);
-                uint8_t n  = rn - r0;
-
-                // check for invalid function
-                // TODO: add funtion p to activation
-                if (registers[r0].tag != VMFunction) {
-                    const char *funname = lastglobalset(vm, r0, fun, pc);
-                    fprint(stderr, "Offending value: %v\n", registers[r0]);
-                    if (funname == NULL) {
-                        runerror(vm, 
-                        "tried calling a function in register %hhu, "
-                        "which is nil and was never set to a function.", r0);
-                    } else {
-                        runerror(vm, 
-                        "tried calling a function in register %hhu, which is "
-                    "nil and was last set to function \"%s\".", r0, funname);
-                    }
-                }
-                // We'd like to do this up top, but we need to make sure the 
-                // function exists first so we can print a helpful 
-                // debug message with a name we know to be valid!
-                if (vm->stackpointer == MAX_STACK_FRAMES) {
-                    fprintf(stderr, "Offending function: ");
-                    fprintfunname(stderr, vm, registers[r0]);
-                    fprintf(stderr, "\n");
-                    // TODO: i'd like to use lastglobalset for a much cleaner
-                    // error statement, but it's returning null (even
-                    // when the name has been clearly set). I'm a bit tired 
-                    // right now and will look later. If I don't get to this,
-                    // it's something I'd like to hear about. 
-                    // const char *funname = lastglobalset(vm, r0, fun, pc);
-
-                    runerror(vm, 
-                        "attempting to call function in register %hhu"
-                        " caused a Stack Overflow", r0);
-                }
-
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
-                if (vm->R_window_start + r0 + func->nregs >= NUM_REGISTERS) {
-                    fprintf(stderr, "Offending function: ");
-                    fprintfunname(stderr, vm, registers[r0]);
-                    fprintf(stderr, "\n");
-                    runerror(vm, 
-                        "attempting to call function in register %hhu"
-                        " caused a Register Window Overflow", r0);
-                }
-
-                // call stack save
-                Activation a = {pc, vm->R_window_start, dest_reg_idx};
-                vm->Stack[vm->stackpointer++] = a;
-
-                assert(func->arity == n);
-
-                // move the register window
-                vm->R_window_start += r0;
-                registers = vm->registers + vm->R_window_start;
-
-                // transfer control= move instruction pointer to start of 
-                // function instruction stream
-                pc = &func->instructions[0] - 1; /* account for increment */
-
-                // return will undo this based on the activation! 
-                break;
+                break;  
             /* LITS <-> GLOBS <-> REGS */
             case LoadLiteral: 
                 registers[UX] = vm->literals[uYZ(curr_instr)];
