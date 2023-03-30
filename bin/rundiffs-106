@@ -1,0 +1,72 @@
+#!/bin/bash
+# 
+# Purpose: diff tests all 106 code based in testing dirs
+# 
+
+## Usage: runtests
+## 
+## 
+## 
+## 
+## author: rab
+## date:  Sun Mar 12 05:02:05 EDT 2023
+
+BASEDIR=$DIR106
+
+SVMDIR=$BASEDIR/src/svm
+UFTDIR=$BASEDIR/src/uft
+BINDIR=$BASEDIR/bin
+TESTDIR=$BASEDIR/tests
+
+numtests=0
+numfail=0
+
+shopt -s nullglob
+
+
+update_failure () { 
+    failure=$1
+    testname=$2
+    out=$3
+    
+    if [[ "$failure" -ne "0" ]]; then 
+        >&2 echo "Failed testing file $testname"
+        >&2 echo "Output: "
+        >&2 echo "$out"
+        numfail=$((numfail + 1))
+    fi
+    
+}
+
+runtests ()
+{
+    for dir in $TESTDIR/*/; do
+        # run each test suite of each kind 
+
+        for vofile in $dir/*.vo; do
+            echo "$vofile"
+            numtests=$((numtests + 1))
+            name=`basename $vofile`
+            out=$(diff --color <(svm "$vofile" 2>&1) <(cat "$dir/$name.1"))
+            update_failure $? "$vofile" "$out"
+        done
+    done
+
+    if [[ "$numfail" -eq "0" ]]; then 
+        echo "All testing modules passed."
+    else 
+        numpassed=$((numtests - $numfail))
+        echo "$numpassed / $numtests testing modules passed. \
+See above output for details."
+        exit 1
+    fi
+}
+
+main ()
+{
+    runtests
+}
+
+main
+
+shopt -u nullglob
