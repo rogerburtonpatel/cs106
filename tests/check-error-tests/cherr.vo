@@ -1,6 +1,7 @@
-.load module 5
-begin-check-error 3
+.load module 3
+.load 0 function 0 3
 loadliteral 1 0
 / 1 1 1
-end-check-error string 7 114 49 32 47 32 114 49
+return 0
+check-error 0 string 7 40 47 32 48 32 48 41
 printlnl string 10 119 101 39 114 101 32 100 111 110 101

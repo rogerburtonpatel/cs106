@@ -15,16 +15,13 @@ typedef enum opcode {
                       Print, Println, Printu, // R1
                       Printl, Printlnl, // LIT
                       Error, // R1
-                      Check, Expect, // R1LIT
-                      GotoVcon, // R1U8
-                      IfVconMatch, // U8LIT, not meant to be evaluated
-                      Add, Sub, Div, Mult, Mod, // R3
-                      Inc, Dec, Neg, Not,
-                      CheckAssert, // R1LIT
+                      Check, Expect, CheckAssert, // R1LIT
+                      CheckError, // R1LIT
                       LoadLiteral, // R1LIT
                       GetGlobal, SetGlobal, // R1GLO
                       Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, Eq, // R3
-
+                      GotoVcon, // R1U8
+                      IfVconMatch, // U8LIT, not meant to be evaluated
                       Cons, // R3
                       Inc, Dec, Neg, Not, // R1
                       BoolOf, // R2

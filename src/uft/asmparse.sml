@@ -3,6 +3,8 @@
 (* You'll get a partially complete version of this file, 
   which you'll need to complete. *)
 
+(* TODO add comments and whitespace parsing around funcs *)
+
 structure AsmParse :>
   sig
     type line = string (* one line of assembly code *)
@@ -256,9 +258,7 @@ struct
     <|> eLR "expect" <$> (the "expect" >> string') <~> optional (the ",") <*> reg
     <|> eLR "check-assert" <$> (the "check-assert" >> string')  <~> optional (the ",") <*> reg
 
-    <|> eL "begin-check-error" <$> (the "begin-check-error" >> int')
-    <|> eL "end-check-error" <$> (the "end-check-error" >> string')
-    (* <|> eR1 "begin-check-error" <$> reg *)
+    <|> eLR "check-error" <$> (the "check-error" >> string')  <~> optional (the ",") <*> reg
                             
     <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
     <|> succeed (eR0 "halt") <~> the "halt"
@@ -484,20 +484,21 @@ struct
           (case regAndLit 
           of ("loadliteral", [x], l) =>
             spaceSep [reg x, ":=", unparse_lit l]
-          | ("check", [x], l) => 
-            spaceSep ["check", unparse_lit l, reg x]
+          | ("check", [x], msg) => 
+            spaceSep ["check", unparse_lit msg, reg x]
           | ("error", _, l) => (* we ignore the register here *)
             spaceSep ["error", unparse_lit l]
-          | ("expect", [x], l) => 
-            spaceSep ["expect", unparse_lit l, reg x]
+          | ("expect", [x], msg) => 
+            spaceSep ["expect", unparse_lit msg, reg x]
+          | ("check-assert", [x], msg) => 
+            spaceSep ["check-assert", unparse_lit msg, reg x]
           | ("getglobal", [x], name) =>
             spaceSep [reg x, ":=", "_G[", unparse_lit name, "]"]
           | ("setglobal", [x], name) =>
             spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
-          | ("begin-check-error", [], offset) => 
-              spaceSep ["begin-check-error", unparse_lit offset]
-          | ("end-check-error", [], name) =>
-            spaceSep ["end-check-error", unparse_lit name]
+          | ("check-error", [x], msg) => 
+              spaceSep ["check-error", unparse_lit msg, reg x]
+
           
           | ("printl", [], name) =>
               spaceSep ["printl", unparse_lit name]
