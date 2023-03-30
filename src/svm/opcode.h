@@ -15,9 +15,8 @@ typedef enum opcode {
                       Print, Println, Printu, // R1
                       Printl, Printlnl, // LIT
                       Error, // R1
-                      BeginCheckError, // iXYZ
                       Check, Expect, CheckAssert, // R1LIT
-                      EndCheckError, // LIT
+                      CheckError, // R1LIT
                       LoadLiteral, // R1LIT
                       GetGlobal, SetGlobal, // R1GLO
                       Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, Eq, // R3

@@ -16,6 +16,7 @@
 #include "value.h"
 #include "vmheap.h"
 #include "vmheap.h"
+#include "vmerror.h"
 
 
 unsigned STARTING_LITS = 1000;
@@ -98,4 +99,19 @@ const char *global_name(VMState state, unsigned index) {
 void initialize_global(VMState vm, Value name, Value v) {
   (void) vm; (void) name; (void) v; // todo replace with real code
   return;
+}
+
+
+void nilfunerror(VMState vm, const char *funname, 
+                 const char *offending_op, uint8_t r0)
+{
+    if (funname == NULL) {
+        runerror(vm, 
+        "tried %sing a function in register %hhu, "
+        "which is nil and was never set to a function.", offending_op, r0);
+    } else {
+        runerror(vm, 
+    "tried %sing a function in register %hhu, which is "
+    "nil and was last set to function \"%s\".", offending_op, r0, funname);
+    }
 }
