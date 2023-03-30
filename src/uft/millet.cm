@@ -88,6 +88,7 @@ group is
   anf.sml      
 
   anembed.sml      
+  anproject.sml
   anrename.sml
 
 
