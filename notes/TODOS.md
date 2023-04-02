@@ -160,3 +160,11 @@ NR: "No, I was out playing touch football"
 "There's not enough words there for it to be wrong"
 
 "As long as we can emacs, the mechanism is immaterial."
+
+Kresten: "we're definitely doing some wrong nonsense"
+nr: "You can comfort yourself in the fact that as long as you're in dark mode
+     I probably can't see what you're doing."
+
+"(I'm never 100% reliable, but definitely much less reliable after 7pm.)"
+
+"No, this is one horse-sized duck. No problem."

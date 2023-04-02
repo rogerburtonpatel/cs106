@@ -58,12 +58,6 @@ struct
   exception LeftAsExercise of string
   exception AttemptedToSetToPrimitive of string
 
-  (* fun implode [] = ""
-    | implode (c::cs) = c ^ implode cs *)
-  
-  (* fun explode "" = []
-    | explode (c ^ cs) = c :: explode cs *)
-
   fun fst (x, y) = x
 
 (* VAR: LOCAL | GLOBAL *)
@@ -120,6 +114,8 @@ struct
         X.CHECK_EXPECT (expString e, exp' (e, []), expString e', exp' (e', []))
     | def (S.CHECK_ASSERT e) =
         X.CHECK_ASSERT (expString e, exp' (e, []))
+    | def (S.CHECK_ERROR e) =
+        X.CHECK_ERROR (expString e, exp' (e, []))
 
   val disambiguate = def
 
@@ -174,6 +170,7 @@ struct
       | def (X.DEFINE (f, (xs, e))) = S.DEFINE (f, (xs, exp e))
       | def (X.CHECK_EXPECT (_, e, _, e')) = S.CHECK_EXPECT (exp e, exp e')
       | def (X.CHECK_ASSERT (_, e))        = S.CHECK_ASSERT (exp e)
+      | def (X.CHECK_ERROR (_, e))         = S.CHECK_ERROR (exp e)
 
   in
 
