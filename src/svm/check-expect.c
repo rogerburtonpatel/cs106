@@ -20,10 +20,20 @@
 
 static char *checks;
 
-int ntests = 0;
-int npassed = 0;
+static int ntests = 0;
+static int npassed = 0;
 
 extern jmp_buf testjmp;
+
+void add_test()
+{
+    ntests++;
+}
+
+void pass_test()
+{
+    npassed++;
+}
 
 static char *copy(const char *s) {
   int n = strlen(s);

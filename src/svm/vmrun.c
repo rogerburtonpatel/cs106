@@ -123,7 +123,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     nilfunerror(vm, funname, "check-error", r0);
                 }
                 // TODO: UYZ is TEST FAIL MSG
-                ntests++;
+                add_test();
                 NHANDLERS++;
                 // set up jump. if we're 1st time, 
                 // push special frame and call func. 
@@ -134,7 +134,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                    if we have multiple jumps (e.g. from multiple 
                    check-error instructions) */
                 if(setjmp(testjmp)) {
-                    npassed++;
+                    pass_test();
                     NHANDLERS--;
                     /* restore frame */
                     Activation a = vm->Stack[--vm->stackpointer];
