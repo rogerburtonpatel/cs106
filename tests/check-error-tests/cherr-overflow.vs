@@ -9,11 +9,11 @@
         L1:
           return r2
     }
-    global the_worst_zero_youve_ever_seen := r0
-
-    r1 := 10000
-    begin-check-error 2
-    r0 := call r0 (r1)
-    end-check-error "calling a stack-overflowing function"
+    r1 := function (0 arguments) {
+        r1 := 10000
+        r0 := call r0 (r1)
+        return r0
+    }
+    check-error "calling a stack-overflowing function" r1
     r0 := function? r0
     check-assert "r0 is a function, not a value." r0
