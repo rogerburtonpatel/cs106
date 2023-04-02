@@ -122,7 +122,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
                     nilfunerror(vm, funname, "check-error", r0);
                 }
-                // TODO: UYZ is TEST FAIL MSG
                 add_test();
                 NHANDLERS++;
                 // set up jump. if we're 1st time, 
@@ -165,7 +164,8 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                     assert(func->arity == 0); /* this can NEVER have args */
                     /* push special frame */
-                    Activation a = {pc, vm->R_window_start, ERROR_FRAME};
+                    Activation a = {pc, vm->R_window_start, -(int)uYZ(curr_instr)};
+
                     vm->Stack[vm->stackpointer++] = a;
                     
                     pc = &func->instructions[0] - 1;
@@ -423,7 +423,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 Activation a = vm->Stack[--vm->stackpointer];
-
+                fprintf(stderr, "return destregidx %d\n", a.dest_reg_idx);
 
                 Value return_value = registers[UX];
 
