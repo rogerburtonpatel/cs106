@@ -68,6 +68,8 @@ struct
           (fn e => fn e' => F.CHECK_EXPECT (s, e, s', e')) <$> exp e <*> exp e'
       | def (X.CHECK_ASSERT (s, e)) =
           (fn e => F.CHECK_ASSERT (s, e)) <$> exp e
+      | def (X.CHECK_ERROR (s, e)) =
+          (fn e => F.CHECK_ERROR (s, e)) <$> exp e
   in
     val project = def
   end
@@ -95,6 +97,7 @@ struct
       | def (F.DEFINE (f, (xs, e))) = C.DEFINE (f, (xs, exp e))
       | def (F.CHECK_EXPECT (s, e, s', e')) = C.CHECK_EXPECT (exp e, exp e')
       | def (F.CHECK_ASSERT (s, e)) = C.CHECK_ASSERT (exp e)
+      | def (F.CHECK_ERROR (s, e)) = C.CHECK_ERROR (exp e)
 
   in
     val embed = def

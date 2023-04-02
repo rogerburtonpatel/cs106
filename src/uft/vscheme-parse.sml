@@ -444,7 +444,7 @@ struct
             <|> bracket "define" (define <$> funname <*> oflist (many name) <*> exp)
             <|> bracket "check-expect"  (curry  S.CHECK_EXPECT <$> exp <*> exp)
             <|> bracket "check-assert"  (       S.CHECK_ASSERT <$> exp)
-            <|> bracket "check-error"   (unimp "check-error" <$> exp)
+            <|> bracket "check-error"   (       S.CHECK_ERROR  <$> exp)
             <|> bracket "data"          typedefIgnored
             <|> bracket "implicit-data" typedefIgnored
             <|> bracket "check-principal-type*" typedefIgnored

@@ -26,4 +26,5 @@ structure FirstOrderScheme = struct
                 | EXP    of exp
                 | CHECK_EXPECT of string * exp * string * exp
                 | CHECK_ASSERT of string * exp
+                | CHECK_ERROR of string * exp
 end

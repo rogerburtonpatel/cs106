@@ -4,6 +4,7 @@
 
 structure KNRename :> sig
   val regOfName : string -> ObjectCode.reg Error.error
+  val nameOfReg : ObjectCode.reg -> string Error.error
   val mapx : ('a -> 'b Error.error) ->
              ('a KNormalForm.exp -> 'b KNormalForm.exp Error.error)
 end
@@ -24,6 +25,7 @@ struct
   (* AsmLex.registerNum takes a string starting with "r" followed by a number n
      such that 0 <= n < 256, and returns n *)
   val regOfName = AsmLex.registerNum
+  fun nameOfReg r = succeed ("r" ^ Int.toString r)
 
   fun mapx f = 
     fn e => 

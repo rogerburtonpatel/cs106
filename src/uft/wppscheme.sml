@@ -137,6 +137,8 @@ struct
             nest 3 (kw "check-expect" [exp e, exp e'])
         | S.CHECK_ASSERT e =>
             nest 3 (kw "check-assert" [exp e])
+        | S.CHECK_ERROR e =>
+            nest 3 (kw "check-error" [exp e])            
         | S.EXP e => exp e
 
 

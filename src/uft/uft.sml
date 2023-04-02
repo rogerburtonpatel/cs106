@@ -126,7 +126,9 @@ struct
                      >=> Error.mapList (ANRename.mapx ANRename.regOfName)
     | AN_reg_of inLang = raise NoTranslationTo AN
 
+
   fun KN_of KN = KN_of_file
+    | KN_of FO = KN_reg_of FO >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
     | KN_of inLang = raise NoTranslationTo KN
 
   fun AN_of AN = AN_of_file

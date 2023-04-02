@@ -34,6 +34,7 @@ structure VScheme = struct
                 | EXP    of exp
                 | CHECK_EXPECT of exp * exp
                 | CHECK_ASSERT of exp
+                | CHECK_ERROR of exp
 
 end
 
@@ -67,6 +68,7 @@ structure UnambiguousVScheme = struct
                 | EXP    of exp
                 | CHECK_EXPECT of string * exp * string * exp
                 | CHECK_ASSERT of string * exp
+                | CHECK_ERROR of string * exp
 
   fun valToString (SYM x) = x
     | valToString (INT n) = Int.toString n
@@ -100,6 +102,7 @@ struct
   structure S = VScheme
   fun isTest (S.CHECK_ASSERT _) = true
     | isTest (S.CHECK_EXPECT _) = true
+    | isTest (S.CHECK_ERROR _) = true
     | isTest (S.VAL _) = false
     | isTest (S.DEFINE _) = false
     | isTest (S.EXP _) = false
