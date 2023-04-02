@@ -258,7 +258,7 @@ struct
             <|> bracket "define" (define <$> name <*> oflist (many name) <*> exp)
             <|> bracket "check-expect" (curry  S.CHECK_EXPECT <$> exp <*> exp)
             <|> bracket "check-assert" (       S.CHECK_ASSERT <$> exp)
-            <|> bracket "check-error"  (unimp "check-error" <$> exp)
+            <|> bracket "check-error"  (       S.CHECK_ERROR  <$> exp)
            )
     <|> bracket "record" (desugarRecord <$> name <*> oflist (many name))
     <|> single <$> S.EXP <$> exp

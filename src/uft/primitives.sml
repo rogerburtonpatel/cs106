@@ -44,6 +44,7 @@ structure Primitive :> sig
   val check        : primitive   (* for converting check-expect to K-normal form *)
   val expect       : primitive   (* for converting check-expect to K-normal form *)
   val check_assert : primitive
+  val check_error  : primitive
   val mkclosure    : primitive
   val setclslot    : primitive
   val getclslot    : primitive
@@ -70,7 +71,7 @@ struct
                          "inc", "dec", "neg", "not"]   (* arity 1 *)
   val error          = [ "error" ]            (* arity 1; never returns *)
   val halt           = [ "halt" ]
-  val checky         = [ "check", "expect" ]  (* arity 2; one is literal *)
+  val checky         = [ "check", "expect", "check_error" ]  (* arity 2; one is literal *)
     (* check and expect can't really be used in source code... *)
 
   (* Representation of a primitive, with observers *)
@@ -116,6 +117,7 @@ struct
   val check        = HAS_EFFECT    { name = "check",        arity = 2 }
   val expect       = HAS_EFFECT    { name = "expect",       arity = 2 }
   val check_assert = HAS_EFFECT    { name = "check-assert", arity = 2 }
+  val check_error  = HAS_EFFECT    { name = "check-error",  arity = 2 }
   val loadliteral  = SETS_REGISTER { name = "loadliteral",  arity = 1 }
   val mkclosure    = SETS_REGISTER { name = "mkclosure",    arity = 2 }
   val setclslot    = HAS_EFFECT    { name = "setclslot",    arity = 3 }

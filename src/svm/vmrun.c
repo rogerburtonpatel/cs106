@@ -133,7 +133,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 /* this 'goto' convention re-initializes the buffer
                    if we have multiple jumps (e.g. from multiple 
                    check-error instructions) */
-                initbuf:
                 if(setjmp(testjmp)) {
                     npassed++;
                     NHANDLERS--;
@@ -142,7 +141,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     vm->R_window_start = a.R_window_start;
                     registers = vm->registers + a.R_window_start;
                     pc = a.resume_loc;
-                    goto initbuf;
                     /* then move on with our lives */
                 } else /* we're not here from a jump */ {
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
