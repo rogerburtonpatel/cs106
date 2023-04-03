@@ -11,7 +11,6 @@ Projection to KNF should probably reject SETGLOBAL in a value (toReg) context.
 
 ^ ask abt
 
-
 knproject.sml:71
 
 
@@ -170,4 +169,7 @@ nr: "You can comfort yourself in the fact that as long as you're in dark mode
 "No, this is one horse-sized duck. No problem."
 
 "(I guess once you've taught 40, you never forget...)"
+
+"It's an exaggeration to say the faculty slack is the Ming Chow social feed,
+ but it's not much of an exaggeration."
 
