@@ -57,3 +57,10 @@
     [r1 1])
 
 (begin (begin (println r1) (println r1)) (println r1)))
+
+; capture-avoiding subst
+(begin 
+   (let ([r0 (let ([r0 3]) (number? r0))]) 
+     (check r0 'hi)) 
+   (let ([r0 #t]) 
+     (expect r0 '#t)))
