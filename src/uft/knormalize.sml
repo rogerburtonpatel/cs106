@@ -76,11 +76,15 @@ struct
   fun vmopLitK p s = fn reg => K.VMOPLIT (p, [reg], K.STRING s)
 
 (* todo add -- *)
-  fun exp rho A e =
+  fun exp rho A ex =
     let val exp : reg Env.env -> regset -> FirstOrderScheme.exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho)   (* normalize and bind in _this_ environment *)
-    in  (case e
+    in  (case ex
           of F.PRIMCALL (p, [e]) => bindWithTranslateExp A rho e (vmopK p)
+           | F.PRIMCALL (p, [e1, e2]) => 
+              bindWithTranslateExp A rho e1 
+                (fn reg => bindWithTranslateExp (A -- reg) rho e2 
+                            (fn reg2 => K.VMOP (p, [reg, reg2])))
            | F.LITERAL v => K.LITERAL v
            | F.LOCAL n => 
              let val r = Env.find (n, rho)
@@ -118,13 +122,23 @@ struct
                       bindWithTranslateExp A rho e2 (vmopLitK P.expect s2))
           end
     | def (F.CHECK_ASSERT (s, e)) = 
-                        bindWithTranslateExp (RS 0) Env.empty e (vmopLitK P.check_assert s)
+          bindWithTranslateExp (RS 0) Env.empty e (vmopLitK P.check_assert s)
+                        (* TODO ASK: can we use 0 in check-error bc of toplevel? *)
     | def (F.CHECK_ERROR (s, e)) = 
-                         (K.LETX 
-                              (0, 
-                               K.FUNCODE ([], exp Env.empty (RS 0) e), 
-                               K.VMOPLIT (P.check_error, [0], K.STRING s)))
+        bindAnyReg (RS 0) (K.FUNCODE ([], exp Env.empty (RS 0) e)) 
+                          (fn reg => 
+                            K.VMOPLIT (P.check_error, [reg], K.STRING s))
     | def (F.VAL (n, e)) = exp Env.empty (RS 0) (F.SETGLOBAL (n, e))
-    | def e = Impossible.exercise "K-normalize a definition"
-
+    | def (F.DEFINE (n, (ns, e))) = 
+        let val envAndArgRegs =    (foldl (fn (n, (rho, rs, r)) => 
+                                           (Env.bind (n, r, rho), rs @ [r], r + 1))
+                                          (Env.empty, [], 1)
+                                          ns)
+            val boundEnv  = #1 envAndArgRegs
+            val argregs   = #2 envAndArgRegs
+            val availRegs = (RS (1 + List.length ns))
+        in K.LETX (0, 
+                K.FUNCODE (argregs, exp boundEnv availRegs e), 
+                KNormalUtil.setglobal (n, 0))
+        end 
 end

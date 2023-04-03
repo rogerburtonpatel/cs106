@@ -1,79 +1,46 @@
-; LITERAL
+;; F.LITERAL, F.CHECK_EXPECT, F.CHECK_ASSERT
+;;
+(check-expect (number? 3) #t)            
+(check-expect (number? 'really?) #f)
+(check-assert (symbol? 'really?))
 
-3
-(let ([$r0 2])
-  (check $r0 'two))
-(let ([$r1 2])
-  (expect $r1 'two))
-; NAME 
-(let* ([$r0 2] [$r1 $r0])
-  (check $r1 'r1-as-two))
-(let* ([$r0 2])
-  (expect $r0 'r0-as-two))
-; VMOP
-(let* ([$r0 2] [$r1 2] [$r0 (+ $r0 $r1)])
-  (check $r0 'two-plus-two))
-(let* ([$r1 4])
-  (expect $r1 'four))
+;; F.CHECK_ERROR - TODO ADD 
+(check-error (error 'bad))
+(check-error (+ 1 'hi))
+
+;; F.GLOBAL, F.SETGLOBAL
+(val x 3)
+(check-expect x 3)
+(check-expect (set x 2) 2)
+(check-expect x 2)
+
+;; F.BEGIN 
+(check-expect (begin) #f)
+(check-expect (begin x) 2)
+(check-expect (begin 1 2 (set x 3)) 3)
+(check-expect (begin (begin)) #f)
+(check-expect (begin 1 2 3 4 5) 5)
+
+;; F.IFX
+(check-expect (if #f 1 2) 2)
+(check-assert (if (number? 3) (symbol? 'really?) (function? x)))
+
+;; F.WHILEX
+(val z #t)
+(check-expect (while z (begin (set z #f) 3 (set x 4))) #f)
+
+;; F.LOCAL - TODO
+
+;; F.DEFINE
+
+(define constant-true () #t)
+(define foo (a) (if a 1 2))
+(define foo2 (a b c d e f) (if a b c))
+
+(check-assert (function? constant-true))
+; (check-assert (constant-true)) TODO
 
 
-; VMOPLIT
-; As discussed on slack, we can't write this yet. 
-; But we'll get there in generation
-; FUNCALL
-; We'll test these when we have callable functions. 
-; (define foo (r10 r11) (+ r10 r11))
-; (let* ([$r0 2] [$r1 2] [$r5 foo] [$r0 ($r5 $r0 $r1)])
-;   (check $r0 'two-foo-two))
-; (let* ([$r1 4])
-;   (expect $r1 'four))
 
-; IFX
-(let* ([$r0 #f] [$r1 2] [$r2 3] [$r0 (if $r0 $r1 $r2)])
-  (check $r0 'if-false-two-else-three))
-(let ([$r1 3])
-  (expect $r1 'three))
-; LETX
-(let ([$r0 1])
-    (let ([$r1 $r0])
-  (check $r1 'one)))
-(let ([$r0 1])
-  (expect $r0 'one))
-; BEGIN
-(let* ([$r0 4] [$r1 2] [$r2 (begin (println $r0) $r1)])
-  (check $r1 'two))
-(let ([$r4 2])
-  (expect $r4 'two))
-; SET
-(let* ([$r1 2] [$r2 3] [$r2 (set $r3 $r2)])
-  (check $r2 'three))
-(let ([$r4 3])
-  (expect $r4 'three))
+;; F.SETLOCAL
 
-; WHILEX
-(let* ([$r1 2] [$r2 3] [$r3 (while (let ([$r5 #f]) $r5) $r5)])
-  (check $r3 'three))
-(let ([$r4 #f])
-  (expect $r4 'three))
-; FUNCODE -- this obviously crashes
-; (let* ([$r1 2] [$r0 (lambda (r100) r100)] [$r3 ($r0 $r1)])
-;   (check $r0 'two-plus-two))
-; (let* ([$r0 2])
-;   (expect $r0 'five))
-
-; (let* ([$r0 2] [$r1 2] [$r0 (+ $r0 $r1)])
-;   (check $r0 'two-plus-two))
-; (let* ([$r0 5])
-;   (expect $r0 'five))
-
-; Something random
-(let* (
-    [r0 1]
-    [r6 1]
-    [r4 (check  r0 'r0-1)]
-    [r5 (expect r6 'r0-1)]
-    [r1 r0]
-    [r3 (+ r1 r0)]
-)
-(+ r1 r0)
-)

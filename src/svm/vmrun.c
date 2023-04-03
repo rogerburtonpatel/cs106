@@ -39,10 +39,6 @@ extern int ntests, npassed;
 extern jmp_buf testjmp;
 
 
-// TODO remove if not needed
-// /* used for runerror stack rewinding */
-// int ERRORNO = -1;
-
 void vmrun(VMState vm, struct VMFunction *fun) {
     
     if (fun->size < 1) {
@@ -334,6 +330,34 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[UX] = 
                     mkBooleanValue(   registers[UY].tag == VMFunction
                                    || registers[UY].tag == VMClosure);
+                break;
+
+            /* LISTS */
+
+            case Cons: {
+                v        = registers[UY];
+                Value v2 = registers[UZ];
+                /* typechecking */
+                if (v2.tag != Emptylist) {
+                    struct VMBlock *oldcell = AS_CONS_CELL(vm, v2);
+                    if (v.tag != oldcell->slots[0].tag) {
+                        typeerror(vm, "matching type in cons cell", 
+                                      v, __FILE__, __LINE__);
+                    v2 = mkConsValue(oldcell);
+                    }
+                }
+                VMNEW(struct VMBlock *, cell, sizeof(int) + 2 * sizeof(Value));
+                cell->nslots   = 2;
+                cell->slots[0] = v;
+                cell->slots[1] = v2;
+                registers[UX]  = mkConsValue(cell);
+                break;
+            }
+            case Car:
+                registers[UX] = AS_CONS_CELL(vm, registers[UY])->slots[0];
+                break;
+            case Cdr:
+                registers[UX] = AS_CONS_CELL(vm, registers[UY])->slots[1];
                 break;
             
             /* Unusual R2U8 case */
