@@ -37,6 +37,8 @@ struct
 
 (* val exp   : UnambiguousVScheme.exp -> string ANormalForm.exp Error.error *)
 
+(* pick smallest register not free in e2, e3 *)
+
 fun freshName name badnames = "y"
 (* use regOfName, and search with actual name *)
       (* we'll reconstruct the actual name for efficient search *)
