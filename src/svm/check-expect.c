@@ -122,7 +122,7 @@ void begin_error_check(struct VMState *vm, Instruction **pc, Value **registers,
 /* if we get here, the test has failed. 
     gives a nice error msg and uninstalls handler so
    subsequent errors will crash if they should. */
-void check_error(struct VMState *vm, const char *source)
+void fail_check_error(struct VMState *vm, const char *source)
 {
     (void) vm;
     fprintf(stderr, "Check-error failed: evaluating \"%s\" was expected to "

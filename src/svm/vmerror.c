@@ -30,7 +30,7 @@ void stackunwind(VMState state)
 {
     Activation *Stack = state->Stack;
     while (state->stackpointer > 0 
-           && Stack[state->stackpointer - 1].dest_reg_idx != ERROR_FRAME)  {
+           && Stack[state->stackpointer - 1].dest_reg_idx > 0)  {
         state->stackpointer--;
     }
 }
