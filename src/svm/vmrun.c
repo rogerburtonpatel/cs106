@@ -127,12 +127,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 // set up jump. if we're 1st time, 
                 // push special frame and call func. 
                 // otherwise unwind stack, restore program like return. 
-                // TODO update return to fail a test. 
-
-                /* this 'goto' convention re-initializes the buffer
-                   if we have multiple jumps (e.g. from multiple 
-                   check-error instructions) */
-                if(setjmp(testjmp)) {
+                if (setjmp(testjmp)) {
                     pass_test();
                     NHANDLERS--;
                     /* restore frame */
@@ -143,7 +138,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     /* then move on with our lives */
                 } else /* we're not here from a jump */ {
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
-                        if (vm->Stack[vm->stackpointer - 1].dest_reg_idx == -1)
+                        if (vm->Stack[vm->stackpointer - 1].dest_reg_idx < 0)
                            {
                             fprintf(stderr, "You've hit the outstandingly rare"
                                             " \nand almost definitely contrived"
@@ -173,60 +168,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
                 break;
             }
-                
-            // case BeginCheckError: {
-            //     ntests++;
-            //     NHANDLERS++;
-            //     /* if not familiar with the arcane setjmp/longjmp form: 
-            //     this will return 0 when we make the 'jump-to point,' and 
-            //     nonzero if we jump to it with longjmp. */
-            //     if (setjmp(testjmp)) {
-            //         npassed++;
-            //         NHANDLERS--;
-                    /* restore frame */
-                    // Activation a = vm->Stack[--vm->stackpointer];
-                    // vm->R_window_start = a.R_window_start;
-                    // registers = vm->registers + a.R_window_start;
-                    // pc = a.resume_loc;
-            //     } else {
-                //     /* push special frame */
-                //     if (vm->stackpointer == MAX_STACK_FRAMES) {
-                //         if (vm->Stack[vm->stackpointer - 1].dest_reg_idx == -1)
-                //            {
-                //             fprintf(stderr, "You've hit the outstandingly rare"
-                //                             " \nand almost definitely contrived"
-                //                             " case \nwhere pushing an error"
-                //                             " frame via check-error \ncaused a"
-                //                             " stack overflow \nbut where that" 
-                //                             " very overflow \nwas caught by"
-                //                             " another check-error."
-                //                             " \nWell done.\n");
-                //            }
-
-                //         NHANDLERS--; /* otherwise we don't unwind properly */
-                //         runerror(vm, 
-                //             "attempting to push an error frame in check-error"
-                //             " caused a Stack Overflow");
-                //     }
-                //     Activation a = {pc + iXYZ(curr_instr), 
-                //                      /* goto end of check-error */
-                //                         vm->R_window_start, ERROR_FRAME};
-                //     vm->Stack[vm->stackpointer++] = a;
-
-                //     /* continue with execution, now in error mode */
-                // }
-                // break;
-            // }            
-            // case EndCheckError: {
-            //     v = literal_value(vm, uYZ(curr_instr));
-            //         fprintf(stderr, "Check-error failed: evaluating \"%s\" was "
-            //         "expected to produce an error, but evaluation terminated "
-            //         "normally.\n", AS_CSTRING(vm, v));
-            //         /* error if nhandlers is 0 */
-            //     NHANDLERS--;
-            //     vm->stackpointer--; /* to remove the error frame */
-            //     break;
-            // }
             /* ARITH- R3 */
             case Add:
                 registers[UX] = 
@@ -423,7 +364,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 }
 
                 Activation a = vm->Stack[--vm->stackpointer];
-                fprintf(stderr, "return destregidx %d\n", a.dest_reg_idx);
 
                 Value return_value = registers[UX];
 
@@ -433,10 +373,11 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 pc = a.resume_loc;
 
                 if (a.dest_reg_idx < 0) {
-                /* we've failed a check-error test if this happens. */                
-                    NHANDLERS--;
+                /* we've failed a check-error test if this happens. */
+                    int slot = -a.dest_reg_idx;
+                    v = literal_value(vm, (uint16_t)slot);
+                    fail_check_error (vm, AS_CSTRING(vm, v));
                 } else {
-                    // set final return
                     registers[a.dest_reg_idx] = return_value;
                 }
                 break;

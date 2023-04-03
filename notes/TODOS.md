@@ -168,3 +168,6 @@ nr: "You can comfort yourself in the fact that as long as you're in dark mode
 "(I'm never 100% reliable, but definitely much less reliable after 7pm.)"
 
 "No, this is one horse-sized duck. No problem."
+
+"(I guess once you've taught 40, you never forget...)"
+

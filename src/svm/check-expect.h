@@ -18,9 +18,10 @@
 
 struct VMState;
 
-void check       (struct VMState *vm, const char *source, Value v);
-void expect      (struct VMState *vm, const char *source, Value v);
+void check            (struct VMState *vm, const char *source, Value v);
+void expect           (struct VMState *vm, const char *source, Value v);
 void check_assert(const char *source, Value v);
+void fail_check_error (struct VMState *vm, const char *source);
 void add_test();
 void pass_test(); /* SPEEDUP: you could make these macros if you're worried
                      about efficiency, or just expose the global test vars. */
