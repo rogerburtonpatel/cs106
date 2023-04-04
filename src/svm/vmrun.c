@@ -339,12 +339,9 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 Value v2 = registers[UZ];
                 /* typechecking */
                 if (v2.tag != Emptylist) {
+                    // TODO CHANGE THIS REDUNDANCY
                     struct VMBlock *oldcell = AS_CONS_CELL(vm, v2);
-                    if (v.tag != oldcell->slots[0].tag) {
-                        typeerror(vm, "matching type in cons cell", 
-                                      v, __FILE__, __LINE__);
                     v2 = mkConsValue(oldcell);
-                    }
                 }
                 VMNEW(struct VMBlock *, cell, sizeof(int) + 2 * sizeof(Value));
                 cell->nslots   = 2;
@@ -452,9 +449,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                                  dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
 
-
-                // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
-
                 assert(func->arity == n);
 
                 // move the register window
@@ -473,13 +467,14 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 uint8_t rn = UY;
                 uint8_t n  = rn - r0;
 
+
                 if (registers[r0].tag == Nil) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
                     nilfunerror(vm, funname, "tailcall", r0);
                 }
 
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[0]);
-
+                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
+                                       
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
                     if (NHANDLERS == 0) {
                         fprintf(stderr, "Offending function:");
@@ -496,7 +491,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     registers[i] = registers[r0 + i];
                 }
 
-                fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
                 assert(func->arity == n);
 
                 pc = &func->instructions[0] - 1; /* account for increment */
