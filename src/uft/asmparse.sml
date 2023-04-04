@@ -113,6 +113,7 @@ struct
             | L.NAME "#t" => SOME (O.BOOL true)
             | L.NAME "false" => SOME (O.BOOL false)
             | L.NAME "#f" => SOME (O.BOOL false)
+            (* todo: add '() *)
             | L.NAME "emptylist" => SOME O.EMPTYLIST
             | L.NAME "nil" => SOME O.NIL
             | L.STRING s => SOME (O.STRING s)
@@ -378,7 +379,7 @@ struct
     | unparse_lit (O.STRING s) = stringify s
     | unparse_lit (O.BOOL true) = "#t"
     | unparse_lit (O.BOOL false) = "#f"
-    | unparse_lit O.EMPTYLIST = "'()"
+    | unparse_lit O.EMPTYLIST = "emptylist"
     | unparse_lit O.NIL = "nil"
 
 (* factor out binops/unops if you can. also factor out object code wrapper *)
