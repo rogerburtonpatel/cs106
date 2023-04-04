@@ -28,6 +28,6 @@ case $# in
 esac | 
 fgrep -v  'check-error' |
 "$BIN/uft" $flavor-vo |
-"env SVMDEBUG=decode $BIN/svm" $PREDEF -
+"$BIN/svm" $PREDEF -
 
 exit $?
