@@ -148,10 +148,10 @@ struct
                                   S (A.tailcall reg (List.last (reg::reglist))) 
           (* 'wildcard' *)
            | K.WHILEX _ => toRegK' r0 e o S (A.return r0)
-           | K.FUNCODE _ => (toRegK' r0 e) o (S (A.return r0))
-           | K.LITERAL _ => (toRegK' r0 e) o (S (A.return r0))
-           | K.VMOP _ => (toRegK' r0 e) o (S (A.return r0))
-           | K.VMOPLIT _ => (toRegK' r0 e) o (S (A.return r0)))
+           | K.FUNCODE _ => toRegK' r0 e o (S (A.return r0))
+           | K.LITERAL _ => toRegK' r0 e o (S (A.return r0))
+           | K.VMOP _ => toRegK' r0 e o (S (A.return r0))
+           | K.VMOPLIT _ => toRegK' r0 e o (S (A.return r0)))
 
 
 

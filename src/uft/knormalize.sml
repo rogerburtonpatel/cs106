@@ -61,13 +61,26 @@ struct
       let val t = smallest rset
       in K.LETX (t, e, k t)
       end
-  (* val bindAnyReg : regset -> exp -> (reg -> exp) -> exp *)
+  val _ = bindAnyReg : regset -> exp -> (reg -> exp) -> exp
+
+  fun bindSmallest rset e k = 
+      let val t = smallest rset
+      in K.LETX (t, e, k t)
+      end
+
+  (* val bindSmallest : regset -> exp -> (reg -> exp) -> exp *)
+
+  fun flip f g = g f
+
+  (* val revminus = flip -- *)
 
   type 'a normalizer = regset -> 'a -> exp
 
-  fun nbRegsWith normalize bind A xs k =
-        Impossible.exercise "nbRegsWith, to be implemented in a later step"
-
+  fun nbRegsWith normalize bind A [] k      = k []
+    | nbRegsWith normalize bind A (e::es) k = 
+      bind A (normalize A e) (fn reg => nbRegsWith normalize bind (A -- reg) es
+                                                        (fn ts => k (reg::ts)))
+        
   val nbRegsWith : 'a normalizer -> policy -> regset -> 'a list -> (reg list -> exp) -> exp
     = nbRegsWith
 
@@ -80,11 +93,9 @@ struct
     let val exp : reg Env.env -> regset -> FirstOrderScheme.exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho)   (* normalize and bind in _this_ environment *)
     in  (case ex
-          of F.PRIMCALL (p, [e]) => bindWithTranslateExp A rho e (vmopK p)
-           | F.PRIMCALL (p, [e1, e2]) => 
-              bindWithTranslateExp A rho e1 
-                (fn reg => bindWithTranslateExp (A -- reg) rho e2 
-                            (fn reg2 => K.VMOP (p, [reg, reg2])))
+          of F.PRIMCALL (p, es) => 
+                            nbRegs bindAnyReg (A -- length es) es 
+                                   (fn regs => K.VMOP (p, regs))
            | F.LITERAL v => K.LITERAL v
            | F.LOCAL n => 
              let val r = Env.find (n, rho)
@@ -106,6 +117,12 @@ struct
             let val t = smallest A
             in K.WHILEX (t, exp rho A e, exp rho A e')
             end
+           | F.FUNCALL (e, es) => 
+            bindSmallest A (exp rho A e) 
+                         (fn reg => nbRegs bindSmallest (A -- reg) es 
+                                           (fn regs => K.FUNCALL (reg, regs)))
+           (* | F.LET (bindings, body) =>  *)
+           (* nbRegs bindSmallest A es (fn regs => K.FUNCALL (hd regs, tl regs)) *)
            | _ => Impossible.exercise "K-normalize an expression")
     end
 
@@ -142,3 +159,24 @@ struct
                 KNormalUtil.setglobal (n, 0))
         end 
 end
+
+(* TODO: ask about this output from qsort:
+
+(let* ([r0 append]
+       [r1 (let* ([r1 qsort]
+                  [r2 (let* ([r2 filter]
+                             [r3 left?]
+                             [r4 rest]) 
+                        (r2 r3 r4))]) 
+             (r1 r2))]
+       [r2 (let* ([r3 pivot]
+                  [r4 (let* ([r4 qsort]
+                             [r5 (let* ([r5 filter]
+                                        [r6 right?]
+                                        [r7 rest]) 
+                                   (r5 r6 r7))]) 
+                        (r4 r5))]) 
+             (cons r3 r4))]) 
+  (r0 r1 r2))
+  
+   *)

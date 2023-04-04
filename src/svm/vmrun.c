@@ -253,7 +253,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 mkBooleanValue(AS_NUMBER(vm, registers[UY]) <=
                             AS_NUMBER(vm, registers[UZ]));
                 break;
-
+// TODO THESE DON'T WORK WITH GLOBALS
             /* UNARY ARITH- R1 */
             case Inc:
                 registers[UX] = 
@@ -264,14 +264,14 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     mkNumberValue(AS_NUMBER(vm, registers[UX]) - 1);
                 break;
             case Neg:
+            // TODO FIX: THIS DOESN'T WORK
                 registers[UX] = 
-                    mkNumberValue(-AS_NUMBER(vm, registers[UX]));
+                    mkNumberValue(-(int64_t)AS_NUMBER(vm, registers[UY]));
                 break;    
-            // REV: Is this needed in vScheme?   
+            // TODO REV: Is this needed in vScheme?   
             case Not:
                 registers[UX] = 
-                    mkNumberValue(~(int64_t)AS_NUMBER(
-                                                vm, registers[UX]));
+                    mkBooleanValue(!AS_BOOL(vm, registers[UY]));
                 break;  
             /* LITS <-> GLOBS <-> REGS */
             case LoadLiteral: 

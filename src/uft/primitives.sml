@@ -60,8 +60,9 @@ struct
                 , "mkclosure"
                 ]
   val unary   = [ "boolean?", "null?", "number?", "pair?", "function?", "nil?"
-                , "symbol?", "car", "cdr", "boolOf", "copy", "swap", "+imm"
-                ]
+                , "symbol?", "car", "cdr", "boolOf", "copy", "swap", "+imm",
+                "neg", "not", "hash"]
+                (* TODO CHANGE ASMPARSE FOR NEG AND NOT *)
 
 
   (* Four different groups of side-effecting primitives.  To the compiler,
@@ -69,7 +70,7 @@ struct
      so I feel compelled to separate them. *)
 
   val side_effecting = [ "print", "printu", "println", 
-                         "inc", "dec", "neg", "not"]   (* arity 1 *)
+                         "inc", "dec"]   (* arity 1 *)
   val error          = [ "error" ]            (* arity 1; never returns *)
   val halt           = [ "halt" ]
   val checky         = [ "check", "expect", "check_error" ]  (* arity 2; one is literal *)
