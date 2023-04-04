@@ -5,7 +5,7 @@
 (check-assert (symbol? 'really?))
 
 ;; F.CHECK_ERROR - TODO ADD 
-(check-error (error 'bad))
+(check-error (begin (error 'bad) 2))
 (check-error (+ 1 'hi))
 
 ;; F.GLOBAL, F.SETGLOBAL
@@ -66,16 +66,32 @@
 ; (append (qsort (filter left? rest))
 ;         (cons pivot (qsort (filter right? rest))))
 
-;; F.LET, LETSTAR
+; F.LET, LETSTAR
+(let ([x 1]) (+ x 1))
+(check-expect (let ([x 1]) (+ x 1)) 2)
 
-; (check-expect (let ([x 1]) (+ x 1)) 2)
+(define localLet (n m)
+   (let ([n m] [m n]) (+ n m)))
 
-; (define localLet (n m)
-;    (let ([n m] [m n]) (+ n m)))
+(define localLetStar (n m)
+   (let* ([n m] [m n]) (+ n m)))
 
-; (define localLetStar (n m)
-;    (let* ([n m] [m n]) (+ n m)))
+(define localLetSimple (n m)
+   (let ([x 3]) (+ x (+ n m))))
+
+(define localLetSimple2 (n m)
+   (let ([m n] [x 3]) (+ x (+ n m))))
+
+(define localLetMixed (n m)
+   (let ([n m] [m n] [x 3]) (+ x (+ n m))))
+
+(define localLetStarMixed (n m)
+   (let* ([n m] [m n] [x 3]) (+ x (+ n m))))
 
 
-; (check-expect (localLet 1 2) 3)
-; (check-expect (localLetStar 1 2) 4)
+(check-expect (localLet 1 2) 3)
+(check-expect (localLetStar 1 2) 4)
+(check-expect (localLetSimple 1 2) 6)
+(check-expect (localLetSimple2 1 2) 5)
+(check-expect (localLetMixed 1 2) 6)
+(check-expect (localLetStarMixed 1 2) 7)

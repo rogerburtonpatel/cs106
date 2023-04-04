@@ -496,7 +496,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     registers[i] = registers[r0 + i];
                 }
 
-                // fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
+                fprintf(stderr, "reg of func: %hhu, arity: %d, n: %hhu\n", r0, func->arity, n);
                 assert(func->arity == n);
 
                 pc = &func->instructions[0] - 1; /* account for increment */
