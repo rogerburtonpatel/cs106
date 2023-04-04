@@ -52,6 +52,10 @@ struct
       end
 
 (* problem is: (A -- reg) is setting a lower avail on [m n], leading to x getting r2 *)
+(* see localLetMixed in kntest.scm *)
+(* TODO ASK: 
+    1. Weird let* construct
+    2. the max thing *)
 
 (* TODO CLEAN up MAX problem *)
   fun bindSmallest rset e k = 
@@ -70,28 +74,33 @@ struct
 
   fun nbRegsWith normalize bind A [] k      = k []
     | nbRegsWith normalize bind A (e::es) k = 
-      let val (RS n) = A
-          (* val () = print ("n is" ^ Int.toString n ^ "\n") *)
-      in
-      bind A (normalize A e) (fn reg => nbRegsWith normalize bind (A -- (Int.max (n, reg))) es
-                                                        (fn ts => k (reg::ts)))
-      end        
-  val nbRegsWith : 'a normalizer -> policy -> regset -> 'a list -> (reg list -> exp) -> exp
+        bind A (normalize A e) 
+          (fn reg => 
+            let val (RS n) = A
+                (* val () = print ("n is " ^ Int.toString n ^ "\n")
+                val () = print ("reg is " ^ Int.toString reg ^ "\n") *)
+                val maxReg = (Int.max (n - 1, reg))
+            in nbRegsWith normalize bind (A -- maxReg) es (fn ts => k (reg::ts)) 
+            end)
+  val nbRegsWith : 'a normalizer -> policy -> regset -> 'a list -> 
+                                              (reg list -> exp) -> exp
     = nbRegsWith
 
-  fun vmopK p      = fn reg => K.VMOP (p, [reg])
   (* Note: only works on strings! *)
-  fun vmopLitK p s = fn reg => K.VMOPLIT (p, [reg], K.STRING s)
+  fun vmopStringK p s = fn reg => K.VMOPLIT (p, [reg], K.STRING s)
 
+  (* DEUBGGING *)
   fun IntListToString [] = ""
     | IntListToString (i::is) = Int.toString i ^ "->" ^ IntListToString is
 
-  fun printRegSet (RS n) = print ("A:" ^ Int.toString n ^ "\n")
+  fun printRegSet (RS n) = print ("A: RS (" ^ Int.toString n ^ ")\n")
 
-(* todo add -- *)
+  (* WEIGHTLIFTERS *)
+
   fun exp rho A ex =
     let val exp : reg Env.env -> regset -> FirstOrderScheme.exp -> exp = exp
-        val nbRegs = nbRegsWith (exp rho)   (* normalize and bind in _this_ environment *)
+        val nbRegs = nbRegsWith (exp rho) 
+        (*  ^ normalize and bind in _this_ environment *)
     in  (case ex
           of F.PRIMCALL (p, es) => 
                             nbRegs bindAnyReg A es
@@ -124,54 +133,47 @@ struct
                                            (fn regs => K.FUNCALL (reg, regs)))
            | F.LET (bindings, body) => 
              let val (names, rightSides) = ListPair.unzip bindings
-                 val bindNamestoRegs     = ListPair.foldl Env.bind rho
-                 (* val _ = printRegSet A *)
+                 val bindNamestoRegs     = ListPair.foldr Env.bind rho
+                 (* val () = printRegSet A *)
              in nbRegs bindAnyReg A rightSides 
-             (* the regs it's generating are incorrect *)
                       (fn regs => 
                       let val () = ()
-                      (* print (IntListToString regs ^ "\n") *)
+                      (* val () = print (IntListToString regs ^ "\n") *)
                       in 
                       exp (bindNamestoRegs (names, regs)) 
                                       (A -- (List.length names + 1)) 
-                                      body end)
+                                      body 
+                      end)
                                       
-             end
-            (* in nbRegs bindSmallest A rightSides 
-                    (fn regs => let val rho' = ListPair.foldl Env.bind rho (names, regs)
-                                    val updatedRegs = (A -- length rightSides)
-                                    val normalizedBody = (exp rho' updatedRegs body)
-                                 in bindSmallest updatedRegs normalizedBody
-                                    (fn reg => normalizedBody)
-                                 end)
-            end *)
-            )
+             end)
     end
 
   and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
-  and translateBegin rho A []      =  K.LITERAL (K.BOOL false)
-    | translateBegin rho A [e]     = exp rho A e
-    | translateBegin rho A (e::es) = K.BEGIN (exp rho A e, translateBegin rho A es)
-(* todo: should we let-bind A to (RS 0) and rho to Env.empty at the top? *)
-  fun def (F.EXP e) = exp Env.empty (RS 0) e
-    | def (F.CHECK_EXPECT  (s1, e1, s2, e2)) = 
-          let val rho = Env.empty
-              val A = (RS 0)
-          in K.BEGIN (bindWithTranslateExp A rho e1 (vmopLitK P.check s1), 
-                      bindWithTranslateExp A rho e2 (vmopLitK P.expect s2))
-          end
-    | def (F.CHECK_ASSERT (s, e)) = 
-          bindWithTranslateExp (RS 0) Env.empty e (vmopLitK P.check_assert s)
+  and translateBegin rho A []        =  K.LITERAL (K.BOOL false)
+    | translateBegin rho A [e]       = exp rho A e
+    | translateBegin rho A (e::es)   = K.BEGIN (exp rho A e, 
+                                                translateBegin rho A es)
+  fun def ex = 
+    let val A   = (RS 0)
+        val rho = Env.empty
+    in 
+    (case ex
+      of F.EXP e => exp rho A e
+       | F.CHECK_EXPECT (s1, e1, s2, e2) =>
+          K.BEGIN (bindWithTranslateExp A rho e1 (vmopStringK P.check s1), 
+                      bindWithTranslateExp A rho e2 (vmopStringK P.expect s2))
+       | F.CHECK_ASSERT (s, e) =>
+          bindWithTranslateExp A rho e (vmopStringK P.check_assert s)
                         (* TODO ASK: can we use 0 in check-error bc of toplevel? *)
-    | def (F.CHECK_ERROR (s, e)) = 
-        bindAnyReg (RS 0) (K.FUNCODE ([], exp Env.empty (RS 0) e)) 
+       | F.CHECK_ERROR (s, e) => 
+        bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
                           (fn reg => 
                             K.VMOPLIT (P.check_error, [reg], K.STRING s))
-    | def (F.VAL (n, e)) = exp Env.empty (RS 0) (F.SETGLOBAL (n, e))
-    | def (F.DEFINE (n, (ns, e))) = 
-        let val envAndArgRegs = (foldl (fn (n, (rho, rs, r)) => 
-                                      (Env.bind (n, r, rho), rs @ [r], r + 1))
-                                      (Env.empty, [], 1)
+       | F.VAL (n, e) => exp rho A (F.SETGLOBAL (n, e))
+       | F.DEFINE (n, (ns, e)) =>
+        let val envAndArgRegs = (foldl (fn (n, (rho', rs, r)) => 
+                                      (Env.bind (n, r, rho'), rs @ [r], r + 1))
+                                      (rho, [], 1)
                                       ns)
             val boundEnv  = #1 envAndArgRegs
             val argregs   = #2 envAndArgRegs
@@ -179,10 +181,10 @@ struct
         in K.LETX (0, 
                 K.FUNCODE (argregs, exp boundEnv availRegs e), 
                 KNormalUtil.setglobal (n, 0))
-        end 
+        end)
+    end
 end
-
-(* TODO: ask about this output from qsort:
+(* TODO: ask about this output from qsort: 
 
 (let* ([r0 append]
        [r1 (let* ([r1 qsort]
@@ -201,4 +203,6 @@ end
              (cons r3 r4))]) 
   (r0 r1 r2))
   
+  how can we get our nice let* stack? (as fun as this snake shape is)
+
    *)

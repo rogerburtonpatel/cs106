@@ -37,7 +37,7 @@
 (define foo2 (a b c d e f) (if a b c))
 
 (check-assert (function? constant-true))
-(check-assert (constant-true)) TODO
+(check-assert (constant-true))
 
 ;; FULL PRIMITIVES
 (check-assert (= 1 1))
@@ -72,26 +72,25 @@
 
 (define localLet (n m)
    (let ([n m] [m n]) (+ n m)))
+(check-expect (localLet 1 2) 3)
 
 (define localLetStar (n m)
    (let* ([n m] [m n]) (+ n m)))
+(check-expect (localLetStar 1 2) 4)
 
 (define localLetSimple (n m)
    (let ([x 3]) (+ x (+ n m))))
+(check-expect (localLetSimple 1 2) 6)
 
 (define localLetSimple2 (n m)
    (let ([m n] [x 3]) (+ x (+ n m))))
+(check-expect (localLetSimple2 1 2) 5)
 
 (define localLetMixed (n m)
    (let ([n m] [m n] [x 3]) (+ x (+ n m))))
+(check-expect (localLetMixed 1 2) 6)
 
 (define localLetStarMixed (n m)
    (let* ([n m] [m n] [x 3]) (+ x (+ n m))))
-
-
-(check-expect (localLet 1 2) 3)
-(check-expect (localLetStar 1 2) 4)
-(check-expect (localLetSimple 1 2) 6)
-(check-expect (localLetSimple2 1 2) 5)
-(check-expect (localLetMixed 1 2) 6)
 (check-expect (localLetStarMixed 1 2) 7)
+

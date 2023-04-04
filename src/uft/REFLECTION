@@ -1,0 +1,4 @@
+what went wrong:
+   1. Cons cell bug: type checking for heterogeneous lists
+   2. Bug in tailcall: getting function from registers[0]
+      instead of registers[r0]. Hard to find. 
