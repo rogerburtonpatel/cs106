@@ -59,16 +59,19 @@ struct
   fun bindAnyReg rset (K.NAME y) k = k y
     | bindAnyReg rset e          k = 
       let val t = smallest rset
-      in K.LETX (t, e, k t)
+      in  K.LETX (t, e, k t)
       end
-  val _ = bindAnyReg : regset -> exp -> (reg -> exp) -> exp
 
+(* problem is: (A -- reg) is setting a lower avail on [m n], leading to x getting r2 *)
+
+(* TODO CLEAN up MAX problem *)
   fun bindSmallest rset e k = 
       let val t = smallest rset
-      in K.LETX (t, e, k t)
+      in  K.LETX (t, e, k t)
       end
 
-  (* val bindSmallest : regset -> exp -> (reg -> exp) -> exp *)
+  val _ = bindAnyReg   : regset -> exp -> (reg -> exp) -> exp
+  val _ = bindSmallest : regset -> exp -> (reg -> exp) -> exp
 
   fun flip f g = g f
 
@@ -78,9 +81,12 @@ struct
 
   fun nbRegsWith normalize bind A [] k      = k []
     | nbRegsWith normalize bind A (e::es) k = 
-      bind A (normalize A e) (fn reg => nbRegsWith normalize bind (A -- reg) es
+      let val (RS n) = A
+          (* val () = print ("n is" ^ Int.toString n ^ "\n") *)
+      in
+      bind A (normalize A e) (fn reg => nbRegsWith normalize bind (A -- (Int.max (n, reg))) es
                                                         (fn ts => k (reg::ts)))
-        
+      end        
   val nbRegsWith : 'a normalizer -> policy -> regset -> 'a list -> (reg list -> exp) -> exp
     = nbRegsWith
 
@@ -88,13 +94,18 @@ struct
   (* Note: only works on strings! *)
   fun vmopLitK p s = fn reg => K.VMOPLIT (p, [reg], K.STRING s)
 
+  fun IntListToString [] = ""
+    | IntListToString (i::is) = Int.toString i ^ "->" ^ IntListToString is
+
+  fun printRegSet (RS n) = print ("A:" ^ Int.toString n ^ "\n")
+
 (* todo add -- *)
   fun exp rho A ex =
     let val exp : reg Env.env -> regset -> FirstOrderScheme.exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho)   (* normalize and bind in _this_ environment *)
     in  (case ex
           of F.PRIMCALL (p, es) => 
-                            nbRegs bindAnyReg (A -- length es) es 
+                            nbRegs bindAnyReg A es
                                    (fn regs => K.VMOP (p, regs))
            | F.LITERAL v => K.LITERAL v
            | F.LOCAL n => 
@@ -108,7 +119,8 @@ struct
            | F.GLOBAL n => KNormalUtil.getglobal n
            (* Note that in prettyprinting this you won't see the 'begin' *)
            | F.SETGLOBAL (n, e) => 
-            bindWithTranslateExp A rho e (fn reg => K.BEGIN (KNormalUtil.setglobal (n, reg), K.NAME reg))
+            bindWithTranslateExp A rho e 
+                (fn reg => K.BEGIN (KNormalUtil.setglobal (n, reg), K.NAME reg))
            | F.BEGIN es  => translateBegin rho A es
            | F.IFX (e, e1, e2) => 
               bindWithTranslateExp A rho e 
@@ -121,9 +133,30 @@ struct
             bindSmallest A (exp rho A e) 
                          (fn reg => nbRegs bindSmallest (A -- reg) es 
                                            (fn regs => K.FUNCALL (reg, regs)))
-           (* | F.LET (bindings, body) =>  *)
-           (* nbRegs bindSmallest A es (fn regs => K.FUNCALL (hd regs, tl regs)) *)
-           | _ => Impossible.exercise "K-normalize an expression")
+           | F.LET (bindings, body) => 
+             let val (names, rightSides) = ListPair.unzip bindings
+                 val bindNamestoRegs     = ListPair.foldl Env.bind rho
+                 (* val _ = printRegSet A *)
+             in nbRegs bindAnyReg A rightSides 
+             (* the regs it's generating are incorrect *)
+                      (fn regs => 
+                      let val () = ()
+                      (* print (IntListToString regs ^ "\n") *)
+                      in 
+                      exp (bindNamestoRegs (names, regs)) 
+                                      (A -- (List.length names + 1)) 
+                                      body end)
+                                      
+             end
+            (* in nbRegs bindSmallest A rightSides 
+                    (fn regs => let val rho' = ListPair.foldl Env.bind rho (names, regs)
+                                    val updatedRegs = (A -- length rightSides)
+                                    val normalizedBody = (exp rho' updatedRegs body)
+                                 in bindSmallest updatedRegs normalizedBody
+                                    (fn reg => normalizedBody)
+                                 end)
+            end *)
+            )
     end
 
   and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
@@ -147,13 +180,13 @@ struct
                             K.VMOPLIT (P.check_error, [reg], K.STRING s))
     | def (F.VAL (n, e)) = exp Env.empty (RS 0) (F.SETGLOBAL (n, e))
     | def (F.DEFINE (n, (ns, e))) = 
-        let val envAndArgRegs =    (foldl (fn (n, (rho, rs, r)) => 
-                                           (Env.bind (n, r, rho), rs @ [r], r + 1))
-                                          (Env.empty, [], 1)
-                                          ns)
+        let val envAndArgRegs = (foldl (fn (n, (rho, rs, r)) => 
+                                      (Env.bind (n, r, rho), rs @ [r], r + 1))
+                                      (Env.empty, [], 1)
+                                      ns)
             val boundEnv  = #1 envAndArgRegs
             val argregs   = #2 envAndArgRegs
-            val availRegs = (RS (1 + List.length ns))
+            val availRegs = RS (1 + List.length ns)
         in K.LETX (0, 
                 K.FUNCODE (argregs, exp boundEnv availRegs e), 
                 KNormalUtil.setglobal (n, 0))

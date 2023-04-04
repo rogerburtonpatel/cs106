@@ -35,6 +35,7 @@ instruction_info instructions[] = {
   { "*", Mult, parseR3, "mult rX rY rZ" },
   { "/",  Div,  parseR3, "div rX rY rZ" },
   { "//", IDiv, parseR3, "idiv rX rY rZ" },
+  { "idiv", IDiv, parseR3, "idiv rX rY rZ" },
   { "mod",  Mod,  parseR3, "mod rX rY rZ" },
   { ">",  Gt,  parseR3, "> rX rY rZ" },
   { "<",  Lt,  parseR3, "< rX rY rZ" },
