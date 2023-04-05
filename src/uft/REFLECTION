@@ -121,4 +121,68 @@ With bindSmallest, we get TWO EXTRA BINDINGS:
   performance- not to meantion readability of assembly with fewer redundant
   bindings. 
 
-  
+
+RESUBMITTED WITH DEPTH POINTS:
+
+The check-error instruction takes a register containing a function to be 
+'error checked' and a string literal that's the readable representation of
+the expression to be error checked. 
+
+TRANSLATION:
+Top-level scheme syntax is (check-error e). 
+This K-normalizes to 
+(let ([r0 (lambda () (k-normalize e))]) 
+     (check-error r0 stringify-e))
+
+Which generates the assembly:
+
+r0 := function (0 arguments) {
+  body-of-e-as-vs
+  return r0
+}
+check-error stringify-e r0
+
+This is observed in knormalize.sml:170-173, and in all the places where
+check-error has been added: in Vscheme/UnambiguousVscheme (vscheme.sml), 
+FOScheme (foscheme.sml), KNF (knf.sml), and as a checky primitive in 
+primitives.sml. 
+
+SEMANTICS:
+
+We begin in vmerror.c, where we initialize a jmp_buf testbuf, and describe
+abstract handlers with NHANDLERS. Now, all the error functions will jump 
+to the buffer if there's a handler installed (NHANDLERS > 0). Otherwise, 
+they'll just print and abort. We expose NHANDLERS in vmerror.h. 
+
+Moving on to check-expect.c/h, we've added API calls to add a test, pass a test,
+and fail a check-error test: 
+add_test() 
+pass_test();
+fail_check_error();
+
+These are used in the main attaction, in vmrun.c:115-165. Here, we push our 
+special 'error frame' with dest_reg_idx as a NEGATIVE index into the literal 
+pool (we'll make it positive when we use it; it being negative is to identify
+an error frame). We then install an abstract handler, set_jmp our jmp_buf, 
+and execute the function in rX in 'error mode.'
+
+If we error out during this function, we'll jump back, restore the frame, 
+and pass the test using our new API. 
+
+If we return from an error frame- see vmrun.c:396-405- we'll fail our test, 
+printing out a fail message accessed by the negative literal slot. 
+
+TESTS: Several can be found in the `tests` directory I submitted with module 9.
+       All the files are fine; some of the .1s don't have the right output
+       since I updated the error messages. For convincing tests, I would look 
+       at the check-errors in kntest.scm, which compile and run as expected, 
+       as well as cherr.vs and cherr-special-overflow.vs in `tests`. Updated
+       diffs are made and will be part of next week's submission.
+
+Thanks! This one was super fun. Back to ANF and tail-recursion optimization.
+
+---
+unicode: I submitted this via Slack. Please let me know if you need anything 
+         else. 
+
+See you Thursday!
