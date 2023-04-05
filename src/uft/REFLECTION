@@ -8,26 +8,40 @@ continuation passed to bindAnyReg, bindSmallest, or a similar function,
 and explain how the continuation reserves the allocated register to prevent 
 its reuse.
 
-> FUNCALL
+> knormalize.sml:132, at the translation of F.FUNCALL. Here, we remove reg,
+  the argument to the continuation, from the available set of registers 
+  with (A -- reg), so that it can't be reused later in the translation of es.
 
 3. To claim this point, identify a line of your code that contains a 
 continuation passed to bindAnyReg, bindSmallest, or a similar function, and 
 explain how the continuation does not reserve the allocated register but rather 
 allows its immediate reuse.
 
-> IF
+> knormalize.sml:125, at the translation of F.IF. Here, we use A in the IF 
+  branches even after calling bindWithTranslateExp on the condition of the if 
+  (the function is a wrapper for bindAnyReg.) This is because once we make the
+  condition's register binding and evaluate it, we're not coming back to
+  the condition and are only going to one branch, so the same set of registers
+  is safe to use. 
 
 4. To claim this point, identify (by line number) every case in your 
 K‑normalizer that binds a list of expressions to a list of registers, and 
 confirm that each case uses the same higher-order function.
 
-> F.PRIMCALL, F.FUNCALL, F.LET. nbRegsWith.
+> knormalize.sml:106 (F.PRIMCALL and also our class!), 132 (F.FUNCALL), 
+                 138 (F.LET). The function is nbRegsWith, partially applied 
+                 to make nbRegs. 
 
 5. To claim this point, identify the lines of your code where it is determined 
 that a function’s incoming actual parameters are in consecutive registers 
 starting at register 1.
 
-> F.DEFINE
+> knormalize.sml:174-177, at F.DEFINE. Here, we fold over the names, binding 
+  each to a reg in the environment. We start at register 1, as indicated by 
+  the '1' on line 176- the register is part of the accumulator that's useful
+  during the fold and discarded after we've created the environment. (i've 
+  updated the code to bind the result to a tuple and not use the cursed #1, #2
+  convention.)
 
 6. To claim this point, submit a file kntest.scm in which every value 
 constructor in foscheme.sml, for both exp and def types, is exercised by some 
@@ -36,7 +50,7 @@ constructor or value constructors that it tests. And uft fo-kn kntest.scm must
 actually generate code. (It is not necessary for the generated code to run or 
 for all the tests to pass.)
 
-> 
+> submitted. 
 
 7. Suppose we change the calling convention so that the function register and 
 argument registers are not killed by a call. Instead they are required to have
@@ -46,10 +60,21 @@ recursion. And other changes, unrelated to tail calls, might also be required
 in the UFT. To claim this point, identify such required change, either in the
 K-normalizer or in the code generator.
 
-In codegen, instead of returingin to register 0, return to reg (nargs + 1). 
-When the reg window shifts, we'll keep everyting. 
+> In codegen.sml, instead of returing to register 0, we'll return to 
+  register (nargs), where nargs is the number of registers used. This way, 
+  if we call a function in r0 with args r1, r2, r3, we'll put our 
+  return value in r4, and not overwrite r0. We're not able to overwrite the 
+  arguments by calling a function via scheme code generation: you can 
+  screw it up in assembly, but the uft won't let you make a function that 
+  changes the values of its arguments because of register window shifts. 
+  
+  The change would be in codegen.sml:100, 122, where instead of calling from 
+  dest or r, we'd call from (List.length r::rs). 
 
-
+  We discussed this question a lot, and weren't able to come up with examples
+  where a function call would change the registers used to call it such that 
+  the following code couldn't use the old values (except, of course, for r0).
+  Hopefully we're on the right track with this one. 
 
 8. To earn this point, your system must run and pass all the tests in 
 scheme105.scm. To claim the point, let us know that you accomplished this goal, 
@@ -57,11 +82,43 @@ and in the reflection, tell us how many tests are included in the file.
 If anything went wrong in your first run of step 25, let us know one thing that 
 went wrong and how you fixed it.
 
-what went wrong:
-   1. Cons cell bug: type checking for heterogeneous lists
+> It immediatly broke when I ran it, because the higher-order stuff doesn't
+work yet (no lambda/closures). So I commented those out and ran again. 2 issues
+and we were through:
+
+   1. Cons cell bug: I was type checking for homogeneous lists. Oops. 
    2. Bug in tailcall: getting function from registers[0]
-      instead of registers[r0]. Hard to find. 
+      instead of registers[r0]. Hard to find. I fixed it by using fprintfunname
+      in every call/tailcall instance in vmrun.c, along with SVMDEBUG=decode.
+      Finally found it when tailcall r2 printed the function in r0. 
+
+There are 27 tests in the file. 
 
 9. To claim this point, justify your choice of policy for K‑normalizing a let 
 expression in step 23. Justification should include an explanation of why 
 another policy is inferior and should be demonstrated with a code example.
+
+> I use bindAnyReg, because I don't want redundant bindings to names we already
+  have. This reduces the code significantly: see this test --
+
+ (define localLetStar (n m)
+    (let* ([n m] [m n]) (+ n m)))
+(check-expect (localLetStar 1 2) 4)
+
+With bindSmallest, we get TWO EXTRA BINDINGS: 
+
+(let ([r0 (lambda (r1 r2) 
+             (let* ([r3 r2]
+                    [r4 r1]) 
+               (+ r3 r4)))]) 
+  (set localLet r0))
+
+  to r3 and r4. But with bindAnyReg:
+
+  (let ([r0 (lambda (r1 r2) (+ r2 r1))]) (set localLet r0))
+
+  So clean. And reducing redundant instructions actually concretely increases
+  performance- not to meantion readability of assembly with fewer redundant
+  bindings. 
+
+  
