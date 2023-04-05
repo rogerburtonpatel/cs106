@@ -122,7 +122,7 @@ struct
                           instrOrErrorIfArityMismatch p rs 1 empty
            | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
                     instrOrErrorIfArityMismatch p rs 1 (S (A.effectLit p rs l))
-           | K.FUNCALL (r, rs) => translateCall r0 r rs
+           | K.FUNCALL (r, rs) => translateCall r r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
 
            | K.LETX  (r, e, e')  => (toRegK' r e) o (forEffectK' e')
