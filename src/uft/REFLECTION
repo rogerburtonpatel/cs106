@@ -1,4 +1,67 @@
+1. To claim this point, submit source code that compiles and builds a uft 
+binary that understands what fo-kn is asking for.
+
+> you bet
+
+2. To claim this point, identify a line of your code that contains a 
+continuation passed to bindAnyReg, bindSmallest, or a similar function, 
+and explain how the continuation reserves the allocated register to prevent 
+its reuse.
+
+> FUNCALL
+
+3. To claim this point, identify a line of your code that contains a 
+continuation passed to bindAnyReg, bindSmallest, or a similar function, and 
+explain how the continuation does not reserve the allocated register but rather 
+allows its immediate reuse.
+
+> IF
+
+4. To claim this point, identify (by line number) every case in your 
+K‑normalizer that binds a list of expressions to a list of registers, and 
+confirm that each case uses the same higher-order function.
+
+> F.PRIMCALL, F.FUNCALL, F.LET. nbRegsWith.
+
+5. To claim this point, identify the lines of your code where it is determined 
+that a function’s incoming actual parameters are in consecutive registers 
+starting at register 1.
+
+> F.DEFINE
+
+6. To claim this point, submit a file kntest.scm in which every value 
+constructor in foscheme.sml, for both exp and def types, is exercised by some 
+test. Each test must be documented by a comment that names the value 
+constructor or value constructors that it tests. And uft fo-kn kntest.scm must 
+actually generate code. (It is not necessary for the generated code to run or 
+for all the tests to pass.)
+
+> 
+
+7. Suppose we change the calling convention so that the function register and 
+argument registers are not killed by a call. Instead they are required to have
+the same values after the return that they had at the call. With this change, 
+it becomes very difficult to use the tailcall instruction except for direct 
+recursion. And other changes, unrelated to tail calls, might also be required
+in the UFT. To claim this point, identify such required change, either in the
+K-normalizer or in the code generator.
+
+In codegen, instead of returingin to register 0, return to reg (nargs + 1). 
+When the reg window shifts, we'll keep everyting. 
+
+
+
+8. To earn this point, your system must run and pass all the tests in 
+scheme105.scm. To claim the point, let us know that you accomplished this goal, 
+and in the reflection, tell us how many tests are included in the file. 
+If anything went wrong in your first run of step 25, let us know one thing that 
+went wrong and how you fixed it.
+
 what went wrong:
    1. Cons cell bug: type checking for heterogeneous lists
    2. Bug in tailcall: getting function from registers[0]
       instead of registers[r0]. Hard to find. 
+
+9. To claim this point, justify your choice of policy for K‑normalizing a let 
+expression in step 23. Justification should include an explanation of why 
+another policy is inferior and should be demonstrated with a code example.

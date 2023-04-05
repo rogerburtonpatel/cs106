@@ -45,9 +45,12 @@ struct
 
 
   val -- : regset * reg -> regset   (* remove a register *)
-   = fn (_, toRemove) => RS (toRemove + 1)
+   = fn (RS n, toRemove) => RS (Int.max (toRemove + 1, n))
   infixr 6 --
   
+
+  fun uncurry f (x, y) = f x y
+  fun curry f x y = f (x, y)
 
   (************ K-normalization ************)
 
@@ -77,7 +80,9 @@ struct
   val _ = bindAnyReg   : regset -> exp -> (reg -> exp) -> exp
   val _ = bindSmallest : regset -> exp -> (reg -> exp) -> exp
 
-  fun flip f g = g f
+  fun flip f (x, y) = f (y, x)
+  infixr 0 $
+  fun f $ g = f g
 
   (* val revminus = flip -- *)
 
@@ -91,7 +96,7 @@ struct
                 (* val () = print ("n is " ^ Int.toString n ^ "\n")
                 val () = print ("reg is " ^ Int.toString reg ^ "\n") *)
                 val maxReg = (Int.max (n - 1, reg))
-            in nbRegsWith normalize bind (A -- maxReg) es (fn ts => k (reg::ts)) 
+            in nbRegsWith normalize bind (A -- reg) es (fn ts => k (reg::ts)) 
             end)
   val nbRegsWith : 'a normalizer -> policy -> regset -> 'a list -> 
                                               (reg list -> exp) -> exp
@@ -113,9 +118,7 @@ struct
         val nbRegs = nbRegsWith (exp rho) 
         (*  ^ normalize and bind in _this_ environment *)
     in  (case ex
-          of F.PRIMCALL (p, es) => 
-                            nbRegs bindAnyReg A es
-                                   (fn regs => K.VMOP (p, regs))
+          of F.PRIMCALL (p, es) => nbRegs bindAnyReg A es (curry K.VMOP p)
            | F.LITERAL v => K.LITERAL v
            | F.LOCAL n => 
              let val r = Env.find (n, rho)
@@ -152,10 +155,9 @@ struct
                       (* val () = print (IntListToString regs ^ "\n") *)
                       in 
                       exp (bindNamestoRegs (names, regs)) 
-                                      (A -- (List.length names + 1)) 
+                                      (List.foldl (flip (op --)) A regs)
                                       body 
                       end)
-                                      
              end)
     end
 
@@ -182,13 +184,11 @@ struct
                             K.VMOPLIT (P.check_error, [reg], K.STRING s))
        | F.VAL (n, e) => exp rho A (F.SETGLOBAL (n, e))
        | F.DEFINE (n, (ns, e)) =>
-        let val envAndArgRegs = (foldl (fn (n, (rho', rs, r)) => 
+        let val (boundEnv, argregs, _) = (List.foldl (fn (n, (rho', rs, r)) => 
                                       (Env.bind (n, r, rho'), rs @ [r], r + 1))
                                       (rho, [], 1)
                                       ns)
-            val boundEnv  = #1 envAndArgRegs
-            val argregs   = #2 envAndArgRegs
-            val availRegs = RS (1 + List.length ns)
+            val availRegs = A -- List.length ns
         in K.LETX (0, 
                 K.FUNCODE (argregs, exp boundEnv availRegs e), 
                 KNormalUtil.setglobal (n, 0))
