@@ -13,6 +13,7 @@ MAINS=uft.opt uft
 .PHONY: mosml
 
 mosml: $(BIN)/uft
+	@: do nothing, and say nothing about doing nothing
 
 .PHONY: clean
 
@@ -23,10 +24,12 @@ clean:
 .PHONY: all
 
 all: $(MAINS:%=$(BIN)/%)
+	@: do nothing, and say nothing about doing nothing
 
 .PHONY: mlton
 
 mlton: $(BIN)/uft.opt
+	@: do nothing, and say nothing about doing nothing
 
 $(BIN)/uft.opt: $(MLBS) $(SRCS)
 	mlton -output $@ -verbose 1 main.mlb
