@@ -66,6 +66,18 @@ faster on some platforms (Peyton Jones, Partain, and Santos 1996).
 Implement let-floating on K-normal form. See what sort of difference it makes 
 to the generated VM code.
 
+
+ROGER:
+
+I thought about doing this in knproject. But then we don't get to 
+reap the benefits in knormalize. So I did it knproject, and got the other 
+depth points. 
+
+I'm going to do this in knrename.sml. That way, we get the benefits in both 
+ANF if we get to it and in the generated code, whether we're coming from 
+knf off of disk or k-normalized code. 
+
+
 Prettyprinting [2 points]. The indentation and line breaks for the 
 vScheme prettyprinter are just barely tolerable. Improve them.
 
