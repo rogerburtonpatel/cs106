@@ -58,6 +58,17 @@ to load and run code. This goal is to implement two machine instructions, one to
 
 
 # A-Normal Form
+
+Right now:
+do reg pass first
+then anormalize. Makes renaming easy. 
+
+Make freeNames set. Calls and tailcalls- free names are funreg -> rn, so we 
+can't bind to any of those
+
+Ok! Let's get to it. 
+
+
 Here's the anormal spiel:
 
 What if we have 
@@ -73,7 +84,7 @@ float whiles-- chapter 2 semantics!
              1       a     b                         a              b
 A[[let x = (let y = ey in ey') in ex']] = A[[let y = ey in (let x = ey' in ex')]]
 
-todo: y can't be free in what?
+todo: y can't be free in what? answer: ex'
             1  a b  c                                a 
 A[[let x = (if e e1 e2) in ex']]        = A[[let y = e in (if y       b
                                                             (let x = e1 in ex')

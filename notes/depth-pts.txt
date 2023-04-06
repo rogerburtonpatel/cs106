@@ -1,0 +1,331 @@
+TOTAL SO FAR: 1
+
+PENDING: .75 for unicode, 4 for check-error. 
+Ask about tokens string for other .3. 
+
+TODO:
+- ANF. Have to. 
+- Denser and Densest Cons cells
+- Tail rec opt. 
+
+MODULE 1: SVM
+
+Depth (20 points), implementation: Add bignums to the SVM, and change the UFT 
+so that bignums are the default numeric type. These points can be claimed any 
+time before classes end
+
+Depth (up to 5 points), tools: You use ChatGPT and/or Copilot to write some of 
+your code, and you demonstrate your understanding of what the tool did well and 
+how to prompt it effectively. 1 point per module up to a maximum of 5. 
+These points can be claimed any time before classes end
+
+MODULE 2: LOADER
+
+Operational semantics [0.25 points]. You can write down a rule of operational 
+semantics to specify what the loader does with the <module> form.
+
+Operational semantics [1 point]. The vScheme global environment 
+ρ is meant to be represented by a compositional mapping from names to locations: 
+ρ = G ∘ N. 
+And in vScheme, the initial basis ρ0 is a total function: every named variable 
+has a location. But in the virtual machine, G is a partial function: 
+only finitely many global variables have designated locations in the VM. 
+This discrepancy can be resolved by writing suitable operational semantics, 
+and you can show two different ways to do it (half a point each, 
+partial credit OK).
+
+Tokenization and parsing [0.5 points]. Suppose that we want to change the 
+on-disk representation of object code so that instead of a sequence of
+ integer codes, a literal string is represented as a C-style string literal, 
+ with double quotes. To handle the new representation, what has to change in 
+ the interface described in file <tokens.h>?
+
+Dynamic compilation and loading [2 points]. μScheme and vScheme both have a use 
+syntactic form, which tells the interpreter to load and run code. This goal is 
+to implement two machine instructions, one to call popen and read from a pipe, 
+and one to load a list of modules from an open file descriptor. 
+These two instructions can then eventually be used to call the compiler and 
+load the results. These instructions can be tested now, and then by the time of 
+module 4, they can be used to implement a use function.
+
+MODULE 3: NONE LEFT
+
+MODULE 4: NONE LEFT 
+
+MODULE 5: KNF
+
+Let-floating transformation [1 point]. 
+When variable y is chosen so it is the same as x or not 
+free in e₃, the following expressions are equivalent:
+
+let x = (let y = e₁ in e₂) in e₃
+
+let y = e₁ in (let x = e₂ in e₃)
+But the second expression results in code that is easier to read and that runs 
+faster on some platforms (Peyton Jones, Partain, and Santos 1996). 
+Implement let-floating on K-normal form. See what sort of difference it makes 
+to the generated VM code.
+
+Prettyprinting [2 points]. The indentation and line breaks for the 
+vScheme prettyprinter are just barely tolerable. Improve them.
+
+MODULE 6: CODEGEN 
+
+Invariants and preconditions [1 point]. You have written an ML function that 
+checks the precondition in outcome 5, thereby confirming that it is OK to 
+translate let into assignment. Your forEffect function checks the condition 
+before calling forEffect'.
+
+Intraprocedural control operators [2 points]. You add break and continue to 
+K-normal form and to everything upstream of it, and you translate them into 
+goto instructions. (The vScheme parser already has hooks for break and 
+continue; you just need to add the abstract syntax.)
+
+A-normal form [3 points]. A-normal form (Flanagan et al 13) is like K-normal 
+form, but with more restrictions: in an expression of the form let x = e in e', 
+expression e may not be a let, if, or while form. Define a variant of A-normal 
+form suitable for the UFT, generate code from it, and in a future module,
+convert first-order Scheme to it (either directly from first-order Scheme or
+indirectly from K-normal form).
+
+MODULE 7: FUNCTIONS 
+
+Stack trace [3 points]. When a run-time error occurs, your code produces a stack
+trace. To make the stack trace useful, you extend the representation of FUNCODE
+to include a string that encodes the function’s name (if known) and source-code
+location (if known). The extension is supported by your K-normal form, assembly
+code (including parser), object code, SVM loader, and vmrun.
+
+This work may count toward depth points or toward module 12, but not both.
+
+Error checking and recovery [4 points]. You implement a check-error instruction,
+which works by putting a special frame on the call stack. If that frame is
+returned to by normal execution, the check-error test fails. But if an error
+occurs while that frame is on the stack, the test succeeds.
+
+This work may count toward depth points or toward module 12, but not both.
+
+Code improvements for tail calls, part I: Register targeting. [3 points] You
+define an optimization pass for K-normal form which changes the register
+bindings so that every tail call is made to a function in register 0 with
+arguments in registers 1 to N . This is done not by adding new bindings (which
+the VM can to more efficiently) but by changing the registers used in existing
+bindings. Such a renaming is always possible, and the cost can be limited to at
+most a single new VM instruction.
+
+In native code, this optimization is important. In a VM, its payoff is small.
+But it enables the next optimization, which has high payoff in both settings.
+
+This work may count toward depth points or toward module 12, but not both.
+
+Code improvements for tail calls, part II: Optimized tail recursion [2 points].
+Building on the previous step, your UFT recognizes when a tail call is a
+recursive call, and it optimizes that tail call into a goto instruction. (A good
+heuristic for recognizing that a tail call is recursive is that it calls a
+function in register 0.)
+
+This optimization is essential for functional languages: a tail-recursive
+function is optimized into a loop.
+
+This work may count toward depth points or toward module 12, but not both.
+
+Curried functions [5 points]. You implement automatic currying as described in
+the handout on understanding procedure calls.
+
+The strategy I recommend is called “eval/apply” and is described by Simon Marlow
+and Simon Peyton Jones in a landmark 2006 paper. The paper has way more detail
+than you need, but the important bits will involve what new species of value and
+what new species of activation record are useful for implementing curried
+functions.
+
+This work may count toward depth points or toward module 12, but not both.
+
+Exceptions [5 points]. Implement exceptions and exception handlers. I recommend
+defining two VM instructions that resemble the “long label” and “long goto”
+features from chapter 3 of my book, which I can give you. Then build exceptions
+on top of that.
+
+This work may count toward depth points or toward module 12, but not both.
+
+Coroutines [10 points]. A coroutine is a synchronous, cooperative, lightweight,
+concurrent abstraction. It’s like a thread, only simpler. A coroutine is
+represented by a suspended VM state. Coroutines need at least the following:
+
+A new form of value whose payload is a VM state.
+
+Instructions that create a coroutine (from a function) and wait for one to
+terminate.
+
+Instructions that transfer control between coroutines. These can be symmetric
+(as in Icon or asymmetric (as in Lua).
+
+Coroutines are a good first step toward fully preemptive concurrency with
+synchronous communication, as in Erlang or Go.
+
+This work may count both toward depth points and module 12. If it is counted
+toward both, the depth points will be halved.
+
+MODULE 8: NONE
+
+MODULE 9: K-NORMALIZATION
+
+Let-floating [3 points]. Use the equations of translation (the 𝓡 function) from
+module 6 to show when the following two expressions have the same translation:
+
+let y = (let x = e₁ in e₂) in e₃ let x = e₁ in (let y = e₂ in e₃) Hint: it works
+when x is not free in e₃ and in one other special case.
+
+Then deploy your insight in your K‑normalizer to rewrite the first form to the
+second form. You’ll know you’ve got it right when your uft fo-kn produces no
+nested let expressions—my prettyprinter will sugar everything into let*.
+
+Hint: define a so-called “smart constructor” to use in place of K.LET.
+
+More powerful if instructions [3 points]. Extend your SVM to include
+two-register if instructions that can compute a Boolean expression and “skip
+next if false”, all in a single VM instruction. For example, if r1 < r2.
+Similarly, extend your SVM to include a one-register if instruction that uses
+the type predicate null? in the condition.4 Extend your K‑normal form and your
+K‑normalizer to exploit these instructions. Demonstrate your extensions and
+measure how much the extension can shrink your generated VM code.
+
+Small-integer literals [3 points]. Extend your SVM to include instructions in
+R2U8 or R2I8 format, so that expressions like x > 0 or n + 1 can be computed
+using a single VM instruction. Extend your K‑normalizer to exploit these
+instructions. Demonstrate your extensions and measure how much the extension can
+shrink your generated VM code.
+
+Optimized let expressions [2 points]. K‑normalize let by defining a hybrid
+policy that results in code that is superior to whatever you would get by using
+a one-size-fits-all policy in step 23.
+
+Efficient compilation of long list literals [1 point]. Using strict
+left-to-right evaluation for long list literals uses a number of registers
+proportional to the length of a list. That means, for example, that we can’t
+compile a literal list with 15 numbers, because we would run out of registers.
+But if the first argument to cons is a literal value, we can change the
+evaluation order to compute the second element first. Do so, and confirm that
+your UFT can compile a literal list of numbers, no matter how long, using only
+two registers.
+
+Polymorphic code generation [1 point]. Assuming you’ve already implemented
+A-normal form, define your K-normalizer as a functor so that your K-normalizer
+can generate both K-normal form and A-normal form, just by applying the functor
+to two different actual parameters.
+
+Bignums in vScheme [2 points]. (Not related to K-normalization.) Repurpose your
+SML bignum implementation from CS 105 to work inside the vScheme interpreter.
+Add a suitable type of value, and update the arithmetic primitives so they do
+mixed arithmetic. (Alter higher-order function arithOp to handle mixed inputs
+and to provide a single point of truth about promotion rules.)
+
+Bignums in the SVM [4 points]. (Not related to K-normalization.) Implement
+bignum arithmetic in the SVM. You can port one of your implementations to C, or
+you can port my array-based implementation from μSmalltalk. Or you can try using
+the GNU multiprecision library (gmp).5
+
+
+MODULE 10: CLOSURE CONVERSION
+
+More accurate mutation analysis [2 points]. Improve my mutability detector so it
+is OK if a single function both mutates a variable and allocates a closure—as
+long as no mutated variable is captured. Demonstrate with a test case.
+
+Mutable variables on the heap [3 points]. You implement the
+Mutability.moveToHeap pass, which migrates every mutated, captured variable into
+a mutable reference cell that is allocated on the heap. The pointer to that cell
+is not mutated so it can safely be shared among multiple closures. I provide
+some hints.
+
+Demonstrate with the random-number generator or the resettable counter from
+chapter 2 of my book.
+
+Mutable variables in closures [3 points]. Improve your UFT so that a closure
+slot can be mutated, provided a static analysis shows that the slot is the only
+location in which the variable is referred to. You’ll need to write the static
+analysis as well as update other UFT passes. Demonstrate your results with the
+random-number generator from chapter 2 of my book.
+
+Faster recursion for global functions [1 point]. When a recursive function calls
+itself, the semantics of vScheme require that it look up its value in the
+global-variable table. But in the absence of mutation, it’s safe for it instead
+to call itself using register 0. Implement this improvement in your UFT, and
+demonstrate it on a long-running recursion. (Try either a very long tail
+recursion or an ordinary recursion that makes an exponential number of calls.)
+
+Reduced dependence on global variables [2 points]. To prevent testing code from
+being compromised by malicious student code, Will Mairs and I developed a
+source-to-source translation we call “bulletproofing.” Bulletproofing transforms
+each val and define by introducing a let form that binds every free global
+variable with a local name. This transformation guarantees that the resulting
+code depends only on the values of the global variables at the time the
+definition is evaluated—if the values of those variables are changed afterward,
+the code will be unaffected.
+
+Implement the bulletproofing transformation, either as a source-to-source
+transformation or as a pass inside your UFT. Using a long-running recursion,
+measure the performance improvement.
+
+This transformation is routinely recommend to Lua programmers as a safe and easy
+way for them to speed up their code.
+
+MODULE 11: GARBAGE COLLECTION 
+
+Denser cons cells [2 points]. Using a struct VMBlock to represent a cons cell
+has its advantages, but the machine word spent on nslots is wasted. Define a new
+type of payload that carries just two values, car and cdr, plus GC metadata.
+Make your system use that payload for cons cells.
+
+Measure the improvements in heap size and bytes requested.
+
+Densest cons cells [2 points]. The previous depth opportunity reduces the size
+of a cons cell from 48 bytes to 40 bytes. But the 8 bytes spend on a forwarding
+pointer are used only during garbage collection, and are otherwise wasted.
+Moreover, once the cons cell has been forwarded, the car is no longer needed.
+Alter the representation of cons cells so that the forwarding pointer and the
+car share space. (An anonymous union will be helpful here.) This will reduce the
+size of a cons cell to its absolute minimum of two values (32 bytes).
+
+Measure the improvements in heap size and bytes requested.
+
+Large objects [3 points]. Implement a large-object allocator. A large object
+should be allocated with malloc, not on a page, and should never be copied. Here
+are some tricks:
+
+You can identify a live large object by setting its forwarded pointer to point
+to itself.
+
+You can link large objects on a list, much as pages are linked on a list or
+interned strings are linked on a list.
+
+After a collection, you can reclaim dead large objects by traversing the list
+after the manner of function VMString_drop_dead_strings.
+
+To test your allocator, you’ll want to allocate large objects and let them die.
+Try loading large functions into global variables, then set those global
+variables to nil, allowing the large functions to die.
+
+Interior pointers [4 points]. Make it possible to keep a function alive (and
+copy it to a new location) even if the only reference to the function is an
+interior pointer to its instruction stream (of type Instruction *). And also to
+correctly forward such interior pointers.
+
+The key operation here is to be able to take a pointer to an arbitrary location
+in an instruction stream and somehow to find the function to which that
+instruction stream belongs. Perhaps the operation can be implemented via some
+clever doctoring of the instruction stream.
+
+This little project might turn out to be more than 4 points worth of work, but
+it’s less than 4 points worth of interest, so I’m just going to keep it at 4
+points. Nobody loves interior pointers.
+
+Zero fewer registers [2 points]. At each VM call, update a high-water mark that
+records the highest-numbered register ever used. At each garbage collection,
+zero registers only to the high-water mark, then reset the high-water mark.
+Using a memory-intensive benchmark, measure the difference in both run time and
+number of hardware instructions executed.
+
+Garbage-collect registers based on liveness analysis [5 points]. Either in the
+UFT or the SVM, do a static analysis at each GC safe point to determine which VM
+registers are actually live. At GC time, consult the results of the analysis to
+know exactly which registers to scan.
