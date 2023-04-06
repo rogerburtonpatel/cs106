@@ -94,13 +94,14 @@ struct
     | HO_of HOX  = Impossible.unimp "imperative features (HOX to HO)"
     | HO_of _    = raise Backward
 
+  fun FO_of FO = FO_of_file
+    | FO_of _  = raise Backward
+
   fun CL_of CL     = CL_of FO   (* really *)
     | CL_of HO     = HO_of HO     >>> ! (map ClosureConvert.close)
     | CL_of HOX    = HO_of HOX    >>> ! (map ClosureConvert.close)
     | CL_of inLang = FO_of inLang >>> ! (map FOCLUtil.embed)
 
-  fun FO_of FO = FO_of_file
-    | FO_of _  = raise Backward
 
   fun KN_reg_of KN = KN_of_file 
                      >=> Error.mapList (KNRename.mapx KNRename.regOfName)

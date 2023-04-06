@@ -31,6 +31,7 @@ structure ClosedScheme = struct
                 | EXP    of exp
                 | CHECK_EXPECT of string * exp * string * exp
                 | CHECK_ASSERT of string * exp
+                | CHECK_ERROR of string * exp
 end
 
 
@@ -45,17 +46,18 @@ struct
   structure S = VScheme
   structure SU = VSchemeUtils
 
+(* load “key-sig”; load “string-key”; load “dict”; load “dict-sig”; *)
+
   (* This is a copy of function `FOUtil.embed` from file `foutil.sml`,
      with the three new cases added *)
 
   fun exp (C.CAPTURED i) =
-        (* You can use combinations of car/cdr, which can be created
-           using SU.car, SU.cdr, and SU.nth.  Remember that in the
-           embedding, the function is at the head, so for example
-           captured variable 0 is in position 1: `(car (cdr $closure))` *)
-        Impossible.exercise "embed reference to captured variable"
-    | exp (C.CLOSURE ((formals, body), captured)) =
-        Impossible.exercise "embed closure"
+  (* in $closure *)
+      S.APPLY (S.VAR "CAPTURED-IN", [S.LITERAL (S.INT i)])
+    | exp (C.CLOSURE ((formals, body), captured)) = 
+        S.APPLY (S.VAR "mkclosure", [S.LAMBDA ("$closure"::formals, exp body)] @ map exp captured)
+        
+        (* map exp captured @ map S.VAR formals) *)
     | exp (C.LETREC  (bs, e))  =
         (* I've done this one *)
         S.LETX (S.LETREC,  map (fn (f, c) => (f, exp (C.CLOSURE c))) bs, exp e)
@@ -78,6 +80,7 @@ struct
     | def (C.DEFINE (f, lambda)) = S.VAL (f, exp (C.CLOSURE (lambda, [])))
     | def (C.CHECK_EXPECT (s, e, s', e')) = S.CHECK_EXPECT (exp e, exp e')
     | def (C.CHECK_ASSERT (s, e)) = S.CHECK_ASSERT (exp e)
+    | def (C.CHECK_ERROR (s, e)) = S.CHECK_ERROR (exp e)
 
   val embed = def
 
