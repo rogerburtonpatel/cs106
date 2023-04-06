@@ -48,6 +48,7 @@ struct
     | badDef (X.DEFINE (f, (xs, e))) = badExp e
     | badDef (X.CHECK_EXPECT (_, e, _, e')) = badExp e orelse badExp e'
     | badDef (X.CHECK_ASSERT (_, e))        = badExp e
+    | badDef (X.CHECK_ERROR (_, e))         = badExp e
 
   fun detect d =
       if badDef d then
