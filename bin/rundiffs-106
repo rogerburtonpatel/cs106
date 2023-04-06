@@ -50,6 +50,15 @@ runtests ()
             out=$(diff --color <(svm "$vofile" 2>&1) <(cat "$dir/$name.1"))
             update_failure $? "$vofile" "$out"
         done
+
+        for knfile in $dir/*.kn; do
+            echo "$knfile"
+            numtests=$((numtests + 1))
+            name=`basename $knfile`
+            out=$(diff --color <(uft kn-vo $knfile | svm 2>&1) <(cat "$dir/$name.1"))
+            update_failure $? "$knfile" "$out"
+        done
+
     done
 
     if [[ "$numfail" -eq "0" ]]; then 
