@@ -40,10 +40,10 @@
 (let ([$r0 1])
   (expect $r0 'one))
 ; BEGIN
-(let* ([$r0 4] [$r1 2] [$r2 (begin (println $r0) $r1)])
-  (check $r1 'two))
-(let ([$r4 2])
-  (expect $r4 'two))
+(let* ([$r0 4] [$r1 2] [$r2 (begin (inc $r1) $r1)])
+  (check $r1 'three))
+(let ([$r4 3])
+  (expect $r4 'three))
 ; SET
 (let* ([$r1 2] [$r2 3] [$r2 (set $r3 $r2)])
   (check $r2 'three))
@@ -70,10 +70,15 @@
 (let* (
     [r0 1]
     [r6 1]
-    ; [r4 (check  r0 'r0-1)] ; These now cause an error! 
-    ; [r5 (expect r6 'r0-1)]
+    [r4 (- r0 r6)]
+    [r5 (* r0 r4)]
     [r1 r0]
     [r3 (+ r1 r0)]
 )
-(+ r1 r0)
+(+ r3 r3)
 )
+
+; Let-floating- works! Yay!
+
+(let ([r0 (let ([r1 2]) (+ r1 r1))]) (+ r0 r0))
+(let ([r0 (let ([r1 (let ([r2 3]) (+ r2 r2))]) (+ r1 r1))]) (+ r0 r0))
