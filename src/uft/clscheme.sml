@@ -31,6 +31,7 @@ structure ClosedScheme = struct
                 | EXP    of exp
                 | CHECK_EXPECT of string * exp * string * exp
                 | CHECK_ASSERT of string * exp
+                | CHECK_ERROR of string * exp
 end
 
 
@@ -44,6 +45,8 @@ struct
   structure P = Primitive
   structure S = VScheme
   structure SU = VSchemeUtils
+
+(* load “key-sig”; load “string-key”; load “dict”; load “dict-sig”; *)
 
   (* This is a copy of function `FOUtil.embed` from file `foutil.sml`,
      with the three new cases added *)
@@ -80,6 +83,7 @@ struct
     | def (C.DEFINE (f, lambda)) = S.VAL (f, exp (C.CLOSURE (lambda, [])))
     | def (C.CHECK_EXPECT (s, e, s', e')) = S.CHECK_EXPECT (exp e, exp e')
     | def (C.CHECK_ASSERT (s, e)) = S.CHECK_ASSERT (exp e)
+    | def (C.CHECK_ERROR (s, e)) = S.CHECK_ERROR (exp e)
 
   val embed = def
 

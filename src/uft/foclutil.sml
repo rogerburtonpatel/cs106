@@ -29,6 +29,7 @@ struct
     | def (F.DEFINE (f, (xs, e)))         = C.DEFINE (f, (xs, exp e))
     | def (F.CHECK_EXPECT (s, e, s', e')) = C.CHECK_EXPECT (s, exp e, s', exp e')
     | def (F.CHECK_ASSERT (s, e))         = C.CHECK_ASSERT (s, exp e)
+    | def (F.CHECK_ERROR (s, e))          = C.CHECK_ERROR (s, exp e)
 
   val embed = def
 

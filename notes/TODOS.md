@@ -184,3 +184,5 @@ nr: "You can comfort yourself in the fact that as long as you're in dark mode
 "It's an exaggeration to say the faculty slack is the Ming Chow social feed,
  but it's not much of an exaggeration."
 
+
+"The standard basis is part of the standard, dude." 
