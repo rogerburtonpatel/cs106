@@ -124,6 +124,8 @@ structure VSchemeUtils : sig
 
   val setcar : exp -> exp -> exp
 
+  val freeIn : UnambiguousVScheme.exp -> string -> bool
+
   val constructed : Pattern.vcon -> exp list -> exp
   val block : exp list -> exp
   val switchVcon : exp -> (VScheme.value * exp) list -> exp option -> exp
@@ -132,6 +134,7 @@ end
   =
 struct
   structure S = VScheme
+  structure X = UnambiguousVScheme
 
   type exp = VScheme.exp
 
@@ -148,6 +151,27 @@ struct
 
   fun setnth e 0 v = S.APPLY (S.VAR "set-car!", [e, v])
     | setnth e k v = setnth (cdr e) (k - 1) v
+
+
+fun freeIn (exp: UnambiguousVScheme.exp) y =
+  let fun 
+        freeIn' (X.LOCAL n)             = n = y
+      | freeIn' (X.GLOBAL n)            = n = y
+      | freeIn' (X.SETLOCAL (n, e))     = n = y orelse freeIn' e
+      | freeIn' (X.SETGLOBAL (n, e))    = freeIn' e
+      | freeIn' (X.IFX (e1, e2, e3))    = freeIn' e1 orelse freeIn' e2 orelse freeIn' e3
+      | freeIn' (X.WHILEX (e1, e2))     = freeIn' e1 orelse freeIn' e2
+      | freeIn' (X.BEGIN es)            = List.exists (fn e => freeIn' e) es
+      | freeIn' (X.FUNCALL (e, es))     = freeIn' e orelse List.exists (fn e => freeIn' e) es
+      | freeIn' (X.PRIMCALL (p, es))    = List.exists (fn e => freeIn' e) es
+      | freeIn' (X.LETX (_, xes, e))    = (List.all (fn (x, _) => x <> y) xes) andalso freeIn' e
+      | freeIn' (X.LAMBDA (ns, e))      = (List.all (fn n => n <> y) ns) andalso freeIn' e
+      | freeIn' _                       = false
+  in
+    freeIn' exp
+  end
+
+
 
   fun constructed con es = S.APPLY (S.VCON con, es)
 
