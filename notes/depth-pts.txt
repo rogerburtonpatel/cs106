@@ -3,6 +3,8 @@ TOTAL SO FAR: 1
 PENDING: .75 for unicode, 4 for check-error. 
 Ask about tokens string for other .3. 
 
+KNF Let floating in knproject.sml as a warm-up. Talk about it! 
+
 TODO:
 - ANF. Have to. 
 - Denser and Densest Cons cells
