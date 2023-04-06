@@ -47,6 +47,11 @@ struct
     | exp (X.GLOBAL x) = succeed (KU.getglobal x)
     | exp (X.IFX (e1, e2, e3)) =
       curry3 K.IFX <$> asName e1 <*> exp e2 <*> exp e3
+
+    | exp (X.LETX (X.LET, [(x, X.LETX (X.LET, [(y, e1)], e2))], e3)) = 
+                curry3 K.LETX <$> (succeed y) <*> exp e1 <*> (curry3 K.LETX <$> (succeed x) <*> exp e2 <*> exp e3)
+    | exp (X.LETX (X.LET, [(n, X.LETX _)], e)) = error "nested let is of \
+                                            \illegal let type in K-Normal form!"
     | exp (X.LETX (X.LET, [(n, e')], e)) = 
                             curry3 K.LETX <$> (succeed n) <*> exp e' <*> exp e
     | exp (X.LETX (X.LET, xs, e)) = 
