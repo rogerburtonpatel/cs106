@@ -47,22 +47,6 @@ struct
     | exp (X.GLOBAL x) = succeed (KU.getglobal x)
     | exp (X.IFX (e1, e2, e3)) =
       curry3 K.IFX <$> asName e1 <*> exp e2 <*> exp e3
-
-    (* | exp (X.LETX (X.LET, [(x, X.LETX (X.LET, [(y, e1)], e2))], e3)) = 
-                if x = y orelse VSchemeUtils.freeIn e3 y 
-                then 
-                (* sadly we have to do this out manually *)
-                curry3 K.LETX <$> (succeed x) <*> 
-                                  (curry3 K.LETX <$> (succeed y) 
-                                                 <*> exp e1 <*> exp e2) 
-                                  <*> exp e3
-                else
-                curry3 K.LETX <$> (succeed y) <*> exp e1 
-                                  <*> (curry3 K.LETX <$> (succeed x) <*> exp e2 
-                                                         <*> exp e3) *)
-    (* | exp (X.LETX (X.LET, [(n, X.LETX _)], e)) = error "nested let is of \
-                                            \illegal let type in K-Normal form!" *)
-                                            (* TODO test illegal internal let *)
     | exp (X.LETX (X.LETREC, nes, e)) = error "no letrec dingus"
     | exp (X.LETX (X.LET, [(n, e')], e)) = translateLet n (exp e') (exp e)
     | exp (X.LETX (X.LET, xs, e)) = 
@@ -113,33 +97,6 @@ struct
                           (translateLet x (succeed e2) (succeed e3))
       | translateLet x e1 e2 = curry3 K.LETX <$> succeed x <*> e1 <*> e2
 
- (* | exp (X.LETX (X.LET, [(x, X.LETX (X.LET, [(y, e1)], e2))], e3)) = 
-                if x = y orelse VSchemeUtils.freeIn e3 y 
-                then 
-                (* sadly we have to do this out manually *)
-                curry3 K.LETX <$> (succeed x) <*> 
-                                  (curry3 K.LETX <$> (succeed y) 
-                                                 <*> exp e1 <*> exp e2) 
-                                  <*> exp e3
-                else
-                curry3 K.LETX <$> (succeed y) <*> exp e1 
-                                  <*> (curry3 K.LETX <$> (succeed x) <*> exp e2 
-                                                         <*> exp e3)
-    | exp (X.LETX (X.LET, [(n, X.LETX _)], e)) = error "nested let is of \
-                                            \illegal let type in K-Normal form!"
-    | exp (X.LETX (X.LET, [(n, e')], e)) = 
-                            curry3 K.LETX <$> (succeed n) <*> exp e' <*> exp e
-    | exp (X.LETX (X.LET, xs, e)) = 
-                     error "let must have exactly one binding in projection to \
-                                                                \K-Normal form!"    
-    | exp (X.LETX (X.LETREC, nes, e)) = error "no letrec dingus" *)
-
-    (* error "no non-global functions in projection to \
-                                                              \K-Normal form!" *)
-  (* val fundef : string KNormalForm.exp -> string KNormalForm.exp = 
-  fn e => curry3 K.LETX <$> (succeed t) 
-                        <*> (curry K.FUNCODE <$> (succeed xs) <*> exp e)
-                        <*> (curry KU.setglobal <$> (succeed f) <*> asName t') *)
   fun list nil     = succeed nil 
   | list (p::ps) = curry op :: <$> p <*> list ps
 
@@ -168,8 +125,8 @@ struct
                                                               \to K-Normal Form"                                                              
     | def (X.DEFINE (f, (xs, e))) = 
     (* TODO change this r100 nonsense *)
-      exp e >>= (fn e' => succeed (K.LETX ("$r100", e', 
-                                K.VMOPLIT (P.setglobal, ["$r100"], K.STRING f))))
+      exp e >>= (fn e' => succeed (K.LETX ("$r0", e', 
+                                K.VMOPLIT (P.setglobal, ["$r0"], K.STRING f))))
 
 end
 
