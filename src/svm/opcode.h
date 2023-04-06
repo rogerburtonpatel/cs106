@@ -22,9 +22,10 @@ typedef enum opcode {
                       Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, Eq, // R3
 
                       Cons, // R3
-                      Inc, Dec, Neg, Not, // R1
-                      BoolOf, // R2
                       Car, Cdr,  // R2
+                      Inc, Dec, // R1
+                      Neg, Not, // R2
+                      BoolOf, // R2
                       Hash, // R2
                       IsFunction, IsNumber, IsSymbol, IsPair, // R2 
                       IsBoolean, IsNull, IsNil, // R2

@@ -253,7 +253,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 mkBooleanValue(AS_NUMBER(vm, registers[UY]) <=
                             AS_NUMBER(vm, registers[UZ]));
                 break;
-// TODO THESE DON'T WORK WITH GLOBALS
+            // TODO THESE DON'T WORK WITH GLOBALS
             /* UNARY ARITH- R1 */
             case Inc:
                 registers[UX] = 
@@ -268,7 +268,6 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 registers[UX] = 
                     mkNumberValue(-(int64_t)AS_NUMBER(vm, registers[UY]));
                 break;    
-            // TODO REV: Is this needed in vScheme?   
             case Not:
                 registers[UX] = 
                     mkBooleanValue(!AS_BOOL(vm, registers[UY]));
@@ -364,12 +363,13 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
 
             /* (UN)CONDITIONAL MOVEMENT */
-            case If: 
+            case If: {
                 bool truth = AS_BOOL(vm, registers[UX]);
                 if (!truth) {
                     pc++; // If false, skip next instruction.
                 }
                 break;
+            }
             case Goto:
                 pc += 1 + iXYZ(curr_instr); 
                 continue; // follows the semantics by adding 1 + for the normal
