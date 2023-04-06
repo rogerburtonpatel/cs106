@@ -23,9 +23,10 @@ typedef enum opcode {
                       GotoVcon, // R1U8
                       IfVconMatch, // U8LIT, not meant to be evaluated
                       Cons, // R3
-                      Inc, Dec, Neg, Not, // R1
-                      BoolOf, // R2
                       Car, Cdr,  // R2
+                      Inc, Dec, // R1
+                      Neg, Not, // R2
+                      BoolOf, // R2
                       Hash, // R2
                       IsFunction, IsNumber, IsSymbol, IsPair, // R2 
                       IsBoolean, IsNull, IsNil, // R2
