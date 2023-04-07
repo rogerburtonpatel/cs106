@@ -82,7 +82,7 @@ void expand(Arraylist_T list)
 
 Arraylist_T arraylist_deep_copy(const Arraylist_T list)
 {
-    Arraylist_T new_list = malloc(sizeof(Arraylist_T));
+    Arraylist_T new_list = malloc(sizeof(*new_list));
     assert(new_list != NULL);
 
     new_list->arr = malloc(list->capacity * sizeof(uint32_t));
