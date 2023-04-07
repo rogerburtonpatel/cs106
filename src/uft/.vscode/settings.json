@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "*.kn": "scheme",
+        "*.scm": "scheme",
+        "*.vs": "umasm",
+        "vmerror.h": "c"
+    }
+}

@@ -13,18 +13,44 @@
 #include "value.h"
 #include "vmerror.h"
 
-uint64_t NHANDLERS = 0;
 
+// TODO DOCUMENT
+static ErrorMode mode = NORMAL;
+
+void set_error_mode(ErrorMode new_mode) {
+  assert(new_mode == NORMAL || new_mode == TESTING);
+  mode = new_mode;
+}
 
 /* Only after writing these did I realize norman did it first. */
 
-jmp_buf errorjmp; /* right now, we don't use this, but we will if we change how
-                   we handle errors */
 jmp_buf testjmp;
 
-Printbuf errorbuf;
+void enter_check_error(void)
+{
+    set_error_mode(TESTING);
+}
+void exit_check_error(void)
+{
+    if (mode != TESTING) {
+        fatal_error("called exit_check_error while not in error mode", __FILE__, __LINE__);
+    }
+    set_error_mode(NORMAL);
+}
+
+ErrorMode error_mode(void)
+{
+    return mode;
+}
 
 /* rewind the stack */
+
+void fatal_error(const char *msg, const char *file, int line)
+{
+    fprintf(stderr, "Fatal error: %s\t(Internal source at %s, line %d)\n", 
+                    msg, file, line);
+    abort();
+}
 
 void stackunwind(VMState state)
 {
@@ -39,10 +65,7 @@ void runerror(VMState state, const char *format, ...)
 {
     stackunwind(state);
 
-//    if (!errorbuf) {
-//         errorbuf = printbuf();
-//    }
-    if (NHANDLERS == 0) {
+    if (mode == NORMAL) {
         fprintf(stderr, "Run-time error:\n    ");
         va_list args;
         va_start(args, format);
@@ -60,11 +83,7 @@ void runerror_p(VMState state, const char *format, ...)
 {
     stackunwind(state);
    
-//    if (!errorbuf) {
-//         errorbuf = printbuf();
-//    }
-
-    if (NHANDLERS == 0) {
+    if (mode == NORMAL) {
         fprintf(stderr, "Run-time error:\n    ");
         assert(format);
         va_list_box box;
@@ -84,7 +103,7 @@ void typeerror(VMState state, const char *expected, Value got,
 {
     stackunwind(state);
 
-    if (NHANDLERS == 0) {
+    if (mode == NORMAL) {
         fprintf(stderr, "Run-time error: expected %s, but got %s.\n"
                         "\t(Internal source at %s, line %d)\n",
                 expected, tagnames[got.tag], file, line);

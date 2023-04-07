@@ -113,40 +113,25 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 break;
             }
             case CheckError: {
+                if (error_mode() == TESTING) {
+                    fprintf(stderr, "Fatal error: "
+                                     "nested check-error not allowed\n");
+                    abort();
+                }
+
                 uint8_t r0 = UX;
                 if (registers[r0].tag == Nil) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
                     nilfunerror(vm, funname, "check-error", r0);
                 }
                 add_test();
-                NHANDLERS++;
+                enter_check_error();
                 // set up jump. if we're 1st time, 
                 // push special frame and call func. 
                 // otherwise unwind stack, restore program like return. 
-                if (setjmp(testjmp)) {
-                    pass_test();
-                    NHANDLERS--;
-                    /* restore frame */
-                    Activation a = vm->Stack[--vm->stackpointer];
-                    vm->R_window_start = a.R_window_start;
-                    registers = vm->registers + a.R_window_start;
-                    pc = a.resume_loc;
-                    /* then move on with our lives */
-                } else /* we're not here from a jump */ {
+                if (!setjmp(testjmp)) {
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
-                        if (vm->Stack[vm->stackpointer - 1].dest_reg_idx < 0)
-                           {
-                            fprintf(stderr, "You've hit the outstandingly rare"
-                                            " \nand almost definitely contrived"
-                                            " case \nwhere pushing an error"
-                                            " frame via check-error \ncaused a"
-                                            " stack overflow \nbut where that" 
-                                            " very overflow \nwas caught by"
-                                            " another check-error."
-                                            " \nWell done.\n");
-                           }
-
-                        NHANDLERS--; /* otherwise we don't unwind properly */
+                        exit_check_error(); /* otherwise we don't unwind properly */
                         runerror(vm, 
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
@@ -155,12 +140,22 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                     struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                     assert(func->arity == 0); /* this can NEVER have args */
                     /* push special frame */
-                    Activation a = {pc, vm->R_window_start, -(int)uYZ(curr_instr)};
+                    Activation a = 
+                                {pc, vm->R_window_start, -(int)uYZ(curr_instr)};
 
                     vm->Stack[vm->stackpointer++] = a;
                     
                     pc = &func->instructions[0] - 1;
                     /* continue with execution, now in error mode */
+                } else /* we're here from a jump */ {
+                    pass_test();
+                    exit_check_error();
+                    /* restore frame */
+                    Activation a = vm->Stack[--vm->stackpointer];
+                    vm->R_window_start = a.R_window_start;
+                    registers = vm->registers + a.R_window_start;
+                    pc = a.resume_loc;
+                    /* then move on with our lives */
                 }
                 break;
             }
@@ -422,7 +417,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 // debug message with a name we know to be valid!
                 struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                 if (vm->stackpointer == MAX_STACK_FRAMES) {
-                    if (NHANDLERS == 0) {
+                    if (error_mode() == NORMAL) {
                         fprintf(stderr, "Offending function:");
                         fprintfunname(stderr, vm, mkVMFunctionValue(func));
                         fprintf(stderr, "\n");
@@ -434,7 +429,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
 
                 if (vm->R_window_start + r0 + func->nregs > NUM_REGISTERS) {
-                    if (NHANDLERS == 0) {
+                    if (error_mode() == NORMAL) {
                         fprintf(stderr, "Offending function:");
                         fprintfunname(stderr, vm, mkVMFunctionValue(func));
                         fprintf(stderr, "\n");
@@ -476,7 +471,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                                        
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
-                    if (NHANDLERS == 0) {
+                    if (error_mode() == NORMAL) {
                         fprintf(stderr, "Offending function:");
                         fprintfunname(stderr, vm, mkVMFunctionValue(func));
                         fprintf(stderr, "\n");
