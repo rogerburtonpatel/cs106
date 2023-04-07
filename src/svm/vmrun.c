@@ -392,7 +392,7 @@ void vmrun(VMState vm, struct VMFunction *fun) {
                 /* we've failed a check-error test if this happens. */
                     int slot = -a.dest_reg_idx;
                     v = literal_value(vm, (uint16_t)slot);
-                    fail_check_error (vm, AS_CSTRING(vm, v));
+                    fail_check_error(vm, AS_CSTRING(vm, v));
                 } else {
                     registers[a.dest_reg_idx] = return_value;
                 }

@@ -35,7 +35,7 @@ DEPS := $(OBJ:.o=.d)
 
 CPPFLAGS += -MMD -MP
 # -Werror
-CFLAGS = -std=c11 -pedantic -Wall -Wextra  -g -I/usr/include -O2 # -I/usr/sup/cii40/include/cii
+CFLAGS = -std=c11 -pedantic -Wall -Wextra  -g -I/usr/include # -I/usr/sup/cii40/include/cii
 
 .PHONY: all obj clean
 all: $(EXE)
