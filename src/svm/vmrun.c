@@ -39,7 +39,9 @@ extern int ntests, npassed;
 extern jmp_buf testjmp;
 
 
-void vmrun(VMState vm, struct VMFunction *fun) {
+extern int setjmp_proxy(jmp_buf t);
+
+void vmrun(VMState vm, struct VMFunction *fun, CallType status) {
     
     if (fun->size < 1) {
         return;
@@ -52,13 +54,12 @@ void vmrun(VMState vm, struct VMFunction *fun) {
 
     Instruction *pc = vm->instructions = fun->instructions;
 
-    Instruction curr_instr;
     Value *registers = vm->registers; 
     /* registers always = vm->registers + vm->R_window_start */
     Value v;
 
     while(1) {
-        curr_instr = *pc;
+        Instruction curr_instr = *pc;
 
         if (CANDUMP && dump_decode) {
             idump(stderr, 

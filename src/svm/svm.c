@@ -29,13 +29,20 @@
 #include "vmrun.h"
 #include "vmstate.h"
 #include "vmstring.h"
+#include "vmerror.h"
+
+extern jmp_buf testjmp;
 
 static void dofile(struct VMState *vm, FILE *input) { 
   for ( struct VMFunction *module = loadmodule(vm, input)
       ; module
       ; module = loadmodule(vm, input)
       ) {
-    vmrun(vm, module);
+  int rc;
+  while ((rc = setjmp(testjmp))) 
+  ;
+    vmrun(vm, module, rc == 0 ? INITIAL_CALL : ERROR_CALL);
+  
   }
   report_unit_tests();
 }
