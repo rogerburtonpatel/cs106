@@ -14,12 +14,9 @@
 #include "vmstate.h"
 #include "value.h"
 
-/*
- * Only after writing these did I realize norman did it first. 
- */
-extern uint64_t NHANDLERS;
 
-// Checked run-time errors: print a message and halt the computation.
+typedef enum ErrorMode { NORMAL, TESTING } ErrorMode;
+
 
 extern void typeerror(VMState state, const char *expected, Value got,
                                 const char *file, int line);
@@ -27,5 +24,15 @@ extern void runerror(VMState state, const char *format, ...);
   // takes arguments as for `printf`, not `print`
 extern void runerror_p(VMState state, const char *format, ...);
   // takes arguments as for `print`, not `printf`
+
+/* call only for compiler bugs or uncatchable errors */
+extern _Noreturn void fatal_error(const char *msg, const char *file, int line);
+
+void enter_check_error(void); // start running within the dynamic extent 
+                              // of an active check-error test
+void exit_check_error(void); // leave the dynamic extent 
+                             // of an active check-error test
+ErrorMode error_mode(void);                             
+   // It is a checked run-time error to call exit without a matching enter.
 
 #endif
