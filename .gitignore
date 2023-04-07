@@ -62,3 +62,5 @@
 callgrind.out.*
 /src/svm/legacy
 a.out
+/bin/test-arraylist
+/bin/test-bignums
