@@ -38,7 +38,7 @@ static void dofile(struct VMState *vm, FILE *input) {
       ; module
       ; module = loadmodule(vm, input)
       ) {
-  int rc;
+  int rc = 0;
   /* if we're initializing the buffer, continue. 
      if we've jumped, initialize the buffer, and continue, preserving rc. */
   while (setjmp(testjmp) &&  (rc = 1))
