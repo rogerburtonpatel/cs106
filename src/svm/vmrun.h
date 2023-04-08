@@ -10,7 +10,7 @@
 typedef enum CallStatus { INITIAL_CALL, ERROR_CALL } CallStatus;
 
 // void vmrun(struct VMState *vm, struct VMFunction *fun);
-  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+  // #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 void vmrun(struct VMState *vm, struct VMFunction *fun,  CallStatus status);
 
 #endif /* VMRUN_INCLUDED */
