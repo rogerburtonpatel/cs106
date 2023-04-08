@@ -9,6 +9,8 @@
 
 typedef enum CallType { INITIAL_CALL, ERROR_CALL } CallType;
 
+// void vmrun(struct VMState *vm, struct VMFunction *fun);
+  #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 void vmrun(struct VMState *vm, struct VMFunction *fun,  CallType status);
 
 #endif /* VMRUN_INCLUDED */

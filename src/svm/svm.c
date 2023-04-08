@@ -39,9 +39,12 @@ static void dofile(struct VMState *vm, FILE *input) {
       ; module = loadmodule(vm, input)
       ) {
   int rc;
-  while ((rc = setjmp(testjmp))) 
+  /* if we're initializing the buffer, continue. 
+     if we've jumped, initialize the buffer, and continue, preserving rc. */
+  while (setjmp(testjmp) &&  (rc = 1))
   ;
     vmrun(vm, module, rc == 0 ? INITIAL_CALL : ERROR_CALL);
+    // vmrun(vm, module);
   
   }
   report_unit_tests();

@@ -17,7 +17,6 @@
 #include "vmrun.h"
 #include "vmstate.h"
 #include "vmstring.h"
-
 int main(int argc, char **argv) {
     assert(argc == 1);
     (void)argv;
@@ -27,11 +26,11 @@ int main(int argc, char **argv) {
     VMState vm = newstate();
 
     fprintf(stderr, "Test: halt\n");
-    vmrun(vm, haltfun());
+    vmrun(vm, haltfun(), INITIAL_CALL);
     fprintf(stderr, "Test: print $r0; halt\n");
-    vmrun(vm, print0fun());
+    vmrun(vm, print0fun(), INITIAL_CALL);
     fprintf(stderr, "Test: check $r0, ...; expect $r0, ...; halt\n");
-    vmrun(vm, ce0fun(vm));
+    vmrun(vm, ce0fun(vm), INITIAL_CALL);
     report_unit_tests();
 
     freestatep(&vm);
