@@ -40,23 +40,43 @@ extern jmp_buf testjmp;
 
 
 extern int setjmp_proxy(jmp_buf t);
-
 void vmrun(VMState vm, struct VMFunction *fun, CallType status) {
-    
+// void vmrun(VMState vm, struct VMFunction *fun) {
+    const char *dump_decode, *dump_call;
+    Instruction *pc;
+    Value *registers;
+    Value v;
     if (fun->size < 1) {
         return;
     }
 
-    /* Thank you to Norman for this debugging infrastructure */
-    const char *dump_decode = svmdebug_value("decode");
-    const char *dump_call   = svmdebug_value("call");
-    (void) dump_call;  // make it OK not to use `dump_call`
+    switch (status) {
+        case INITIAL_CALL:;
+            /* Thank you to Norman for this debugging infrastructure */
+            dump_decode = svmdebug_value("decode");
+            dump_call   = svmdebug_value("call");
+            (void) dump_call;  // make it OK not to use `dump_call`
+            pc = vm->instructions = fun->instructions;
+            registers = vm->registers; 
+            /* registers always = vm->registers + vm->R_window_start */
+            break;
+        case ERROR_CALL:;
+            if (error_mode() == TESTING) {
+                pass_test();
+            Activation a = vm->Stack[--vm->stackpointer];
+            vm->R_window_start = a.R_window_start;
+            registers = vm->registers + a.R_window_start;
+            pc = a.resume_loc + 1;
+            break;
+            } else {
+                fprintf(stderr, "Stack trace: some day!\n");
+                /* we're done */
+                return;
+            }
+        
+    }
 
-    Instruction *pc = vm->instructions = fun->instructions;
 
-    Value *registers = vm->registers; 
-    /* registers always = vm->registers + vm->R_window_start */
-    Value v;
 
     while(1) {
         Instruction curr_instr = *pc;
@@ -127,12 +147,9 @@ void vmrun(VMState vm, struct VMFunction *fun, CallType status) {
                 }
                 add_test();
                 enter_check_error();
-                // set up jump. if we're 1st time, 
-                // push special frame and call func. 
-                // otherwise unwind stack, restore program like return. 
-                if (!setjmp(testjmp)) {
+                /* push special frame and vmcall func.  */
                     if (vm->stackpointer == MAX_STACK_FRAMES) {
-                        exit_check_error(); /* otherwise we don't unwind properly */
+                        exit_check_error(); //otherwise we don't unwind properly
                         runerror(vm, 
                             "attempting to push an error frame in check-error"
                             " caused a Stack Overflow");
@@ -141,23 +158,11 @@ void vmrun(VMState vm, struct VMFunction *fun, CallType status) {
                     struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                     assert(func->arity == 0); /* this can NEVER have args */
                     /* push special frame */
-                    Activation a = 
-                                {pc, vm->R_window_start, -(int)uYZ(curr_instr)};
-
+                    // TODO talk about this funky line- *pc instead of 
+                    // curr_instr so it fits under 80 cols!
+                    Activation a = {pc, vm->R_window_start, -(int)uYZ(*pc)};
                     vm->Stack[vm->stackpointer++] = a;
-                    
                     pc = &func->instructions[0] - 1;
-                    /* continue with execution, now in error mode */
-                } else /* we're here from a jump */ {
-                    pass_test();
-                    exit_check_error();
-                    /* restore frame */
-                    Activation a = vm->Stack[--vm->stackpointer];
-                    vm->R_window_start = a.R_window_start;
-                    registers = vm->registers + a.R_window_start;
-                    pc = a.resume_loc;
-                    /* then move on with our lives */
-                }
                 break;
             }
             /* ARITH- R3 */
