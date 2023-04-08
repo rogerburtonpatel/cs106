@@ -40,9 +40,19 @@ extern jmp_buf testjmp;
 
 
 extern int setjmp_proxy(jmp_buf t);
-void vmrun(VMState vm, struct VMFunction *fun, CallType status) {
-// void vmrun(VMState vm, struct VMFunction *fun) {
-    const char *dump_decode, *dump_call;
+void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
+    // TODO: these were in INTIAL_CALL, but gcc -O2 was causing some unwanted
+    // prints because they were undefined in an ERROR_CALL. Best way to fix?
+    // We don't want this expensive operation on each run...
+    const char *dump_decode = svmdebug_value("decode");
+    const char *dump_call =  svmdebug_value("call");
+    // Before, we had just their declarations; initializations were in 
+    // INITIAL_CALL. but ofc because we don't initialize in ERROR_CALL, 
+    // they're undefined and can result in unwanted debug dumping. 
+    // If we put the initializations in ERROR_CALL, may as well put them 
+    // up top. They don't change during runtime, so we could pass them 
+    // as parameters to vmrun, but that's messy... we could also just turn
+    // CANDUMP off, but this isn't great (or is it fine?)
     Instruction *pc;
     Value *registers;
     Value v;
@@ -53,8 +63,8 @@ void vmrun(VMState vm, struct VMFunction *fun, CallType status) {
     switch (status) {
         case INITIAL_CALL:;
             /* Thank you to Norman for this debugging infrastructure */
-            dump_decode = svmdebug_value("decode");
-            dump_call   = svmdebug_value("call");
+            // dump_decode = svmdebug_value("decode");
+            // dump_call   = svmdebug_value("call");
             (void) dump_call;  // make it OK not to use `dump_call`
             pc = vm->instructions = fun->instructions;
             registers = vm->registers; 
