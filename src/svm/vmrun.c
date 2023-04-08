@@ -53,6 +53,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     // up top. They don't change during runtime, so we could pass them 
     // as parameters to vmrun, but that's messy... we could also just turn
     // CANDUMP off, but this isn't great (or is it fine?)
+    // const char *dump_decode, *dump_call;
     Instruction *pc;
     Value *registers;
     Value v;
@@ -63,6 +64,10 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     switch (status) {
         case INITIAL_CALL:;
             /* Thank you to Norman for this debugging infrastructure */
+            
+            // FOR NORMAN: uncomment these lines, and the one on 56
+            // for a wild time with -O2 (also need to comment out 47/48)
+            // run with svm tests/check-error-tests/cherr.vo to replicate
             // dump_decode = svmdebug_value("decode");
             // dump_call   = svmdebug_value("call");
             (void) dump_call;  // make it OK not to use `dump_call`
