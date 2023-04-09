@@ -46,7 +46,7 @@ struct
                                                        @ [S.LITERAL (value v)]))
     | exp (A.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)
 
-    | exp (A.IFX (a, e1, e2)) = S.IFX (S.VAR a, (exp e1), (exp e2))
+    | exp (A.IFX (a, e1, e2)) = S.IFX (S.VAR a, exp e1, exp e2)
     | exp (A.LETX (n, e, A.NAME n')) = 
           if n = n'
           then exp e 
@@ -55,7 +55,7 @@ struct
     | exp (A.LETX (n, e1, e2)) = lt' n (exp e1) (exp e2)
     | exp (A.BEGIN (e1, e2)) = S.BEGIN [exp e1, exp e2]
     | exp (A.SET (n, e)) = S.SET (n, exp e)
-    | exp (A.WHILEX (n, e1, e2)) = S.WHILEX ((lt' n (exp e1) (S.VAR n)), exp e2)
+    | exp (A.WHILEX (n, e1, e2)) = S.WHILEX (lt' n (exp e1) (S.VAR n), exp e2)
     | exp (A.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
   val _ = exp : VScheme.name ANormalForm.exp -> VScheme.exp 
 

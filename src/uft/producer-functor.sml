@@ -14,7 +14,7 @@ struct
   fun id x = x
   fun pair x y = (x, y)
   fun curry3 f x y z = f (x, y, z)
-  fun eq x y = (x = y)
+  fun eq x y = x = y
 
   type input = input
   structure E = Error

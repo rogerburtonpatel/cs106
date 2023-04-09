@@ -127,7 +127,7 @@ struct
 
            | K.LETX  (r, e, e')  => (toRegK' r e) o (forEffectK' e')
            | K.BEGIN (e1, e2)    => (forEffectK' e1) o (forEffectK' e2)
-           | K.SET   (r, e)      => (toRegK' r e)
+           | K.SET   (r, e)      => toRegK' r e
            | K.WHILEX (r, e, e') => 
              let val lab  = A.newlabel ()
                  val lab' = A.newlabel ()
@@ -196,7 +196,7 @@ struct
            | AN.IFX (r, e1, e2) => translateifA r e1 e2 forEffectA'
            | AN.LETX  (r, e, e')  => (toRegA' r e) o (forEffectA' e')
            | AN.BEGIN (e1, e2)    => (forEffectA' e1) o (forEffectA' e2)
-           | AN.SET   (r, e)      => (toRegA' r e)
+           | AN.SET   (r, e)      => toRegA' r e
            | AN.WHILEX (r, e, e') => 
              let val lab  = A.newlabel ()
                  val lab' = A.newlabel ()

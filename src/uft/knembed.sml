@@ -56,7 +56,7 @@ struct
                                                        @ [S.LITERAL (value v)]))
     | exp (K.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)
 
-    | exp (K.IFX (a, e1, e2)) = S.IFX (S.VAR a, (exp e1), (exp e2))
+    | exp (K.IFX (a, e1, e2)) = S.IFX (S.VAR a, exp e1, exp e2)
     | exp (K.LETX (n, e, K.NAME n')) = 
           if n = n'
           then exp e 
@@ -67,7 +67,7 @@ struct
                                  of SOME e => e
                                   | NONE => S.BEGIN [exp e1, exp e2])
     | exp (K.SET (n, e)) = S.SET (n, exp e)
-    | exp (K.WHILEX (n, e1, e2)) = S.WHILEX ((lt' n (exp e1) (S.VAR n)), exp e2)
+    | exp (K.WHILEX (n, e1, e2)) = S.WHILEX (lt' n (exp e1) (S.VAR n), exp e2)
     | exp (K.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
 
 

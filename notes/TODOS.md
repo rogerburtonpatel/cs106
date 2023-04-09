@@ -4,39 +4,8 @@ TESTING- dress to impress
 1. vs, kn, fo idempotent testing
 2. vscheme differential testing
 
-
 Ask about setting globals to literals
 
-qs: 
-Projection to KNF should probably reject SETGLOBAL in a value (toReg) context.
-
-^ ask abt
-
-knproject.sml:71
-
-
-
-# Depth
-
-# Bignums 
-1. build bignums module 
-   - new, free
-   - add, sub, mult, div, idiv, mod. 
-   - print
-   - ask about floating point
-
-
-Dynamic compilation and loading [2 points]. 
-μScheme and vScheme both have a use syntactic form, which tells the interpreter 
-to load and run code. This goal is to implement two machine instructions, one to
- call popen and read from a pipe, and one to load a list of modules from an open
-  file descriptor. These two instructions can then eventually be used to call 
-  the compiler and load the results. These instructions can be tested now, and 
-  then by the time of module 4, they can be used to implement a use function.
-
-
-
-# A-Normal Form
 
 # Depth
 
@@ -120,9 +89,6 @@ have illegal forms?
 # Random todos
 Add <:> operator : curry op cons + <$>
 Ask about literal after @: can we have it, bc we use regs?
-# Random todos
-Add <:> operator : curry op cons + <$>
-Ask about literal after @: can we have it, bc we use regs?
 
 
 
@@ -184,6 +150,5 @@ nr: "You can comfort yourself in the fact that as long as you're in dark mode
 
 "It's an exaggeration to say the faculty slack is the Ming Chow social feed,
  but it's not much of an exaggeration."
-
 
 "The standard basis is part of the standard, dude." 
