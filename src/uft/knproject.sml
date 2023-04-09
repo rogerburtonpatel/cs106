@@ -48,11 +48,16 @@ struct
     | exp (X.IFX (e1, e2, e3)) =
       curry3 K.IFX <$> asName e1 <*> exp e2 <*> exp e3
     | exp (X.LETX (X.LETREC, nes, e)) = error "no letrec dingus"
-    | exp (X.LETX (X.LET, [(n, e')], e)) = translateLet n (exp e') (exp e)
+    | exp (X.LETX (X.LET, [(n, e')], e)) = 
+      (case (exp e', exp e)
+        of (Error.OK e1, Error.OK e2) => succeed (translateLetPure n e1 e2)
+         | (Error.ERROR msg, _) => Error.ERROR msg
+         | (_, Error.ERROR msg) => Error.ERROR msg)
     | exp (X.LETX (X.LET, xs, e)) = 
                      error "let must have exactly one binding in projection to \
                                                                 \K-Normal form!"    
     | exp (X.WHILEX (X.LETX (X.LET, [(n, e1)], e2), e')) = 
+    (* todo test this a bit more *)
           if eqnames n (asName e2)
           then curry3 K.WHILEX <$> (succeed n) <*> exp e1 <*> exp e2
           else error "while name bound in let must be the one called in \
@@ -85,17 +90,14 @@ struct
     
     | exp (X.LAMBDA (ns, e)) = curry K.FUNCODE <$> succeed ns <*> exp e
 
-    and translateLet x (Error.OK (K.LETX (y, e1, e2))) (Error.OK e3) = 
+    and translateLetPure x (K.LETX (y, e1, e2)) e3 = 
         if x = y orelse KU.freeIn e3 y
         then (* sadly we have to do this out manually *)
-                    curry3 K.LETX <$> succeed x <*> 
-                                      (curry3 K.LETX <$> succeed y 
-                                                  <*> succeed e1 <*> succeed e2) 
-                                      <*> (succeed e3)
+                    K.LETX (x, K.LETX (y, e1, e2), e3)
         else 
-        curry3 K.LETX <$> succeed y <*> succeed e1 <*> 
-                          (translateLet x (succeed e2) (succeed e3))
-      | translateLet x e1 e2 = curry3 K.LETX <$> succeed x <*> e1 <*> e2
+        K.LETX (y, e1, translateLetPure x e2 e3)
+      | translateLetPure x e1 e2 = K.LETX (x, e1, e2)
+
 
   fun list nil     = succeed nil 
   | list (p::ps) = curry op :: <$> p <*> list ps

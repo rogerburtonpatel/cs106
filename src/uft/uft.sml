@@ -119,7 +119,7 @@ struct
 
   fun KN_reg_of KN = KN_of_file 
                      >=> Error.mapList (KNRename.mapx KNRename.regOfName)
-    | KN_reg_of FO = FO_of_file 
+    | KN_reg_of FO = CL_of FO
                      >>> ! (List.map KNormalize.def)
     | KN_reg_of inLang = raise NoTranslationTo KN
 
@@ -160,6 +160,8 @@ struct
   fun emitHO outfile = app (emitScheme outfile o Disambiguate.ambiguate)
 
   fun emitFO outfile = app (emitScheme outfile o FOUtil.embed)
+  
+  fun emitCL outfile = app (emitScheme outfile o CSUtil.embed)
 
   fun emitKN outfile = app (emitScheme outfile o KNEmbed.def)
   
@@ -173,12 +175,13 @@ struct
     (case outLang
        of VO => VO_of      inLang >>> ! (emitVO outfile)
         | VS => VS_of      inLang >>> ! (emitVS outfile)
-        | KN => KN_of      inLang >>> ! (emitKN outfile)
         | AN => AN_of      inLang >>> ! (emitAN outfile)
+        | KN => KN_of      inLang >>> ! (emitKN outfile)
+        | FO => FO_of      inLang >>> ! (emitFO outfile)
+        | CL => CL_of      inLang >>> ! (emitCL outfile)
         | HO => HO_of      inLang >>> ! (emitHO outfile)
         | ES => ES_of      inLang >>> ! (emitHO outfile)
-        | FO => FO_of      inLang >>> ! (emitFO outfile)
-        | _  => raise NoTranslationTo outLang
+        | HOX => HOX_of    inLang >>> ! (emitHO outfile)
     ) infile
     handle Backward => raise NotForward (inLang, outLang)
          | NoTranslationTo outLang => raise NotForward (inLang, outLang)
