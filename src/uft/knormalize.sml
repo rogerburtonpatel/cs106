@@ -91,13 +91,8 @@ struct
   fun nbRegsWith normalize bind A [] k      = k []
     | nbRegsWith normalize bind A (e::es) k = 
         bind A (normalize A e) 
-          (fn reg => 
-            let val (RS n) = A
-                (* val () = print ("n is " ^ Int.toString n ^ "\n")
-                val () = print ("reg is " ^ Int.toString reg ^ "\n") *)
-                val maxReg = (Int.max (n - 1, reg))
-            in nbRegsWith normalize bind (A -- reg) es (fn ts => k (reg::ts)) 
-            end)
+          (fn reg => nbRegsWith normalize bind (A -- reg) es 
+                     (fn ts => k (reg::ts)))
   val nbRegsWith : 'a normalizer -> policy -> regset -> 'a list -> 
                                               (reg list -> exp) -> exp
     = nbRegsWith
@@ -166,7 +161,7 @@ struct
     | translateBegin rho A (e::es)   = K.BEGIN (exp rho A e, 
                                                 translateBegin rho A es)
   fun def ex = 
-    let val A   = (RS 0)
+    let val A   = RS 0
         val rho = Env.empty
     in 
     (case ex

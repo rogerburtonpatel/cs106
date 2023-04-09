@@ -71,7 +71,7 @@ struct
 
   fun labelEnv is = 
     let fun g (n, A.DEFLABEL label, envir) = 
-                  if (E.binds (envir, label))
+                  if E.binds (envir, label)
                   then Error.ERROR (label ^ "already exists")
                   else Error.OK (E.bind (label, n, envir))
          |  g (_, _, envir) = Error.OK envir
@@ -81,7 +81,7 @@ struct
   val _ = labelEnv : AssemblyCode.instr list -> int Env.env error
 
     fun mkGoto (n, envir, label, objinstrs) =
-      let val ost = (E.find(label, envir) - n)
+      let val ost = E.find(label, envir) - n
       in (curry op ::) (O.GOTO ost) <$> objinstrs
         handle (E.NotFound x) => 
                     Error.ERROR (label ^ "not defined in environment")

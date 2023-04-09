@@ -130,8 +130,8 @@ struct
 
   (* we use register 0 as a placeholder here; it's killed alongside all other
      registers after a call to 'error'. *)
-  fun mkerror msg = [(loadlit 0 
-        (KNormalForm.STRING msg)), (effect P.error [0])]
+  fun mkerror msg = [loadlit 0 
+        (KNormalForm.STRING msg), effect P.error [0]]
 
   val rec areConsecutive : ObjectCode.reg list -> bool
     = fn []  => true
