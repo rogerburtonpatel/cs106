@@ -1,4 +1,4 @@
-(* KNormalizer from First-Order Scheme to KNormal-form Scheme. 
+(* KNormalizer from Closed Scheme to KNormal-form Scheme. 
     This is where register allocation happens! *)
 
 (* You'll fill out the missing code in this file *)
@@ -7,13 +7,13 @@ structure KNormalize :> sig
   type reg = int  (* register *)
   type regset     (* set of registers *)
   val regname : reg -> string
-  val exp : reg Env.env -> regset -> FirstOrderScheme.exp -> reg KNormalForm.exp
-  val def :                          FirstOrderScheme.def -> reg KNormalForm.exp
+  val exp : reg Env.env -> regset -> ClosedScheme.exp -> reg KNormalForm.exp
+  val def :                          ClosedScheme.def -> reg KNormalForm.exp
 end 
   =
 struct 
   structure K  = KNormalForm
-  structure F  = FirstOrderScheme
+  structure F  = ClosedScheme
   structure E  = Env
   structure P  = Primitive
 
@@ -103,7 +103,7 @@ struct
   (* WEIGHTLIFTERS *)
 
   fun exp rho A ex =
-    let val exp : reg Env.env -> regset -> FirstOrderScheme.exp -> exp = exp
+    let val exp : reg Env.env -> regset -> ClosedScheme.exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho) 
         (*  ^ normalize and bind in _this_ environment *)
     in  (case ex
@@ -137,17 +137,16 @@ struct
            | F.LET (bindings, body) => 
              let val (names, rightSides) = ListPair.unzip bindings
                  val bindNamestoRegs     = ListPair.foldr Env.bind rho
-                 (* val () = printRegSet A *)
              in nbRegs bindAnyReg A rightSides 
-                      (fn regs => 
-                      let val () = ()
-                      (* val () = print (IntListToString regs ^ "\n") *)
-                      in 
-                      exp (bindNamestoRegs (names, regs)) 
+                      (fn regs => exp (bindNamestoRegs (names, regs)) 
                                       (List.foldl (flip (op --)) A regs)
-                                      body 
-                      end)
-             end)
+                                      body)
+             end
+          | F.CLOSURE (lambda, captured) => Impossible.impossible "closure"
+          | F.CAPTURED i => Impossible.impossible "captured"
+          | F.LETREC (bindings, body) => Impossible.impossible "letrec"
+             
+             )
     end
 
   and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
