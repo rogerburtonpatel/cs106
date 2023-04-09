@@ -121,13 +121,18 @@ struct
 
   val literal = P.maybe lit_of_token one
 
+
   (* turn any single-token string into a parser for that token *)
   fun the "\n" = eol
     | the s =
-        case AsmLex.tokenize s
+        let fun matchtokens toks = 
+        case toks
           of Error.OK [t, AsmLex.EOL] => sat (P.eq t) one >> succeed ()
+           | Error.OK (t::ts) => sat (P.eq t) one >> matchtokens (Error.OK ts)
            | _ => (app eprint ["fail: `", s, "`\n"]; Impossible.impossible "non-token in assembler parser")
-  (* val the = many1 the *)
+        in matchtokens (AsmLex.tokenize s)
+        end
+
 
 
 
@@ -163,9 +168,11 @@ struct
     end
     
 
-  fun eRL operator r1 lit   = regslit operator [r1] lit
-  fun eLR operator = flip $ eRL operator
+  fun eRL  operator r1 lit      = regslit operator [r1] lit
+  fun eLR  operator             = flip $ eRL operator
 
+  fun eR2L operator r1 r2 lit   = regslit operator [r1, r2] lit
+  fun eRLR operator r1 lit r2   = regslit operator [r1, r2] lit
   fun eL operator lit = regslit operator [] lit
 
   (***** Example parser for you to extend *****)
@@ -228,9 +235,12 @@ struct
 
   val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
-                "null?", "nil?", "car", "cdr", "hash"]
+                "null?", "nil?", "car", "cdr", "hash", "neg", "not"]
   val oneops = ["print", "println", "printu", "error",
-                "inc", "dec", "neg", "not"]
+                "inc", "dec"]
+
+  fun bracketed lb p rb = (the lb >> p) <~> the rb
+
 
   (* val parseBinops = parseOps binopParser *)
 
@@ -248,11 +258,11 @@ struct
     <|> parseOps oneParser oneops
 
 
-    <|> eRL "getglobal" <$> reg <~> the ":=" <~> the "_G" <~> the "[" <*> string' <~> the "]"
+    <|> eRL "getglobal" <$> reg <~> the ":= _G" <*> bracketed "[" string' "]"
     <|> eRL "getglobal"  <$> reg <~> the ":=" <~> the "global" <*> name'
 
 
-    <|> eLR "setglobal"  <$> (the "_G" >> the "[" >> string') <~> the "]" <~> the ":=" <*> reg
+    <|> eLR "setglobal"  <$> (the "_G" >> bracketed "[" string' "]") <~> the ":=" <*> reg
     <|> eLR "setglobal" <$> (the "global" >> name') <~> the ":=" <*> reg
 
     <|> eLR "check" <$> (the "check" >> string') <~> optional (the ",") <*> reg
@@ -274,6 +284,15 @@ struct
 
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
 
+(* todo bracketed parser and 'the' improvement *)
+    <|> eR2L "mkclosure" <$> reg <~> the ":=" <~> the "mkclosure" <*> reg <*> int'
+    <|> eR2L "mkclosure" <$> reg <~> the ":=" <~> the "closure" <~> the "[" <*> reg <~> the "," <*> int' <~> the "]"
+
+    <|> eR2L "setclslot" <$> reg <~> the ":=" <*> reg <*> bracketed "<" int' ">"
+    <|> eR2L "setclslot" <$> reg <~> the ":=" <*> reg <~> the "." <*> int'
+
+    <|> eRLR "getclslot" <$> reg <*> bracketed "<" int' ">" <~> the ":=" <*> reg
+    <|> eRLR "getclslot" <$> reg <~> the "." <*> int' <~> the ":=" <*> reg
 
 
     
@@ -284,14 +303,15 @@ struct
     (* rX := call rY (rZ) *)
     (* rX := call rY () *)
     (* rX := call rY    *)
-    <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
-            <~> the "(" <~> reg <~> the "," <~> the "..." <~> the "," <*> reg <~> the ")"
+    (* todo resuse bracketed producer here *)
+    <|> eR3 "call" <$> reg <~> the ":= call" <*> reg 
+            <~> the "(" <~> reg <~> the ", ... ," <*> reg <~> the ")"
     <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
             <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")"             
-    <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> reg <~> the ")" 
-    <|> eRCall "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <*> many1 reg <~> the ")" 
-    <|> eR2to3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg <~> the "(" <~> the ")" 
-    <|> eR2to3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg
+    <|> eR3 "call" <$> reg <~> the ":= call" <*> reg <~> the "(" <*> reg <~> the ")" 
+    <|> eRCall "call" <$> reg <~> the ":= call" <*> reg <~> the "(" <*> many1 reg <~> the ")" 
+    <|> eR2to3 "call" <$> reg <~> the ":= call" <*> reg <~> the "(" <~> the ")" 
+    <|> eR2to3 "call" <$> reg <~> the ":= call" <*> reg
 
     <|> eR1 "return" <$> (the "return" >> reg)
     
@@ -329,10 +349,9 @@ struct
 
    fun loadfunc (reg, arity) body = A.LOADFUNC (reg, arity, body)
    val loadfunStart : (int * int) parser = 
-      P.pair <$> reg <~> the ":=" <~> the "function" 
-        <~> the "(" <*> int <~> the "arguments" <~> the ")" 
-        <~> the "{" <~> eol (* TODO THIS CAN BE BETTER *)
-   val loadfunEnd : unit parser = the "}" <~> eol
+      P.pair <$> reg <~> the ":= function" <*> bracketed "(" (int <~> the "arguements") ")" 
+        <~> the "{" <~> many1 eol (* TODO THIS CAN BE BETTER *)
+   val loadfunEnd : unit parser = the "}" <~> many1 eol
 
    (* grammar :   <instruction> ::= <one_line_instruction> EOL
                                  | <loadfunStart> {<instruction>} <loadfunEnd> *)
@@ -404,10 +423,10 @@ struct
               spaceSep ["inc", reg x]
             | ("dec", [x]) =>
               spaceSep ["dec", reg x]
-            | ("neg", [x]) =>
-              spaceSep ["neg", reg x]
-            | ("not", [x]) =>
-              spaceSep ["not", reg x]
+            | ("neg", [x, y]) =>
+              spaceSep [reg x, ":=", "neg", reg y]
+            | ("not", [x, y]) =>
+              spaceSep [reg x, ":=", "not", reg y]
             | ("cons", [x, y, z]) =>
               spaceSep [reg x, ":=", reg y, "cons", reg z]   
             | ("=", [x, y, z]) =>
@@ -499,8 +518,13 @@ struct
             spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
           | ("check-error", [x], msg) => 
               spaceSep ["check-error", unparse_lit msg, reg x]
+          | ("mkclosure", [x, y], slotnum) => 
+              spaceSep [reg x, ":=", "mkclosure", reg y, unparse_lit slotnum]
+          | ("getclslot", [x, y], slotnum) => 
+              spaceSep [reg x, "<", unparse_lit slotnum, ">", ":=", reg y]
+          | ("setclslot", [x, y], slotnum) => 
+              spaceSep [reg x, ":=", reg y, "<", unparse_lit slotnum, ">"]
 
-          
           | ("printl", [], name) =>
               spaceSep ["printl", unparse_lit name]
           | ("printlnl", [], name) =>

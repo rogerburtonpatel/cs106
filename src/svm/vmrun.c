@@ -501,6 +501,31 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 break;
             }
 
+            case MkClosure: {
+                struct VMFunction *f = AS_VMFUNCTION(vm, registers[UY]);
+                size_t nslots = AS_NUMBER(vm, registers[UZ]);
+                VMNEW(struct VMClosure *, cl, 
+                      sizeof(*cl) + (sizeof(Value) * nslots));
+                cl->f = f;
+                cl->nslots = nslots;
+                registers[UX] = mkClosureValue(cl);
+                break;
+            }
+            case SetClSlot: {
+                // TODO BOUNDS CHECK
+                AS_CLOSURE(vm, registers[UX])->
+                captured[(size_t)AS_NUMBER(vm, registers[UY])] = registers[UZ];
+                break;
+            }
+            case GetClSlot: {
+                // TODO BOUNDS CHECK
+
+                registers[UX] = 
+                    AS_CLOSURE(vm, registers[UY])->
+                    captured[(size_t)AS_NUMBER(vm, registers[UZ])];
+                break;
+            }
+
             default:
                 printf("Opcode Not implemented!\n");
                 break;
