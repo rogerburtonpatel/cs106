@@ -30,7 +30,8 @@ struct
   val asName : X.exp -> X.name Error.error
          (* project into a name; used where KNF expects a name *)
     = fn X.LOCAL x => succeed x 
-       | e => error ("expected a local variable but instead got " ^ (X.whatIs e))
+       | e => error ("expected a local variable but instead got " 
+                                                                 ^ (X.whatIs e))
 
 (* val exp   : UnambiguousVScheme.exp -> string KNormalForm.exp Error.error *)
   fun eqnames n1 (Error.OK s) = n1 = s
