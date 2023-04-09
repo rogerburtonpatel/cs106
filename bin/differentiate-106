@@ -1,0 +1,49 @@
+#!/bin/bash -ex
+
+# does differentiable testing on a file: runs it through the uft wash, 
+# translating it a level down each time and running vscheme. 
+# if there's a break, it tells you when. 
+
+SCHEMEFILE=""
+
+usage ()
+{
+    if [[ "$#" -ne 1 ]]; then 
+        echo "Usage: $0 scheme-file"
+        exit 1
+    fi
+}
+
+run ()
+{
+    canonical_out=$(vscheme "$SCHEMEFILE" 2>&1)
+    echo $canonical_out
+
+    extension="${SCHEMEFILE##*.}"
+    case $extension in 
+
+    "kn")
+        kn_out=$(uft kn-kn $SCHEMEFILE | vscheme 2>&1)
+        difference=$(diff <(echo "$canonical_out") <(echo "$kn_out") 2>&1)
+        if [[ "$?" -ne 0 ]]; then 
+            echo "DIFFERENCE IN KN: $difference"
+        fi
+    ;;
+
+    *)
+        echo "not implemented"
+    ;;
+
+    esac
+}
+
+main ()
+{
+    usage $@
+    SCHEMEFILE="$1"
+    run
+    echo "done"
+}
+
+
+main $@
