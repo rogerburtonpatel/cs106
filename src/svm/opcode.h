@@ -34,7 +34,7 @@ typedef enum opcode {
                       Return, // R1
                       Call, // R3
                       Tailcall, // R2
-                      MkClosure, SetClSlot, GetClSlot, // R2
+                      MkClosure, SetClSlot, GetClSlot, // R3
                       If, // R1
                       Goto, // iXYZ
                       Unimp, // stand-in for opcodes not yet implemented

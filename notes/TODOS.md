@@ -1,10 +1,11 @@
 # Actual todos
 
-Cons cells!!!!
+TESTING- dress to impress
+1. vs, kn, fo idempotent testing
+2. vscheme differential testing
+
 
 Ask about setting globals to literals
-
-comment parser broken-- what's wrong with my code?
 
 qs: 
 Projection to KNF should probably reject SETGLOBAL in a value (toReg) context.
