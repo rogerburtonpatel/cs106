@@ -1,0 +1,6 @@
+(begin 
+   (let* ([r0 2]
+          [r0 (+ r0 r0)]) 
+     (check r0 'two-plus-two))
+   (let ([r0 4]) 
+     (expect r0 'four)))
