@@ -349,8 +349,8 @@ struct
 
    fun loadfunc (reg, arity) body = A.LOADFUNC (reg, arity, body)
    val loadfunStart : (int * int) parser = 
-      P.pair <$> reg <~> the ":= function" <*> bracketed "(" (int <~> the "arguements") ")" 
-        <~> the "{" <~> many1 eol (* TODO THIS CAN BE BETTER *)
+      P.pair <$> reg <~> the ":= function" <*> bracketed "(" (int <~> the "arguments") ")" 
+        <~> the "{" <~> many1 eol 
    val loadfunEnd : unit parser = the "}" <~> many1 eol
 
    (* grammar :   <instruction> ::= <one_line_instruction> EOL
