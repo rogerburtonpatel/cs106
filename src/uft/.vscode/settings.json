@@ -2,7 +2,7 @@
     "files.associations": {
         "*.kn": "scheme",
         "*.scm": "scheme",
-        "*.vs": "umasm",
+        "*.vs": "scheme",
         "vmerror.h": "c"
     }
 }

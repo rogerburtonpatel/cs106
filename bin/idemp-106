@@ -1,9 +1,9 @@
 #!/bin/bash
 # 
-# Purpose: makes a testing file for some 106 operation
+# Purpose: tests idempotency of the uft. 
 # 
 
-## Usage: mktester <name-of-test-suite>
+## Usage: idemp-106
 ## 
 ## 
 ## 
@@ -16,7 +16,7 @@ BASEDIR=$DIR106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
-TESTDIR=$BASEDIR/tests/idemp
+TESTDIR=$BASEDIR/tests/idemp-106
 
 
 
@@ -68,6 +68,7 @@ run_one_test ()
                                                   
 }
 
+shopt -s nullglob
 
 run_tests () {
     for file in $TESTDIR/*.scm; do
@@ -77,6 +78,11 @@ run_tests () {
     for file in $TESTDIR/*.scm; do
         run_one_test "diff <(uft kn-vs $file 2>&1) <(uft kn-vs $file | uft vs-vs)"
     done
+
+    for file in $TESTDIR/*.vs; do
+        run_one_test "diff <(uft vs-vs $file 2>&1) <(uft vs-vs $file | uft vs-vs)"
+    done
+
 
     if [[ "$numfail" -eq "0" ]]; then 
         echo "All tests passed."
@@ -95,3 +101,5 @@ main () {
 }
 
 main
+
+shopt -u nullglob
