@@ -2,7 +2,7 @@
                                     ((CAPTURED-IN 0 $closure) 
                                     ((CAPTURED-IN 1 $closure) x))) 
                            (cons f (cons g '()))))
-
+; TODO Closure convert by hand
 (define qsort (xs)
   (if (null? xs)
       '()

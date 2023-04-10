@@ -109,7 +109,9 @@ struct
            | K.WHILEX _        => (forEffectK' ex)
                                     o S (A.loadlit dest (K.BOOL false))
            | K.FUNCODE (rs, e) =>
-                       S (A.loadfunc dest (List.length rs) (toReturnK' e [])))
+                       S (A.loadfunc dest (List.length rs) (toReturnK' e []))
+          | K.CAPTURED i => Impossible.impossible "codegen captured"
+           | K.CLOSURE ae => Impossible.impossible "codegen closure")
   and forEffectK' (ex: reg KNormalForm.exp) : instruction hughes_list  =
 (case ex
           of K.LITERAL _ => empty
@@ -134,7 +136,9 @@ struct
              in S (A.goto lab) o S (A.deflabel lab') o (forEffectK' e')
                 o S (A.deflabel lab) o (toRegK' r e) o S (A.ifgoto r lab')          
             end
-           | K.FUNCODE (rs, e) => empty)
+           | K.FUNCODE (rs, e) => empty
+           | K.CAPTURED i => Impossible.impossible "codegen captured"
+           | K.CLOSURE ae => Impossible.impossible "codegen closure")
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         (* toRegK' 255 e o S (A.return 255) *)
         (case e
@@ -151,7 +155,9 @@ struct
            | K.FUNCODE _ => toRegK' r0 e o (S (A.return r0))
            | K.LITERAL _ => toRegK' r0 e o (S (A.return r0))
            | K.VMOP _ => toRegK' r0 e o (S (A.return r0))
-           | K.VMOPLIT _ => toRegK' r0 e o (S (A.return r0)))
+           | K.VMOPLIT _ => toRegK' r0 e o (S (A.return r0))
+           | K.CAPTURED i => Impossible.impossible "codegen captured"
+           | K.CLOSURE ae => Impossible.impossible "codegen closure")
 
 
 

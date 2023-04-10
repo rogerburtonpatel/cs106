@@ -2,50 +2,67 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - I'm really proud of function slotIfCaptured at closure-convert.sml:67-69,
+    and its use at closure-convert.sml:82 and 88. This was my first foray into
+    independently creating code that pattern matches on an `option`, and it 
+    seems intuitive for this case: if a variable is captured, give me its 
+    slot; otherwise, give me NONE. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - I'd like to check out my knrename code for K.CLOSURE. Matt helped me out
+    with it (thank you!), and I want to see what other people have. 
+    I also am curious about k-normalization of K.CLOSURE- i'd like a check on
+    that. 
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+  - Same as above. Thank you!
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - Matt helped me with fun closure at closure-convert.sml:72-75 and with 
+    knrename.sml:52-53, and stephanie helped me with clscheme.sml:56. 
+    HUGE thanks to both! Week full of exams and projects; the help 
+    was really appreciated. 
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
+  - I fixed my set-difference algorithm (apparently this is just something 
+    I'm bad at), and I've started to work through the laws for nicer knf. 
+    Looking at module 5 and let-floating rules. These changes are at 
+
+    1. Set stuff: knormalize.sml:37
+    2. Let-floating- starting in knproject.sml:94-100. I'm copying this 
+    to knormalize.sml soon. 
+
 
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - Yes, but I'd prefer next week 
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - Definitely how people handled the knrename K.CLOSURE case. 
 
 Again supposing you are not selected to present, are you willing to
 serve on the review panel? (Or if there are more than one of you, who
 is willing to serve?)
 
-  - 
+  - Yes! 

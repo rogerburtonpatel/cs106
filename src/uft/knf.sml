@@ -14,14 +14,19 @@ structure KNormalForm = struct
     = LITERAL of literal
     | NAME of 'a
     | VMOP of vmop * 'a list
-    | VMOPLIT of vmop * 'a list * literal
-    | FUNCALL of 'a * 'a list 
-    | IFX     of 'a * 'a exp * 'a exp 
-    | LETX    of 'a * 'a exp * 'a exp
-    | BEGIN   of 'a exp * 'a exp 
-    | SET     of 'a * 'a exp
-    | WHILEX  of 'a * 'a exp * 'a exp 
-    | FUNCODE of 'a list * 'a exp
+    | VMOPLIT  of vmop * 'a list * literal
+    | FUNCALL  of 'a * 'a list 
+    | IFX      of 'a * 'a exp * 'a exp 
+    | LETX     of 'a * 'a exp * 'a exp
+    | BEGIN    of 'a exp * 'a exp 
+    | SET      of 'a * 'a exp
+    | WHILEX   of 'a * 'a exp * 'a exp 
+    | FUNCODE  of 'a funcode
+    | CAPTURED of int
+    | CLOSURE  of 'a closure
+  withtype 'a closure = ('a list * 'a exp) * 'a list
+    (* (funcode, registers holding values of captured variables) *)  
+  and 'a funcode = 'a list * 'a exp  (* lambda with no free names *)
 
 end
 
@@ -64,6 +69,7 @@ struct
           | free (K.BEGIN (e1, e2))    = free e1 orelse free e2
           | free (K.LETX (n, e, e'))   = free e orelse 
                                         (n <> y andalso free e')
+          | free _ = Impossible.impossible "todo closures"
   in  free exp
   end
 

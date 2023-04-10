@@ -26,6 +26,10 @@ struct
   val regOfName = AsmLex.registerNum
   fun nameOfReg r = succeed ("r" ^ Int.toString r)
 
+  fun pair x y = (x, y)
+  fun curryClBody x y z = ((x, y), z)
+ 
+
   fun mapx f = 
     fn e => 
     (case e 
@@ -42,6 +46,11 @@ struct
       | K.WHILEX (n, e, e') => curry3 K.WHILEX <$> f n <*> mapx f e 
                                                                   <*> mapx f e'
       | K.FUNCODE (ns, e) => curry K.FUNCODE <$> errorList (map f ns) 
-                                                                  <*> mapx f e)
+                                                                  <*> mapx f e
+      | K.CAPTURED i => succeed (K.CAPTURED i)
+      | K.CLOSURE ae => K.CLOSURE <$> clRename f ae)
+    and clRename f ((formals, body), captured) = 
+      curryClBody <$> Error.mapList f formals <*> mapx f body <*> Error.mapList f captured
+(* TODO- fix this. Thanks matt! *)
 
 end
