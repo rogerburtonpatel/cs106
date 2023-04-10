@@ -69,7 +69,11 @@ struct
     | exp (K.SET (n, e)) = S.SET (n, exp e)
     | exp (K.WHILEX (n, e1, e2)) = S.WHILEX (lt' n (exp e1) (S.VAR n), exp e2)
     | exp (K.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
-
+    | exp (K.CAPTURED i) = 
+    S.APPLY (S.VAR "CAPTURED-IN", [S.LITERAL (S.INT i), S.VAR "$closure"])
+    | exp (K.CLOSURE ((formals, body), captured)) = 
+        S.APPLY (S.VAR "mkclosure", [S.LAMBDA ("$closure"::formals, exp body), 
+        SU.list (map (S.LITERAL o S.SYM) captured)])
 
   
   val _ = exp : VScheme.name KNormalForm.exp -> VScheme.exp 

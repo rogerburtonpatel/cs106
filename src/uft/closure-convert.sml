@@ -27,34 +27,33 @@ struct
     in  find 0 xs
     end
 
-  fun flip f x y = f y x
-
   fun free (expr : X.exp) = 
-    let fun fr ex set = 
-    (case ex
-      of X.LITERAL _ => set
-       | X.LOCAL n   => S.insert (n, set)
-       | X.GLOBAL _  => set
-       | X.SETLOCAL (n, e) => fr e (S.insert (n, set))
-       | X.SETGLOBAL (n, e) => fr e set
-       | X.IFX (e1, e2, e3) => S.union' [fr e1 set, fr e2 set, fr e3 set]
-       | X.WHILEX (e, e')   => S.union' [fr e set, fr e' set]
-       | X.BEGIN es         => S.union' (map (flip fr set) es)
-       | X.FUNCALL (e, es)  => S.union' (fr e set :: (map (flip fr set) es))
-       | X.PRIMCALL (_, es) => S.union' (map (flip fr set) es)
+  let fun freeSets es = foldl (fn (e, set) => (free e)::set) nil es
+  in
+    (case expr
+      of X.LITERAL _ => S.empty
+       | X.LOCAL n   => S.insert (n, S.empty)
+       | X.GLOBAL _  => S.empty
+       | X.SETLOCAL (n, e) => S.union' [S.insert (n, S.empty), free e]
+       | X.SETGLOBAL (n, e) => free e
+       | X.IFX (e1, e2, e3) => S.union' [free e1, free e2, free e3]
+       | X.WHILEX (e, e')   => S.union' [free e, free e']
+       | X.BEGIN es         => S.union' (freeSets es)
+       | X.FUNCALL (e, es)  => S.union' (freeSets (e::es))
+       | X.PRIMCALL (_, es) => S.union' (freeSets es)
        | X.LETX (X.LET, bindings, body) => 
           let val (names, rhss) = ListPair.unzip bindings
-          in S.union' (S.diff (S.ofList names, fr body set) 
-                      :: (map (flip fr set) rhss))
+          in S.union' (S.diff (S.ofList names, free body) 
+                      :: freeSets rhss)
           end
        | X.LETX (X.LETREC, bindings, body) => 
           let val (names, rhss) = ListPair.unzip bindings
           in S.diff (S.ofList names, 
-                     S.union' (fr body set :: (map (flip fr set) rhss)))
+                     S.union' (free body :: freeSets rhss))
           end
-       | X.LAMBDA  (ns, e)  => S.diff (S.ofList ns, fr e set))
-    in fr expr S.empty
-    end
+       | X.LAMBDA  (ns, e)  => S.diff (free e, S.ofList ns))
+    (* in fr expr S.empty *)
+    end 
 
   val _ = free : X.exp -> X.name S.set
 
@@ -71,18 +70,19 @@ struct
 
         (* I recommend internal function closure : X.lambda -> C.closure *)
         fun closure (xs, body) = 
-              let val capturedNames = S.elems (S.diff (S.ofList xs, free body))
-              (* TODO WRONG C.LOCAL- need to get C.CAPUTRED if in captured *)
-              in ((xs, exp body), map C.LOCAL capturedNames)
+              let val capturedNames = S.elems (free (X.LAMBDA (xs, body)))
+              in ((xs, closeExp capturedNames body), map (fn n => closeExp captured (X.LOCAL n)) capturedNames)
               end
 
 
         (* I recommend internal function exp : X.exp -> C.exp *)
         and exp (X.LITERAL l) = C.LITERAL (literal l)
           | exp (X.LOCAL n)   = 
+
             (case slotIfCaptured n captured 0 
              of SOME i => C.CAPTURED i
               | _ => C.LOCAL n)
+
           | exp (X.GLOBAL n) = C.GLOBAL n
           | exp (X.SETLOCAL (n, e)) = 
             (case slotIfCaptured n captured 0
@@ -104,7 +104,19 @@ struct
     in  exp e
     end
 
-  fun close def = Impossible.exercise "close a definition"
+  fun close def = 
+    let val closeNoCap = closeExp []
+    in case def 
+        of X.VAL (v, e) => C.VAL (v, closeNoCap e)
+    | X.DEFINE (n, (ns, e)) => C.DEFINE (n, (ns, closeNoCap e))
+    | X.EXP e => C.EXP (closeNoCap e)
+    | X.CHECK_EXPECT (s1, e1, s2, e2) => 
+                  C.CHECK_EXPECT (s1, closeNoCap e1, s2, closeNoCap e2)
+    | X.CHECK_ASSERT (s, e) => C.CHECK_ASSERT (s, closeNoCap e)
+    | X.CHECK_ERROR (s, e)  => C.CHECK_ERROR  (s, closeNoCap e)
+
+    end
+  
 
 
 end

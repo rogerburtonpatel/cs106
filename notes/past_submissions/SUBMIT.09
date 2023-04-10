@@ -2,50 +2,181 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - Getting nbRegsWith right! It took some whiteboarding and a lot of thought,
+    but it felt like a continuations level-up. 
+
+    Also, I spent a long, long time debugging a particular issue with 
+    mixing rebinding local names in a let with binding new names - it was 
+    allowing for argument registers to be overwritten. 
+    The offending tests are localLetMixed and localLetStarMixed in 
+    kntest.scm:89-95, and are discussed later in this file. 
+
+    I managed to fix it, and while I think there's a better solution than 
+    the one I have, I like mine well enough (using Int.max on the regs to keep
+    A small). Walking through the continuations was really rewarding. 
+    I also like that even though I came up with a solution that isn't perfect,
+    it works. I can move from there towards improvement. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - knormalize.sml, at the bottom of the file: right now, my 
+    qsort translates to this, which is a bit less assembly-like. (I think 
+    it still translates well to vs). How can I get the nice perfect let* 
+    behavior exhibited in the spec? In general, I often get constructs like: 
+
+ (begin 
+   (let ([r0 (let* ([r0 localLetMixed]
+                    [r1 1]
+                    [r2 2]) 
+               (r0 r1 r2))]) 
+     (check r0 '(localLetMixed 1 2))) 
+   (let ([r0 6]) 
+     (expect r0 '6)))
+
+     While I'd like to be getting the let* stacks that reflect assembly, 
+     with r0 bound on the bottom rather than the top. Maybe anf can handle this,
+     but if I can now, I'd like to. 
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+    - The thing mentioned above- i'd love to have nicer knf!
+    - Generally, DEFINE and LET- 
+    I think something is up with those that's making 
+    the above happen (or F.PRIMCALL). 
+
+    - Also, the 'max' issue. This was my big bug of this assignment. Here is my
+    current fix, and what I want to do better. 
+
+    With this test: 
+
+    (define localLetMixed (n m)
+        (let ([n m] [m n] [x 3]) (+ x (+ n m))))
+    (check-expect (localLetMixed 1 2) 6)
+
+    if our nbRegsWith looks like this (mine did):
+
+  fun nbRegsWith normalize bind A [] k      = k []
+    | nbRegsWith normalize bind A (e::es) k = 
+        bind A (normalize A e) 
+          (fn reg => 
+           nbRegsWith normalize bind (A -- reg) es (fn ts => k (reg::ts)))
+
+                        we see here     ^  that we're setting the regset
+                        to pull from as 1 + the new register we process. 
+                        this is all well and good, but if we attempt to 
+                        bind to an ARGUMENT register that's small, we 
+                        can LOWER the regset too far and generate code like 
+                        this: 
+
+            (let ([r0 (lambda (r1 r2) 
+                    (let* ([r2 3]
+                            [r3 (+ r2 r1)]) 
+                    (+ r2 r3)))]) 
+        (set localLetMixed r0))
+
+    which is obviously bad- we're overwriting r2. I want the behavior of 
+    using bindAnyReg so we don't rebind parameters, and because of this 
+    erasure (along with ml, in spite of my love for it, being a debug-unfriendly
+    language), this took a long time to find.
+    My current fix is to keep the register set fixed using Int.max; however, 
+    this can lead to using some larger registers than necessary:
+
+    (let ([r0 (lambda (r1 r2) 
+             (let* ([r3 3]
+                    [r5 (+ r2 r1)]) 
+               (+ r3 r5)))]) 
+  (set localLetMixed r0))
+
+  (we'd rather have r4 than r5 for sure). 
+
+  I'm not quite sure how to resolve this, and am pretty tired right now. 
+  I'll ask about it in lab tomorrow. My current implementation is 
+  in nbRegsWith at knormalize.sml:75-84 (esp lines 79-83). 
+    
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - I talked with Matt about knormalize.sml:36-- when do we use the -- 
+    operator/was I not using it enough? He gave me a hand-- thanks!
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
-
+  - I removed the redundant parentheses at codegen.sml:147-151!
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - Yes! I've now finished, and am proud of my process, especially because
+    there's still room for improvement. I also really like the way my 
+    code prints in uft fo-kn right now, before the fix: 
+    it isn't assembly like, but it kind of looks like a cool snake, 
+    or a sideways mountain range:
+
+(begin 
+   (let ([r0 (let* ([r0 zip]
+                    [r1 (let* ([r1 1]
+                               [r2 (let* ([r2 2]
+                                          [r3 (let* ([r3 3]
+                                                     [r4 '()]) 
+                                                (cons r3 r4))]) 
+                                     (cons r2 r3))]) 
+                          (cons r1 r2))]
+                    [r2 (let* ([r2 'a]
+                               [r3 (let* ([r3 'b]
+                                          [r4 (let* ([r4 'c]
+                                                     [r5 '()]) 
+                                                (cons r4 r5))]) 
+                                     (cons r3 r4))]) 
+                          (cons r2 r3))]) 
+               (r0 r1 r2))]) 
+     (check r0 '(zip '(1 2 3) '(a b c)))) 
+   (let ([r0 (let* ([r0 (let* ([r0 1]
+                               [r1 (let* ([r1 'a]
+                                          [r2 '()]) 
+                                     (cons r1 r2))]) 
+                          (cons r0 r1))]
+                    [r1 (let* ([r1 (let* ([r1 2]
+                                          [r2 (let* ([r2 'b]
+                                                     [r3 '()]) 
+                                                (cons r2 r3))]) 
+                                     (cons r1 r2))]
+                               [r2 (let* ([r2 (let* ([r2 3]
+                                                     [r3 (let* ([r3 'c]
+                                                                [r4 
+                                                                    '()]) 
+                                                           (cons 
+                                                              r3 
+                                                              r4))]) 
+                                                (cons r2 r3))]
+                                          [r3 '()]) 
+                                     (cons r2 r3))]) 
+                          (cons r1 r2))]) 
+               (cons r0 r1))]) 
+     (expect r0 ''((1 a) (2 b) (3 c)))))
+
+
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - Mostly the thing mentioned- how to ensure you get your bindings 
+    all in a row, and also if people dealt with this 'max' local-let case. 
 
 Again supposing you are not selected to present, are you willing to
 serve on the review panel? (Or if there are more than one of you, who
 is willing to serve?)
 
-  - 
+  - Yes! 

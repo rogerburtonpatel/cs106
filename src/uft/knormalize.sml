@@ -149,7 +149,7 @@ struct
                                       body)
              end
           | F.CLOSURE (lambda, captured) => Impossible.impossible "closure"
-          | F.CAPTURED i => Impossible.impossible "captured"
+          | F.CAPTURED i => K.CAPTURED i
           | F.LETREC (bindings, body) => Impossible.impossible "letrec"
              
              )
