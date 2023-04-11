@@ -1,5 +1,7 @@
 CS 106 Homework Submission
 
+*Realized i submitted off wrong branch*
+
 What person or group is submitting this homework?
 
   - Roger
@@ -18,7 +20,10 @@ help finding during code review?
   - I'd like to check out my knrename code for K.CLOSURE. Matt helped me out
     with it (thank you!), and I want to see what other people have. 
     I also am curious about k-normalization of K.CLOSURE- i'd like a check on
-    that. 
+    that. Currently, my svm can run ho-vo qsort, but 
+    uft ho-kn qsort-orig.scm | vscheme 
+    fails with 
+    `Applied non-function r2.` I've debugged lots, with no luck. 
 
 What code, if any, would you especially like the course staff to
 review?  Why?
@@ -27,8 +32,8 @@ review?  Why?
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
-other code that you got from someone else?  If so, what code is it
-(file names and line numbers please) and who supplied it?
+other code that you got from someone else?  If so, what code is it
+(file names and line numbers please) and who supplied it?
 
   - Matt helped me with fun closure at closure-convert.sml:72-75 and with 
     knrename.sml:52-53, and stephanie helped me with clscheme.sml:56. 
@@ -53,13 +58,14 @@ review?
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - Yes, but I'd prefer next week 
+  - I'd prefer next week 
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - Definitely how people handled the knrename K.CLOSURE case. 
+  - Definitely how people handled the knrename K.CLOSURE case, and how
+    they knormalized K.CLOSURE as well. 
 
 Again supposing you are not selected to present, are you willing to
 serve on the review panel? (Or if there are more than one of you, who
