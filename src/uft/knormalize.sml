@@ -108,6 +108,8 @@ struct
 
   (* WEIGHTLIFTERS *)
 
+
+
   fun exp rho A ex =
     let val exp : reg Env.env -> regset -> ClosedScheme.exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho) 
@@ -160,6 +162,17 @@ struct
     | translateBegin rho A [e]       = exp rho A e
     | translateBegin rho A (e::es)   = K.BEGIN (exp rho A e, 
                                                 translateBegin rho A es)
+
+  and funcode (ns, e) rho A = 
+    let val (boundEnv, argregs, _) = (List.foldl (fn (n, (rho', rs, r)) => 
+                                  (Env.bind (n, r, rho'), rs @ [r], r + 1))
+                                  (rho, [], 1)
+                                  ns)
+        val availRegs = A -- List.length ns
+    in (argregs, exp boundEnv availRegs e)
+    end
+  val funcode : F.funcode -> reg Env.env -> regset -> reg K.funcode = funcode
+
   fun def ex = 
     let val A   = RS 0
         val rho = Env.empty
@@ -171,22 +184,20 @@ struct
                       bindWithTranslateExp A rho e2 (vmopStringK P.expect s2))
        | F.CHECK_ASSERT (s, e) =>
           bindWithTranslateExp A rho e (vmopStringK P.check_assert s)
-                        (* TODO ASK: can we use 0 in check-error bc of toplevel? *)
        | F.CHECK_ERROR (s, e) => 
         bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
                           (fn reg => 
                             K.VMOPLIT (P.check_error, [reg], K.STRING s))
        | F.VAL (n, e) => exp rho A (F.SETGLOBAL (n, e))
-       | F.DEFINE (n, (ns, e)) =>
-        let val (boundEnv, argregs, _) = (List.foldl (fn (n, (rho', rs, r)) => 
+       | F.DEFINE (n, (ns, e)) => K.LETX (0, K.FUNCODE (funcode (ns, e) rho A), KNormalUtil.setglobal (n, 0)))
+        (* let val (boundEnv, argregs, _) = (List.foldl (fn (n, (rho', rs, r)) => 
                                       (Env.bind (n, r, rho'), rs @ [r], r + 1))
                                       (rho, [], 1)
                                       ns)
             val availRegs = A -- List.length ns
         in K.LETX (0, 
                 K.FUNCODE (argregs, exp boundEnv availRegs e), 
-                KNormalUtil.setglobal (n, 0))
-        end)
+                KNormalUtil.setglobal (n, 0)) *)
     end
 end
 (* TODO: ask about this output from qsort: 
