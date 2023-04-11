@@ -84,6 +84,12 @@ struct
     then good
     else L (A.mkerror ("bad number of arguments in primitive " ^ P.name p))
 
+(* mapi : (int * 'a ‑> 'b) ‑> 'a list ‑> 'b list *)
+fun mapi f xs =  (* missing from mosml *)
+  let fun go k [] = []
+        | go k (x::xs) = f (k, x) :: go (k + 1) xs
+  in  go 0 xs
+  end
 
 (* TODO ADD GLOBALS IF NEEDED? ask *)
   fun toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
@@ -108,10 +114,9 @@ struct
            | K.SET (r, e)      => (toRegK' r e) o S (A.copyreg dest r)
            | K.WHILEX _        => (forEffectK' ex)
                                     o S (A.loadlit dest (K.BOOL false))
-           | K.FUNCODE (rs, e) =>
-                       S (A.loadfunc dest (List.length rs) (toReturnK' e []))
-          | K.CAPTURED i => Impossible.impossible "codegen captured"
-           | K.CLOSURE ae => Impossible.impossible "codegen closure")
+           | K.FUNCODE lambda => funcode dest lambda
+           | K.CAPTURED i => S (A.captured dest i)
+           | K.CLOSURE (lambda, captured) => putClIntoReg dest lambda captured)
   and forEffectK' (ex: reg KNormalForm.exp) : instruction hughes_list  =
 (case ex
           of K.LITERAL _ => empty
@@ -137,8 +142,8 @@ struct
                 o S (A.deflabel lab) o (toRegK' r e) o S (A.ifgoto r lab')          
             end
            | K.FUNCODE (rs, e) => empty
-           | K.CAPTURED i => Impossible.impossible "codegen captured"
-           | K.CLOSURE ae => Impossible.impossible "codegen closure")
+           | K.CAPTURED i => empty
+           | K.CLOSURE cl => empty)
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         (* toRegK' 255 e o S (A.return 255) *)
         (case e
@@ -156,8 +161,12 @@ struct
            | K.LITERAL _ => toRegK' r0 e o (S (A.return r0))
            | K.VMOP _ => toRegK' r0 e o (S (A.return r0))
            | K.VMOPLIT _ => toRegK' r0 e o (S (A.return r0))
-           | K.CAPTURED i => Impossible.impossible "codegen captured"
-           | K.CLOSURE ae => Impossible.impossible "codegen closure")
+           | K.CAPTURED i => S (A.captured r0 i)
+           | K.CLOSURE (lambda, captured) => (putClIntoReg r0 lambda captured) o S (A.return r0))
+  and funcode r (rs, e) = S (A.loadfunc r (List.length rs) (toReturnK' e []))
+  and putClIntoReg r lambda captured = (funcode r lambda) 
+                                  o S (A.mkclosure r r (List.length captured))
+                                  o L (mapi (fn (slotnum, capreg) => A.setclslot r slotnum capreg) captured)
 
 
 

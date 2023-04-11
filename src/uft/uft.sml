@@ -119,9 +119,8 @@ struct
 
   fun KN_reg_of KN = KN_of_file 
                      >=> Error.mapList (KNRename.mapx KNRename.regOfName)
-    | KN_reg_of FO = CL_of FO
+    | KN_reg_of inLang = CL_of inLang
                      >>> ! (List.map KNormalize.def)
-    | KN_reg_of inLang = raise NoTranslationTo KN
 
   fun AN_reg_of AN = AN_of_file 
                      >=> Error.mapList (ANRename.mapx ANRename.regOfName)
@@ -130,7 +129,8 @@ struct
 
   fun KN_of KN = KN_of_file
     | KN_of FO = KN_reg_of FO >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
-    | KN_of inLang = raise NoTranslationTo KN
+    | KN_of HO = CL_of HO >>> ! (List.map KNormalize.def) >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
+    | KN_of inLang = raise NoTranslationTo inLang
 
   fun AN_of AN = AN_of_file
     | AN_of inLang = raise NoTranslationTo AN
