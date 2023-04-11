@@ -413,6 +413,24 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
 
                 uint8_t dest_reg_idx = UX;
 
+                struct VMFunction *func;
+
+                switch (registers[r0].tag) {
+                    case VMFunction:
+                        func = registers[r0].f;
+                        break;
+                    case VMClosure:
+                        func = registers[r0].hof->f;
+                        break;
+                    case Nil:;
+                        func = NULL; /* stops the compiler from complaining */
+                        const char *funname = lastglobalset(vm, r0, fun, pc);
+                        nilfunerror(vm, funname, "call", r0);
+                        break;
+                    default:;
+                    /* this call to AS_FUNCTION will give us a nice typerror */
+                    func = AS_VMFUNCTION(vm, registers[r0]);
+                }
 
                 // check for invalid function 
                 if (registers[r0].tag == Nil) {
@@ -422,7 +440,6 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 // We'd like to do this up top, but we need to make sure the 
                 // function exists first so we can print a helpful 
                 // debug message with a name we know to be valid!
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                 if (vm->stackpointer == MAX_STACK_FRAMES) {
                     if (error_mode() == NORMAL) {
                         fprintf(stderr, "Offending function:");
@@ -503,7 +520,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
 
             case MkClosure: {
                 struct VMFunction *f = AS_VMFUNCTION(vm, registers[UY]);
-                size_t nslots = AS_NUMBER(vm, registers[UZ]);
+                size_t nslots = UZ;
                 VMNEW(struct VMClosure *, cl, 
                       sizeof(*cl) + (sizeof(Value) * nslots));
                 cl->f = f;
@@ -514,7 +531,8 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             case SetClSlot: {
                 // TODO BOUNDS CHECK
                 AS_CLOSURE(vm, registers[UX])->
-                captured[(size_t)AS_NUMBER(vm, registers[UY])] = registers[UZ];
+                captured[UZ] 
+                = registers[UY];
                 break;
             }
             case GetClSlot: {
@@ -522,7 +540,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
 
                 registers[UX] = 
                     AS_CLOSURE(vm, registers[UY])->
-                    captured[(size_t)AS_NUMBER(vm, registers[UZ])];
+                    captured[UZ];
                 break;
             }
 

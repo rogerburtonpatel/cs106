@@ -53,6 +53,15 @@ structure AsmGen :> sig
                      (* fun, last *)
   val mkerror : string -> instruction list
 
+  val mkclosure : reg -> reg -> int -> instruction
+    (* x := new closure with k slots; x‑>f := y; *)
+  val setclslot : reg -> int -> reg -> instruction
+    (* x.k := y *)
+  val getclslot : reg -> reg -> int -> instruction
+    (* x := y.k *)
+
+  val captured : reg -> int -> instruction
+
 
 end
   =
@@ -126,6 +135,22 @@ struct
      registers after a call to 'error'. *)
   fun mkerror msg = [loadlit 0 
         (KNormalForm.STRING msg), effect P.error [0]]
+
+  fun mkclosure rx ry nslots = i O.REGINT ("mkclosure", rx, ry, nslots)
+
+  fun setclslot rx slotnum ry = i O.REGINT ("setclslot", rx, ry, slotnum)
+
+  fun getclslot rx ry slotnum = i O.REGINT ("getclslot", rx, ry, slotnum)
+
+  fun captured r i = getclslot r 0 i
+          (* val mkclosure : reg -> reg -> int -> instruction
+    (* x := new closure with k slots; x‑>f := y; *)
+  val setclslot : reg -> int -> reg -> instruction
+    (* x.k := y *)
+  val getclslot : reg -> reg -> int -> instruction
+    (* x := y.k *)
+
+  val captured : reg -> int -> instruction *)
 
   val rec areConsecutive : ObjectCode.reg list -> bool
     = fn []  => true

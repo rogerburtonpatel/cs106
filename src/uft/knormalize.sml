@@ -139,7 +139,10 @@ struct
                                       (List.foldl (flip (op --)) A regs)
                                       body)
              end
-          | F.CLOSURE (lambda, captured) => Impossible.impossible "closure"
+          | F.CLOSURE (lambda, []) => K.FUNCODE (funcode lambda rho A)
+          | F.CLOSURE (lambda, captured) => 
+              nbRegs bindAnyReg A captured 
+                    (fn regs => K.CLOSURE ((funcode lambda rho A), regs))
           | F.CAPTURED i => K.CAPTURED i
           | F.LETREC (bindings, body) => Impossible.impossible "letrec"
              
@@ -177,16 +180,9 @@ struct
         bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
                           (fn reg => 
                             K.VMOPLIT (P.check_error, [reg], K.STRING s))
-       | F.VAL (n, e) => exp rho A (F.SETGLOBAL (n, e))
-       | F.DEFINE (n, (ns, e)) => K.LETX (0, K.FUNCODE (funcode (ns, e) rho A), KNormalUtil.setglobal (n, 0)))
-        (* let val (boundEnv, argregs, _) = (List.foldl (fn (n, (rho', rs, r)) => 
-                                      (Env.bind (n, r, rho'), rs @ [r], r + 1))
-                                      (rho, [], 1)
-                                      ns)
-            val availRegs = A -- List.length ns
-        in K.LETX (0, 
-                K.FUNCODE (argregs, exp boundEnv availRegs e), 
-                KNormalUtil.setglobal (n, 0)) *)
+       | F.VAL valdef => exp rho A (F.SETGLOBAL valdef)
+       | F.DEFINE (n, lambda) => K.LETX (0, K.FUNCODE (funcode lambda rho A), 
+                                            KNormalUtil.setglobal (n, 0)))
     end
 end
 (* TODO: ask about this output from qsort: 

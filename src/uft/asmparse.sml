@@ -518,19 +518,21 @@ struct
             spaceSep ["_G[", unparse_lit name, "]", ":=", reg x]
           | ("check-error", [x], msg) => 
               spaceSep ["check-error", unparse_lit msg, reg x]
-          | ("mkclosure", [x, y], slotnum) => 
-              spaceSep [reg x, ":=", "mkclosure", reg y, unparse_lit slotnum]
-          | ("getclslot", [x, y], slotnum) => 
-              spaceSep [reg x, "<", unparse_lit slotnum, ">", ":=", reg y]
-          | ("setclslot", [x, y], slotnum) => 
-              spaceSep [reg x, ":=", reg y, "<", unparse_lit slotnum, ">"]
-
           | ("printl", [], name) =>
               spaceSep ["printl", unparse_lit name]
           | ("printlnl", [], name) =>
               spaceSep ["printlnl", unparse_lit name]
 
-          | _ => "an unknown register-string based assembly-code instruction")
+          | _ => "an unknown register-literal based assembly-code instruction")
+        | O.REGINT regsAndInt => 
+          (case regsAndInt
+            of ("mkclosure", x, y, slotnum) => 
+              spaceSep [reg x, ":=", "mkclosure", reg y, int slotnum]
+          | ("getclslot", x, y, slotnum) => 
+              spaceSep [reg x, ":=", reg y, "<", int slotnum, ">"]
+          | ("setclslot", x, y, slotnum) => 
+              spaceSep [reg x, "<", int slotnum, ">", ":=", reg y]
+          | _ => "an unknown registers-and-int-based assembly-code instruction")
         | _ => "an unknown assembly-code instruction")
     | unparse1 (A.DEFLABEL s) =
         s ^ ":"
@@ -541,7 +543,7 @@ struct
     | unparse1 _ = "an unknown assembly-code instruction"
 
   fun unparse ((A.LOADFUNC (r, k, body))::instrs) = 
-        spaceSep [reg r, ":=", "function", "(", int k, "arguments", ")", "{"] :: (List.map (curry (op ^) "\n  ") 
+        spaceSep [reg r, ":=", "function", "(", int k, "arguments", ")", "{"] :: (List.map (curry (op ^) "  ") 
                             (unparse body)) @ ["}"] @ unparse instrs
 
     | unparse ((A.OBJECT_CODE (O.LOADFUNC (r, k, body)))::instrs) = 

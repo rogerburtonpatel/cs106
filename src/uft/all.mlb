@@ -6,11 +6,14 @@ $(SML_LIB)/basis/basis.mlb
   escapes.sml     
 
   env.sml         
+  set.sml         
   ioutil.sml      
 
   
 
   languages.sml   
+
+
   
 
   
@@ -73,14 +76,34 @@ $(SML_LIB)/basis/basis.mlb
   anrename.sml
 
 
-  foscheme.sml
-  foutil.sml
-  knormalize.sml
+
+
   
 
   asmutil.sml       
   codegen.sml       
 
   knrename.sml      
+
+
+  
+
+  foscheme.sml      
+  foutil.sml        
+
+  clscheme.sml       
+
+  knormalize.sml    
+     
+
+
+
+  
+
+  closure-convert.sml   
+  foclutil.sml           
+  mutability.sml        
+
+
   
   uft.sml
