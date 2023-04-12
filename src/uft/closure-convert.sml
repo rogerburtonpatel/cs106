@@ -45,13 +45,11 @@ struct
        | X.PRIMCALL (_, es) => S.union' (freeSets es)
        | X.LETX (X.LET, bindings, body) => 
           let val (names, rhss) = ListPair.unzip bindings
-          in S.union' (S.diff (S.ofList names, free body) 
-                      :: freeSets rhss)
+          in S.union' (S.diff (free body, S.ofList names)::freeSets rhss)
           end
        | X.LETX (X.LETREC, bindings, body) => 
           let val (names, rhss) = ListPair.unzip bindings
-          in S.diff (S.ofList names, 
-                     S.union' (free body :: freeSets rhss))
+          in S.diff (S.union' (free body :: freeSets rhss), S.ofList names)
           end
        | X.LAMBDA  (ns, e)  => S.diff (free e, S.ofList ns))
     (* in fr expr S.empty *)

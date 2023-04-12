@@ -77,7 +77,21 @@ function and it overlooks a free variable.) To claim this point, identify the
 line of code in your K-normalizer where the compiler would fail, and explain how
 the failure would manifest.
 
-> 
+> When we make our list of captured names while closure-converting 
+  at closure-convert.sml:80, we won't have all the free names in our lambda
+  body. When we call closeExp at :81, we'll got through the motions of `exp`, 
+  but when we find a local variable that's free, it might not be in the
+  capturedNames list we passed to closeExp. This will lead to a failure 
+  in the case statement at closure-convert.sml:89-91: we won't replace the
+  local variable with a C.CAPTURED i, and just keep talking about it as a name.
+  As we move down the line in our translation, our knormalizer will attempt to
+  translate that local name into a register at knormalize.sml:116-119, 
+  and will either fail in its Env.find with a checked run-time error in the uft
+  or (I managed to get it to do this by making free X.LOCAL n return S.empty)
+  just erroneously bind to a register if the variable shares a name with an 
+  actual local variable in scope. This will lead to undefined behavior in 
+  the SVM; we'll have use of bad local variables where there should be use
+  of captured variables. 
 
 7. Imagine that the detector in Mutability.detect doesn’t work—it always returns
 Error.OK applied to its argument, regardless of whether there are bad mutations
@@ -85,15 +99,61 @@ in the source code. Assuming that there are bad mutations in the source code, if
 the detector doesn’t work, the compiler will fail downstream. To claim this
 point, identify the line in your source code where the failure should occur.
 
-> 
+> If we do a bad mutation (i.e. write to a captured variable), our compiler 
+  will fail at closure-convert.sml:93-96 (specfically 95/96 as the fail case).
+  We'll see that the variable is indeed captured in `capture` list, and 
+  closure conversion will scream and stop. 
+
+Side note: this helped me find ANOTHER S.diff bug in my knormalizer! 
+this test was failing:
+
+echo "(lambda (y) (let ([z 1]) (+ 1 2)))" | uft ho-kn
+
+with NameNotFound: z
+
+Because I had
+S.union' (S.diff (S.ofList names, free body)::freeSets rhss)
+in my free X.LETX case 
+instead of 
+S.union' (S.diff (free body, S.ofList names)::freeSets rhss), 
+
+ho-cl was giving: 
+(mkclosure (lambda ($closure y) (let ([z 1]) (+ 1 2))) (cons z '())), 
+
+and here z is just out of scope. Basically, the semantics were just wrong:
+I was saying let-bound names ARE free, and those in the body aren't. 
+Not what I meant, but apparently I have a long, long way to go with 
+Set difference.
 
 8. To claim this point, identify the lines of code in your K-normalizer that 
 build the environment used to compile all the right-hand sides and the body of a
 LETREC.
 
-> 
+> knormalize.sml:154-157. We first allocate a register for each binding on :154,
+  then extend the environment `rho` with a ListPair.foldr of Env.bind 
+  over the list of bound names and registers. It's with this environment (and
+  the updated set of available registers, A') that we consider our register 
+  bindings when binding in the right-hand sides and body of the letrec. 
 
 99. If your submission for module 9 did not alias variables, you have already 
 earned the bonus point. Otherwise, to claim the bonus point, correct any unsafe
 aliasing that your K-normalizer may have done, and invent a new, original test
 case that shows the difference.
+
+Correction: I changed knormalize.sml:144 to not use bindAnyReg, but rather
+bindSmallest to make its bindings. This means that yes, we'll have wasteful
+re-bindings of registers when we bind new registers to hold the values of 
+our local names, which are already in registers. But we pass the test in 
+mut-test.scm, which I've just put as part of my resubmission. 
+
+Here's the test:
+
+(define mutate-local (x)
+   (let ([bad x])
+     (begin (set bad 5)
+            x)))
+(check-expect (mutate-local 1) 1)
+
+why it's different: if we `(set bad 5)` and we're using bindAnyReg, 
+we're going to have first eliminated the binding of bad to x and just have
+`(set x 5)` instead (on the register level). We don't want this. 
