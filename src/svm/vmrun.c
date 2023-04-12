@@ -534,17 +534,17 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 break;
             }
             case SetClSlot: {
-                // TODO BOUNDS CHECK
-                AS_CLOSURE(vm, registers[UX])->
-                captured[UZ] 
+                struct VMClosure *cl = AS_CLOSURE(vm, registers[UX]);
+                assert(UZ < cl->nslots);
+                cl->captured[UZ] 
                 = registers[UY];
                 break;
             }
             case GetClSlot: {
-                // TODO BOUNDS CHECK
-
+                struct VMClosure *cl = AS_CLOSURE(vm, registers[UY]);
+                assert(UZ < cl->nslots);
                 registers[UX] = 
-                    AS_CLOSURE(vm, registers[UY])->
+                    cl->
                     captured[UZ];
                 break;
             }

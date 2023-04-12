@@ -181,6 +181,7 @@ struct
         val availRegs = A -- List.length ns
     in (argregs, exp boundEnv availRegs e)
     end
+
   val funcode : F.funcode -> reg Env.env -> regset -> reg K.funcode = funcode
 
   fun def ex = 
@@ -203,7 +204,7 @@ struct
                                             KNormalUtil.setglobal (n, 0)))
     end
 end
-(* TODO: ask about this output from qsort: 
+(* TODO: fix this output from qsort: 
 
 (let* ([r0 append]
        [r1 (let* ([r1 qsort]
