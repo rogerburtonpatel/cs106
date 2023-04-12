@@ -141,7 +141,7 @@ struct
            | F.LET (bindings, body) => 
              let val (names, rightSides) = ListPair.unzip bindings
                  val bindNamestoRegs     = ListPair.foldr Env.bind rho
-             in nbRegs bindAnyReg A rightSides 
+             in nbRegs bindSmallest A rightSides 
                       (fn regs => exp (bindNamestoRegs (names, regs)) 
                                       (List.foldl (flip (op --)) A regs)
                                       body)
