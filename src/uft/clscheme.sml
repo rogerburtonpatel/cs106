@@ -55,7 +55,6 @@ struct
      with the three new cases added *)
 
   fun exp (C.CAPTURED i) =
-  (* in $closure *)
       S.APPLY (S.VAR "CAPTURED-IN", [S.LITERAL (S.INT i), S.VAR "$closure"])
     | exp (C.CLOSURE ((formals, body), captured)) = 
         S.APPLY (S.VAR "mkclosure", [S.LAMBDA ("$closure"::formals, exp body), 
