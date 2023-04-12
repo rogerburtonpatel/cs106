@@ -1,48 +1,64 @@
-#!/bin/bash -ex
+#!/bin/bash
 
 # does differentiable testing on a file: runs it through the uft wash, 
 # translating it a level down each time and running vscheme. 
 # if there's a break, it tells you when. 
 
 SCHEMEFILE=""
+FILETYPE=".scm"
+order=("ho" "cl")
 
 usage ()
 {
-    if [[ "$#" -ne 1 ]]; then 
+    if [[ "$#" -ne 2 && "$#" -ne 1 ]]; then 
         echo "Usage: $0 scheme-file"
         exit 1
     fi
+
+
+
 }
 
 run ()
 {
+
+
     canonical_out=$(vscheme "$SCHEMEFILE" 2>&1)
-    echo $canonical_out
 
     extension="${SCHEMEFILE##*.}"
-    case $extension in 
 
-    "kn")
-        kn_out=$(uft kn-kn $SCHEMEFILE | vscheme 2>&1)
-        difference=$(diff <(echo "$canonical_out") <(echo "$kn_out") 2>&1)
-        if [[ "$?" -ne 0 ]]; then 
-            echo "DIFFERENCE IN KN: $difference"
-        fi
-    ;;
+    for ((i=0; i<${#order[@]}; i++))
+    do
+        for ((j=i; j<${#order[@]}; j++))
+        do
+            translation="${order[i]}-${order[j]}"
+            my_out=$(uft $translation $SCHEMEFILE | vscheme 2>&1)
+            difference=$(diff <(echo "$canonical_out") <(echo "$my_out") 2>&1)
+            if [[ "$?" -ne 0 ]]; then 
+                >&2 echo "DIFFERENCE IN \"uft $translation\":\n $difference"
+                exit 1
+            else 
+                echo "\"uft $translation $SCHEMEFILE | vscheme 2>&1\" passed the diff." 
+            fi        
+        done
+    done
 
-    *)
-        echo "not implemented"
-    ;;
-
-    esac
+    my_out=$(uft "ho-vo" $SCHEMEFILE | svm 2>&1)
+    difference=$(diff <(echo "$canonical_out") <(echo "$my_out") 2>&1)
+    if [[ "$?" -ne 0 ]]; then 
+        >&2 echo "DIFFERENCE IN \"uft ho-vo \":\n $difference"
+        exit 1
+    else 
+        echo "\"uft "ho-vo" $SCHEMEFILE | svm     2>&1\" passed the diff." 
+    fi
 }
 
 main ()
 {
     usage $@
     SCHEMEFILE="$1"
-    run
-    echo "done"
+    run $@
+    echo "You survived the wash!"
 }
 
 
