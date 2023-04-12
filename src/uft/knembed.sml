@@ -44,6 +44,7 @@ struct
       | _ => NONE)
 
 
+
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
     | exp (K.NAME x)       = S.VAR x
     | exp (K.VMOP (p, ns)) = S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
@@ -70,10 +71,15 @@ struct
     | exp (K.WHILEX (n, e1, e2)) = S.WHILEX (lt' n (exp e1) (S.VAR n), exp e2)
     | exp (K.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
     | exp (K.CAPTURED i) = 
-    S.APPLY (S.VAR "CAPTURED-IN", [S.LITERAL (S.INT i), S.VAR "$closure"])
+          S.APPLY (S.VAR "CAPTURED-IN", [S.LITERAL (S.INT i), S.VAR "$closure"])
     | exp (K.CLOSURE ((formals, body), captured)) = 
         S.APPLY (S.VAR "mkclosure", [S.LAMBDA ("$closure"::formals, exp body), 
-        SU.list (map (S.LITERAL o S.SYM) captured)])
+        SU.list (map S.VAR captured)])
+        (* todo check if this is right *)
+    | exp (K.LETREC (bindings, body)) = 
+              S.LETX (S.LETREC, map (fn (name, ((bindings, body), captured)) => 
+                                    (name, exp body)) 
+                                    bindings, exp body)
 
   
   val _ = exp : VScheme.name KNormalForm.exp -> VScheme.exp 

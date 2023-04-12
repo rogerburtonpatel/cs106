@@ -24,6 +24,7 @@ structure KNormalForm = struct
     | FUNCODE  of 'a funcode
     | CAPTURED of int
     | CLOSURE  of 'a closure
+    | LETREC of ('a * 'a closure) list * 'a exp
   withtype 'a closure = ('a list * 'a exp) * 'a list
     (* (funcode, registers holding values of captured variables) *)  
   and 'a funcode = 'a list * 'a exp  (* lambda with no free names *)
@@ -69,7 +70,7 @@ struct
           | free (K.BEGIN (e1, e2))    = free e1 orelse free e2
           | free (K.LETX (n, e, e'))   = free e orelse 
                                         (n <> y andalso free e')
-          | free _ = Impossible.impossible "todo closures"
+          | free _ = Impossible.impossible "todo closures/letrec"
   in  free exp
   end
 

@@ -98,8 +98,8 @@ struct
               end
           | exp (S.LETX (S.LETREC, bindings, e)) =
               let val locals = map fst bindings @ locals
-                  val bs = map (fn (x, e) => (x, exp' (e, locals))) bindings
-                  val e = exp' (e, locals)
+                  val bs     = map (fn (x, e) => (x, exp' (e, locals))) bindings
+                  val e      = exp' (e, locals)
               in  X.LETX (X.LETREC, bs, e)
               end
           | exp (S.LAMBDA (xs, e)) = X.LAMBDA (xs, exp' (e, xs @ locals))

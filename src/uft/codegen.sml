@@ -78,12 +78,6 @@ struct
   val r0 = 0
 
 
-  (* let binding to error *)
-  fun instrOrErrorIfArityMismatch p rs extra good = 
-    if P.arity p = List.length rs + extra
-    then good
-    else L (A.mkerror ("bad number of arguments in primitive " ^ P.name p))
-
 (* mapi : (int * 'a ‑> 'b) ‑> 'a list ‑> 'b list *)
 fun mapi f xs =  (* missing from mosml *)
   let fun go k [] = []
@@ -91,8 +85,30 @@ fun mapi f xs =  (* missing from mosml *)
   in  go 0 xs
   end
 
+
+
+  (* let binding to error *)
+  fun instrOrErrorIfArityMismatch p rs extra good = 
+    if P.arity p = List.length rs + extra
+    then good
+    else L (A.mkerror ("bad number of arguments in primitive " ^ P.name p))
+
+
+fun letrec gen (bindings, body) =
+   let val _ = letrec : (reg K.exp -> instruction hughes_list)
+                     -> (reg * reg K.closure) list * reg K.exp
+                     -> instruction hughes_list
+      (* one helper function to allocate and another to initialize *)
+      fun alloc (f_i, closure as (funcode as (formals, body), captures)) = 
+        toRegK' f_i (K.FUNCODE funcode)
+        o S (A.mkclosure f_i f_i (List.length captures))
+      fun init  (f_i, closure as (funcode as (formals, body), captures)) = 
+        L (mapi (fn (k, v) => A.setclslot f_i k v) captures)
+
+  in  hconcat (map alloc bindings) o hconcat (map init bindings) o gen body
+  end
 (* TODO ADD GLOBALS IF NEEDED? ask *)
-  fun toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
+  and toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
         (case ex
           of K.LITERAL l => S (A.loadlit dest l)
            | K.NAME r    => S (A.copyreg dest r)
@@ -116,34 +132,36 @@ fun mapi f xs =  (* missing from mosml *)
                                     o S (A.loadlit dest (K.BOOL false))
            | K.FUNCODE lambda => funcode dest lambda
            | K.CAPTURED i => S (A.captured dest i)
-           | K.CLOSURE (lambda, captured) => putClIntoReg dest lambda captured)
+           | K.CLOSURE (lambda, captured) => putClIntoReg dest lambda captured
+           | K.LETREC lr => letrec (toRegK' dest) lr)
   and forEffectK' (ex: reg KNormalForm.exp) : instruction hughes_list  =
-(case ex
-          of K.LITERAL _ => empty
-           | K.NAME _    => empty
-           | K.VMOP (p as P.SETS_REGISTER _, rs) => 
-                          instrOrErrorIfArityMismatch p rs 0 empty
-           | K.VMOP (p as P.HAS_EFFECT _, rs) => 
-                          instrOrErrorIfArityMismatch p rs 0 (S (A.effect p rs))
-           | K.VMOPLIT (p as P.SETS_REGISTER _, rs, _) => 
-                          instrOrErrorIfArityMismatch p rs 1 empty
-           | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
-                    instrOrErrorIfArityMismatch p rs 1 (S (A.effectLit p rs l))
-           | K.FUNCALL (r, rs) => translateCall r r rs
-           | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
+    (case ex
+      of K.LITERAL _ => empty
+        | K.NAME _    => empty
+        | K.VMOP (p as P.SETS_REGISTER _, rs) => 
+                      instrOrErrorIfArityMismatch p rs 0 empty
+        | K.VMOP (p as P.HAS_EFFECT _, rs) => 
+                      instrOrErrorIfArityMismatch p rs 0 (S (A.effect p rs))
+        | K.VMOPLIT (p as P.SETS_REGISTER _, rs, _) => 
+                      instrOrErrorIfArityMismatch p rs 1 empty
+        | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
+                instrOrErrorIfArityMismatch p rs 1 (S (A.effectLit p rs l))
+        | K.FUNCALL (r, rs) => translateCall r r rs
+        | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
 
-           | K.LETX  (r, e, e')  => (toRegK' r e) o (forEffectK' e')
-           | K.BEGIN (e1, e2)    => (forEffectK' e1) o (forEffectK' e2)
-           | K.SET   (r, e)      => toRegK' r e
-           | K.WHILEX (r, e, e') => 
-             let val lab  = A.newlabel ()
-                 val lab' = A.newlabel ()
-             in S (A.goto lab) o S (A.deflabel lab') o (forEffectK' e')
-                o S (A.deflabel lab) o (toRegK' r e) o S (A.ifgoto r lab')          
-            end
-           | K.FUNCODE (rs, e) => empty
-           | K.CAPTURED i => empty
-           | K.CLOSURE cl => empty)
+        | K.LETX  (r, e, e')  => (toRegK' r e) o (forEffectK' e')
+        | K.BEGIN (e1, e2)    => (forEffectK' e1) o (forEffectK' e2)
+        | K.SET   (r, e)      => toRegK' r e
+        | K.WHILEX (r, e, e') => 
+          let val lab  = A.newlabel ()
+              val lab' = A.newlabel ()
+          in S (A.goto lab) o S (A.deflabel lab') o (forEffectK' e')
+            o S (A.deflabel lab) o (toRegK' r e) o S (A.ifgoto r lab')      
+        end
+        | K.FUNCODE (rs, e) => empty
+        | K.CAPTURED i => empty
+        | K.CLOSURE cl => empty
+        | K.LETREC lr => letrec forEffectK' lr)
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         (* toRegK' 255 e o S (A.return 255) *)
         (case e
@@ -162,7 +180,9 @@ fun mapi f xs =  (* missing from mosml *)
            | K.VMOP _ => toRegK' r0 e o (S (A.return r0))
            | K.VMOPLIT _ => toRegK' r0 e o (S (A.return r0))
            | K.CAPTURED i => S (A.captured r0 i)
-           | K.CLOSURE (lambda, captured) => (putClIntoReg r0 lambda captured) o S (A.return r0))
+           | K.CLOSURE (lambda, captured) => (putClIntoReg r0 lambda captured) o S (A.return r0)
+           | K.LETREC lr => letrec toReturnK' lr)
+           (* todo pass to toreg *)
   and funcode r (rs, e) = S (A.loadfunc r (List.length rs) (toReturnK' e []))
   and putClIntoReg r lambda captured = (funcode r lambda) 
                                   o S (A.mkclosure r r (List.length captured))

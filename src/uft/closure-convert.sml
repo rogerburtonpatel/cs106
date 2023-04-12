@@ -19,6 +19,8 @@ struct
     | literal X.EMPTYLIST = C.EMPTYLIST
 
 
+  fun curry f x y = f (x, y)
+
   fun indexOf x xs = 
     (* returns `SOME i`, where i is the position of `x` in `xs`,
        or if `x` does not appear in `xs`, returns `NONE` *)
@@ -62,7 +64,12 @@ struct
        of the free variables of that expression, return the closure-
        converted version of the expression in Closed Scheme *)
     let val _ = closeExp : X.name list -> X.exp -> C.exp
-        
+
+
+        fun unLambda (X.LAMBDA lambda) = lambda
+          | unLambda _ = 
+                    Impossible.impossible "parser failed to insist on a lambda"
+
         (* proud of this: pattern matching on option type *)
         fun slotIfCaptured x [] _ = NONE 
           | slotIfCaptured x (y::ys) n = 
@@ -71,9 +78,9 @@ struct
         (* I recommend internal function closure : X.lambda -> C.closure *)
         fun closure (xs, body) = 
               let val capturedNames = S.elems (free (X.LAMBDA (xs, body)))
-              in ((xs, closeExp capturedNames body), map (fn n => closeExp captured (X.LOCAL n)) capturedNames)
+              in ((xs, closeExp capturedNames body),
+                     map (fn n => closeExp captured (X.LOCAL n)) capturedNames)
               end
-
 
         (* I recommend internal function exp : X.exp -> C.exp *)
         and exp (X.LITERAL l) = C.LITERAL (literal l)
@@ -97,8 +104,12 @@ struct
           | exp (X.FUNCALL (e, es))  = C.FUNCALL (exp e, map exp es)
           | exp (X.LETX (X.LET, bindings, body)) = 
              C.LET (List.map (fn (name, e) => (name, exp e)) bindings, exp body)
-          | exp (X.LETX (X.LETREC, bindings, body)) = Impossible.impossible "closure-convert letrec"
-          | exp (X.LAMBDA (ns, e)) = C.CLOSURE (closure (ns, e))
+          | exp (X.LETX (X.LETREC, bindings, body)) = 
+              let val (names, lambdas) = ListPair.unzip bindings
+                  val lambdas'         = map unLambda lambdas
+              in C.LETREC (ListPair.zip (names, map closure lambdas'), exp body)
+              end
+          | exp (X.LAMBDA lambda) = C.CLOSURE (closure lambda)
 
         val _ = closure : X.lambda -> C.closure
     in  exp e

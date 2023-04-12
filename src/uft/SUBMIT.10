@@ -1,6 +1,6 @@
 CS 106 Homework Submission
 
-*Realized i submitted off wrong branch*
+*Resubmitting with a token!* 
 
 What person or group is submitting this homework?
 
@@ -14,6 +14,9 @@ What work are you proud of?
     seems intuitive for this case: if a variable is captured, give me its 
     slot; otherwise, give me NONE. 
 
+    I'm also proud of getting through the letrec cases after a rough week. 
+    I'm glad I took your advice and read the GC chapter a while back. 
+
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
@@ -25,10 +28,16 @@ help finding during code review?
     fails with 
     `Applied non-function r2.` I've debugged lots, with no luck. 
 
+    (fixed in code review!)
+
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  - Same as above. Thank you!
+  - my `uft ho-cl parity.scm | vscheme` fails with 
+  Run-time error: letrec tries to bind non-lambda expression (mkclosure ...
+
+  is this me or the interpreter? I believe I want a closure on the rhs of 
+  the letrec bindings. 
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
@@ -52,8 +61,6 @@ review?
     1. Set stuff: knormalize.sml:37
     2. Let-floating- starting in knproject.sml:94-100. I'm copying this 
     to knormalize.sml soon. 
-
-
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?

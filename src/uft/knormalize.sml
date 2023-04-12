@@ -106,9 +106,16 @@ struct
 
   fun printRegSet (RS n) = print ("A: RS (" ^ Int.toString n ^ ")\n")
 
+  fun allocAndRemoveRegs regset es = 
+      List.foldr (fn (_, (A, regs)) => (A -- (smallest A), (smallest A)::regs)) 
+                 (regset, []) es
+  
+  
+  fun map' f' [] k = k []
+  | map' f' (x :: xs) k =
+      f' x (fn y => map' f' xs (fn ys => k (y :: ys)))
+  
   (* WEIGHTLIFTERS *)
-
-
 
   fun exp rho A ex =
     let val exp : reg Env.env -> regset -> ClosedScheme.exp -> exp = exp
@@ -155,10 +162,21 @@ struct
               nbRegs bindAnyReg A captured 
                     (fn regs => K.CLOSURE ((funcode lambda rho A), regs))
           | F.CAPTURED i => K.CAPTURED i
-          | F.LETREC (bindings, body) => Impossible.impossible "letrec"
-             
+          | F.LETREC (bindings, body) => 
+            let val (A', rs)     = allocAndRemoveRegs A bindings 
+                val (names, cls) = ListPair.unzip bindings 
+                val rho'         = ListPair.foldrEq Env.bind rho (names, rs)
+                fun closure ((xs, e'), []) k = 
+                    K.FUNCODE (funcode (xs, e') rho' A')
+                  | closure ((xs, e'), es) k = 
+                    nbRegsWith (exp rho') bindAnyReg A' es 
+                               (fn ts => k (funcode (xs, e') rho' A', ts))
+                in map' closure cls 
+                   (fn cs => K.LETREC (ListPair.zip (rs, cs), exp rho' A' body))
+                end
              )
     end
+
 
   and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
   and translateBegin rho A []        =  K.LITERAL (K.BOOL false)
