@@ -48,7 +48,14 @@ struct
       | K.FUNCODE (ns, e) => curry K.FUNCODE <$> errorList (map f ns) 
                                                                   <*> mapx f e
       | K.CAPTURED i => succeed (K.CAPTURED i)
-      | K.CLOSURE ae => K.CLOSURE <$> clRename f ae)
+      | K.CLOSURE ae => K.CLOSURE <$> clRename f ae
+      | K.LETREC (bindings, body) => 
+        let val bindings' = Error.mapList 
+                            (fn (n, cl) => pair <$> f n <*> clRename f cl) 
+                            bindings
+        in curry K.LETREC <$> bindings' <*> mapx f body
+        end)
+        (* Thank you matt *)
     and clRename f ((formals, body), captured) = 
       curryClBody <$> Error.mapList f formals <*> mapx f body <*> Error.mapList f captured
 (* TODO- fix this. Thanks matt! *)

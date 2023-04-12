@@ -3,6 +3,10 @@
         "*.kn": "scheme",
         "*.scm": "scheme",
         "*.vs": "scheme",
-        "vmerror.h": "c"
+        "vmerror.h": "c",
+        "__bit_reference": "c",
+        "__string": "c",
+        "string": "c",
+        "string_view": "c"
     }
 }

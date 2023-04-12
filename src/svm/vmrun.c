@@ -431,15 +431,9 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     /* this call to AS_FUNCTION will give us a nice typerror */
                     func = AS_VMFUNCTION(vm, registers[r0]);
                 }
-
-                // check for invalid function 
-                if (registers[r0].tag == Nil) {
-                    const char *funname = lastglobalset(vm, r0, fun, pc);
-                    nilfunerror(vm, funname, "call", r0);
-                }
-                // We'd like to do this up top, but we need to make sure the 
-                // function exists first so we can print a helpful 
-                // debug message with a name we know to be valid!
+                /* We'd like to do this up top, but we need to make sure the 
+                function exists first so we can print a helpful 
+                debug message with a name we know to be valid! */
                 if (vm->stackpointer == MAX_STACK_FRAMES) {
                     if (error_mode() == NORMAL) {
                         fprintf(stderr, "Offending function:");
@@ -463,22 +457,22 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                         " caused a Register Window Overflow", r0);
                 }
 
-                // call stack save
+                /* call stack save */
                 Activation a = {pc, vm->R_window_start, 
                                  dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
 
                 assert(func->arity == n);
 
-                // move the register window
+                /* move the register window */
                 vm->R_window_start += r0;
                 registers = vm->registers + vm->R_window_start;
 
-                // transfer control= move instruction pointer to start of 
-                // function instruction stream
+               /*  transfer control= move instruction pointer to start of 
+                function instruction stream */
                 pc = &func->instructions[0] - 1; /* account for increment */
 
-                // return will undo this based on the activation! 
+                /* return will undo this based on the activation!  */
                 break;
             }
             case Tailcall: {
@@ -486,13 +480,24 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 uint8_t rn = UY;
                 uint8_t n  = rn - r0;
 
+                struct VMFunction *func;
 
-                if (registers[r0].tag == Nil) {
-                    const char *funname = lastglobalset(vm, r0, fun, pc);
-                    nilfunerror(vm, funname, "tailcall", r0);
+                switch (registers[r0].tag) {
+                    case VMFunction:
+                        func = registers[r0].f;
+                        break;
+                    case VMClosure:
+                        func = registers[r0].hof->f;
+                        break;
+                    case Nil:;
+                        func = NULL; /* stops the compiler from complaining */
+                        const char *funname = lastglobalset(vm, r0, fun, pc);
+                        nilfunerror(vm, funname, "call", r0);
+                        break;
+                    default:;
+                    /* this call to AS_FUNCTION will give us a nice typerror */
+                    func = AS_VMFUNCTION(vm, registers[r0]);
                 }
-
-                struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
                                        
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
                     if (error_mode() == NORMAL) {
@@ -505,7 +510,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                       "caused a Register Window Overflow", r0);
                 }
 
-                // copy over function and argument registers 
+                /* copy over function and argument registers  */
                 for (int i = 0; i <= n; ++i) {
                     registers[i] = registers[r0 + i];
                 }

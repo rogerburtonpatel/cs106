@@ -90,7 +90,7 @@ struct
     >>> List.concat              (* AssemblyCode.instr list *)
 
 
-  fun HO_of HO   = schemexOfFile
+  fun HO_of HO   = schemexOfFile >=> Error.mapList Mutability.detect
     | HO_of HOX  = Impossible.unimp "imperative features (HOX to HO)"
     | HO_of _    = raise Backward
 
