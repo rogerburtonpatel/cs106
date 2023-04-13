@@ -276,7 +276,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 break;  
             /* LITS <-> GLOBS <-> REGS */
             case LoadLiteral: 
-                registers[UX + 1000000] = vm->literals[uYZ(curr_instr)];
+                registers[UX] = vm->literals[uYZ(curr_instr)];
                 break;
             
             case GetGlobal:
