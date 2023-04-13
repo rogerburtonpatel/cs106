@@ -7,9 +7,9 @@
 # Usage: differentiate-106 
 
 SCHEMEFILE=""
-QUIET=0
+QUIET=false
 FILETYPE=".scm"
-order=("ho" "cl" "kn")
+translations=("ho-ho" "ho-cl" "ho-kn")
 
 usage ()
 {
@@ -22,7 +22,7 @@ run ()
 {
     while (( $# > 0 )); do
         case $1 in 
-            -"q") QUIET=1 ; shift ;;
+            -"q") QUIET=true ; shift ;;
             *".scm") shift ;;
             *)   usage ; break ;;
         esac
@@ -34,26 +34,23 @@ run ()
         >&2 echo     "which uft-ho-kn turns into \"check\" and \"expect\", "
         >&2 echo     "which aren't recognized by vscheme."
         >&2 echo     "I'll skip translation to kn for now."
-        order=("ho" "cl")
+        translations=("ho-ho" "ho-cl")
     fi
 
     canonical_out=$(vscheme "$SCHEMEFILE" 2>&1)
 
-    for ((i=0; i<${#order[@]}; i++))
+    for ((i=0; i<${#translations[@]}; i++))
     do
-        for ((j=i; j<${#order[@]}; j++))
-        do
-            translation="${order[i]}-${order[j]}"
-            my_out=$(uft $translation $SCHEMEFILE | vscheme 2>&1)
-            difference=$(diff <(echo "$canonical_out") <(echo "$my_out") 2>&1)
-            if [[ "$?" -ne 0 ]]; then 
-                >&2 echo "DIFFERENCE IN \"uft $translation\":\n $difference"
-                exit 1
-            else 
-                echo -n "\"uft $translation `basename $SCHEMEFILE` | "
-                echo    "vscheme 2>&1\" passed the diff against vscheme output."
-            fi        
-        done
+        translation="${translations[i]}"
+        my_out=$(uft $translation $SCHEMEFILE | vscheme 2>&1)
+        difference=$(diff <(echo "$canonical_out") <(echo "$my_out") 2>&1)
+        if [[ "$?" -ne 0 ]]; then 
+            >&2 echo "DIFFERENCE IN \"uft $translation\":\n $difference"
+            exit 1
+        else 
+            echo -n "\"uft $translation `basename $SCHEMEFILE` | "
+            echo    "vscheme 2>&1\" passed the diff against vscheme output."
+        fi        
     done
 
     my_out=$(uft "ho-vo" $SCHEMEFILE | svm 2>&1)
@@ -70,10 +67,10 @@ run ()
 main ()
 {
     SCHEMEFILE="$1"
-    if [ $QUIET ]; then 
+    if $QUIET ; then 
         run $@ &> /dev/null
     else 
-        run $@ >"$OUT"
+        run $@ 
         echo "You survived the wash!"
     fi
 }

@@ -56,8 +56,10 @@ VMState newstate(void) {
 // This isn't enough to benefit from constant vs. linear time in a way 
 // perceptable to humans. 
 int literal_slot(VMState state, Value literal) {
-    VMNEW(Value, *lit, (sizeof(*lit)));
-    *lit = literal;
+    // TODO DEPTH POINT: This for garbage collection. 
+    // Value needs a forwarding pointer. 
+    // VMNEW(Value *, lit, (sizeof(*lit)));
+    // *lit = literal;
     Value *literals = state->literals;
     for (int i = 0; i < state->num_literals; ++i) {
         if (identical(literals[i], literal)) {

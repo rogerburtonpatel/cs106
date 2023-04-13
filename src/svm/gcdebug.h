@@ -1,6 +1,8 @@
 #ifndef GCDEBUG_INCLUDED
 #define GCDEBUG_INCLUDED
 
+#define NOVALGRIND 1
+
 #include <stdlib.h>
 
 void gc_debug_init(void); // required before using other things in this interface

@@ -52,15 +52,10 @@ struct
      with the three new cases added *)
 
   fun exp (C.CAPTURED i) =
-        (* The embedding of a `CAPTURED` form should call the predefined
-           vScheme function `CAPTURED-IN`.
-         *)
-        Impossible.exercise "embed reference to captured variable"
-    | exp (C.CLOSURE ((formals, body), captured)) =
-        (* The embedding of a `CLOSURE` form should call the primitive
-           vScheme function `mkclosure`.
-         *)
-        Impossible.exercise "embed closure"
+      S.APPLY (S.VAR "CAPTURED-IN", [S.LITERAL (S.INT i), S.VAR "$closure"])
+    | exp (C.CLOSURE ((formals, body), captured)) = 
+        S.APPLY (S.VAR "mkclosure", [S.LAMBDA ("$closure"::formals, exp body), 
+        SU.list (map exp captured)])
     | exp (C.LETREC  (bs, e))  =
         (* I've done this one *)
         S.LETX (S.LETREC,  map (fn (f, c) => (f, exp (C.CLOSURE c))) bs, exp e)

@@ -42,6 +42,9 @@ struct VMState {
   uint16_t num_globals;
 
    // store is the vmheap
+
+   Value awaiting_expect;  // value passed to the pending `check`, if any
+
 };
 
 VMState newstate();       // allocate and initialize (to empty)
