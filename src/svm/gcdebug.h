@@ -1,7 +1,9 @@
 #ifndef GCDEBUG_INCLUDED
 #define GCDEBUG_INCLUDED
 
-#define NOVALGRIND 1
+// #ifdef __APPLE__
+// #define NOVALGRIND
+// #endif
 
 #include <stdlib.h>
 

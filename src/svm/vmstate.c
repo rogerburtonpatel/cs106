@@ -38,6 +38,7 @@ VMState newstate(void) {
 
     vms->stackpointer = vms->R_window_start = 0;
     vms->num_literals = vms->num_globals = 0;
+    vms->counter = 0;
     
     /* registers are static memory-- we'll just init them to nils */
     for (int i = 0; i < NUM_REGISTERS; ++i) {

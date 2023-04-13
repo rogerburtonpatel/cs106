@@ -27,8 +27,8 @@ typedef struct VMState *VMState;
 
 struct VMState {
 
-  Instruction *instructions;
-  Instruction *pc;
+  struct VMFunction *fun;
+  int64_t counter;
   Value registers[NUM_REGISTERS];
   Value literals[MAX_LITERALS];
   

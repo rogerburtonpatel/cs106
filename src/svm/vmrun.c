@@ -36,6 +36,16 @@
 #define UY uY(curr_instr)
 #define UZ uZ(curr_instr)
 
+#define VMSAVE() do { \
+    vm->fun = fun; \
+    vm->counter = pc - &(fun->instructions[0]); \
+} while (0)
+
+#define VMLOAD() do { \
+   fun = vm->fun; \
+   pc = &(fun->instructions[vm->counter]); \
+} while (0)
+
 extern int ntests, npassed;
 extern jmp_buf testjmp;
 
@@ -48,6 +58,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     Instruction *pc;
     Value *registers;
     Value v;
+    vm->fun = fun;
 
     if (fun->size < 1) {
         return;
@@ -57,7 +68,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
         case INITIAL_CALL:;
             /* Thank you to Norman for this debugging infrastructure */
             (void) dump_call;  // make it OK not to use `dump_call`
-            pc = vm->instructions = fun->instructions;
+            VMLOAD();
             registers = vm->registers; 
             /* registers always = vm->registers + vm->R_window_start */
             break;
@@ -86,7 +97,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
         if (CANDUMP && dump_decode) {
             idump(stderr, 
             vm, 
-            ((int64_t)pc - (int64_t)vm->instructions) / 4, 
+            ((int64_t)pc - (int64_t)&(vm->fun[0])) / 4, 
             curr_instr, 
             0, 
             registers + UX, 
@@ -99,7 +110,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 /* I'm ok with having a counter variable external to the vmstate
                    and storing it when we Halt, because it saves a dereference
                    every time, and we only Halt once. */
-                vm->pc = pc;
+                VMLOAD();
                 return;
             case Print:
                 print("%v", registers[UX]);

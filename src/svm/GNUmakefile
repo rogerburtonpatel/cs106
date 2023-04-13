@@ -1,3 +1,10 @@
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+    detected_OS := Windows
+else
+    detected_OS := $(shell uname)  # same as "uname -s"
+endif
+# Thank you https://stackoverflow.com/questions/714100/os-detecting-makefile
+
 TOP := ../..
 
 BUILD = $(TOP)/build
@@ -39,6 +46,9 @@ DEPS := $(OBJ:.o=.d)
 CPPFLAGS += -MMD -MP
 # -Werror
 CFLAGS = -std=c11 -pedantic -Wall -Wextra  -g -I/usr/include -g3 # -I/usr/sup/cii40/include/cii
+ifeq ($(detected_OS), Darwin  ) # yeah, you __need__ the two spaces here.
+	CFLAGS += -DNOVALGRIND
+endif
 
 .PHONY: all obj clean
 all: $(EXE)
