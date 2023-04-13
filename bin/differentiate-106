@@ -4,36 +4,40 @@
 # translating it a level down each time and running vscheme. 
 # if there's a break, it tells you when. 
 
+# Usage: differentiate-106 
+
 SCHEMEFILE=""
+QUIET=0
 FILETYPE=".scm"
-order=("ho" "cl")
+order=("ho" "cl" "kn")
 
 usage ()
 {
-    if [[ "$#" -ne 2 && "$#" -ne 1 ]]; then 
-        echo "Usage: $0 scheme-file"
+        echo "Usage: $0 scheme-file.[scm|ho] [-q]"
         exit 1
-    fi
-
-
 
 }
 
 run ()
 {
+    while (( $# > 0 )); do
+        case $1 in 
+            -"q") QUIET=1 ; shift ;;
+            *".scm") shift ;;
+            *)   usage ; break ;;
+        esac
+    done
 
-    # while (( $# > 0 )); do
-    #     case $1 in 
-    #         -"scm" | -"ho" | -"kn" | -"fo" | -"cl") FILETYPE="${1#-}" ; shift ;;
-    #         *".scm" | *".ho" | *".kn" | *".fo" | *".cl") SCHEMEFILE=$1 ; shift ;;
-    #         -*)  usage ; break ;;
-    #         *)   break ;;
-    #     esac
-    # done
+    if $(grep -q "check-expect" $SCHEMEFILE); then 
+        >&2 echo -en "\033[31mWARNING!!!\033[0m "
+        >&2 echo     "Your target file contains \"check-expect\", "
+        >&2 echo     "which uft-ho-kn turns into \"check\" and \"expect\", "
+        >&2 echo     "which aren't recognized by vscheme."
+        >&2 echo     "I'll skip translation to kn for now."
+        order=("ho" "cl")
+    fi
 
     canonical_out=$(vscheme "$SCHEMEFILE" 2>&1)
-
-    extension="${SCHEMEFILE##*.}"
 
     for ((i=0; i<${#order[@]}; i++))
     do
@@ -46,7 +50,8 @@ run ()
                 >&2 echo "DIFFERENCE IN \"uft $translation\":\n $difference"
                 exit 1
             else 
-                echo "\"uft $translation $SCHEMEFILE | vscheme 2>&1\" passed the diff." 
+                echo -n "\"uft $translation `basename $SCHEMEFILE` | "
+                echo    "vscheme 2>&1\" passed the diff against vscheme output."
             fi        
         done
     done
@@ -57,16 +62,20 @@ run ()
         >&2 echo "DIFFERENCE IN \"uft ho-vo \":\n $difference"
         exit 1
     else 
-        echo "\"uft "ho-vo" $SCHEMEFILE | svm     2>&1\" passed the diff." 
+        echo -n "\"uft "ho-vo" `basename $SCHEMEFILE` | svm     2>&1\""
+        echo    " passed the diff against vscheme output." 
     fi
 }
 
 main ()
 {
-    usage $@
     SCHEMEFILE="$1"
-    run $@
-    echo "You survived the wash!"
+    if [ $QUIET ]; then 
+        run $@ &> /dev/null
+    else 
+        run $@ >"$OUT"
+        echo "You survived the wash!"
+    fi
 }
 
 
