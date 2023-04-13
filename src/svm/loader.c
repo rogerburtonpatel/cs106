@@ -118,9 +118,8 @@ static Instruction get_instruction(VMState vm, FILE *vofile, unsigned *maxregp) 
 /* reads count lines and returns a VMFunction* with count read instructions */
 static struct VMFunction *loadfun(VMState vm, int arity, int count, FILE *vofile) {
     // Extra instruction space for Halt sentinel --------------------v
-    // VMNEW(struct VMFunction *, function, vmsize_fun(count + 1));
-    struct VMFunction *function = vmalloc_raw(vmsize_fun(count + 1));
-
+    VMNEW(struct VMFunction *, function, vmsize_fun(count + 1));
+    
     *function = (struct VMFunction) {.arity = arity, .size = count};
 
     unsigned maxregp = 0;

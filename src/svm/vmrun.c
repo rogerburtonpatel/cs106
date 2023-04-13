@@ -19,6 +19,7 @@
 #include "value.h"
 #include "vmstate.h"
 #include "vmrun.h"
+#include "vmsizes.h"
 
 #include "print.h"
 
@@ -344,9 +345,9 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     struct VMBlock *oldcell = AS_CONS_CELL(vm, v2);
                     v2 = mkConsValue(oldcell);
                 }
-                // BUG: This is setting registers[1].block->slots[1] to NULL. p *((Value *)0x00000001008094a0)
-                VMNEW(struct VMBlock *, cell, sizeof(int) + 2 * sizeof(Value));
-                ((*cell).forwarded = NULL);
+                // never forget the pain this caused v
+                // VMNEW(struct VMBlock *, cell, sizeof(int) + 2 * sizeof(Value));
+                VMNEW(struct VMBlock *, cell, vmsize_cons());
                 cell->nslots   = 2;
                 cell->slots[0] = v;
                 cell->slots[1] = v2;
@@ -529,7 +530,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 struct VMFunction *f = AS_VMFUNCTION(vm, registers[UY]);
                 size_t nslots = UZ;
                 VMNEW(struct VMClosure *, cl, 
-                      sizeof(*cl) + (sizeof(Value) * nslots));
+                      vmsize_closure(nslots));
                 cl->f = f;
                 cl->nslots = nslots;
                 registers[UX] = mkClosureValue(cl);
