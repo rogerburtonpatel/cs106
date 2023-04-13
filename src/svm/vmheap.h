@@ -28,7 +28,7 @@ extern void heap_shutdown(void);
 extern void *vmalloc_raw(size_t);
 extern void *vmcalloc_raw(size_t, size_t);
 
-#define VMNEW(TYPE,  P, N) TYPE P = vmalloc_raw(N); GCINIT(*P)
+#define VMNEW(TYPE,  P, N) TYPE P = vmalloc_raw(N); //GCINIT(*P)
 #define VMNEWC(TYPE, P, N) TYPE P = vmcalloc_raw(1, N); GCINIT(*P)
 
 //// Module 11: GC interface

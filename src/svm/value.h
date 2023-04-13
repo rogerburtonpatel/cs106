@@ -125,7 +125,7 @@ extern bool asBool(Value v);
 // when you're ready to do cons,car,cdr (from module 1 onward):
 
 struct VMBlock {
-  GCMETA(VMBlock)
+  struct VMBlock *forwarded;
   int nslots;
   struct Value slots[];
 };
