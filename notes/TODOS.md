@@ -11,6 +11,9 @@ anf confirm : directly to anf? not that hard ig
 free variables in a closure for freeIn
 Ask about setting globals to literals
 
+fix uft kn-vo qsort-debug.kn
+fix uft cl-vo qsort.cl
+
 # Depth
 
 # Bignums 

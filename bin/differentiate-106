@@ -53,13 +53,13 @@ run ()
         fi        
     done
 
-    my_out=$(uft "ho-vo" $SCHEMEFILE | svm 2>&1)
+    my_out=$(run-ho-with-predef $SCHEMEFILE)
     difference=$(diff <(echo "$canonical_out") <(echo "$my_out") 2>&1)
     if [[ "$?" -ne 0 ]]; then 
-        >&2 echo "DIFFERENCE IN \"uft ho-vo \":\n $difference"
+        >&2 echo "DIFFERENCE IN \"run-ho-with-predef \":\n $difference"
         exit 1
     else 
-        echo -n "\"uft "ho-vo" `basename $SCHEMEFILE` | svm     2>&1\""
+        echo -n "\"run-ho-with-predef $SCHEMEFILE\""
         echo    " passed the diff against vscheme output." 
     fi
 }

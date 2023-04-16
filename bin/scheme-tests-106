@@ -3,7 +3,7 @@
 # Purpose: TODO: fill in 
 # 
 
-## Usage: TESTDIR_PLACEHOLDER
+## Usage: TODO: fill in
 ## 
 ## 
 ## 
@@ -15,7 +15,8 @@ BASEDIR=$DIR106
 
 SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
-TESTDIR=$BASEDIR/tests/TESTDIR_PLACEHOLDER
+TESTDIR=$BASEDIR/tests/scheme-tests-106
+
 
 shopt -s nullglob
 
@@ -74,16 +75,9 @@ run_one_test ()
 
 run_tests () {
 
-    # Put tests here and remove echo. Some examples: 
-    echo "Empty testing file!"
-    for file in $TESTDIR/*.vo; do
-        run_one_test "svm $file"
+    for file in $TESTDIR/*.scm; do
+        run_one_test "run-ho-with-predef $file"
     done
-
-    # for file in $TESTDIR/*.vs; do
-    #     run_one_test "uft vs-vo \"$file\" | svm" # you need these escape quotes
-    #                                              # for pipes. trust me. 
-    # done
 
     if [[ "$numtests" -eq "0" ]]; then
         >&2 echo "No tests run. Check why that might be."

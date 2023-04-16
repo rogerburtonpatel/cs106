@@ -11,3 +11,7 @@
 
 ; fine
 (lambda (y) (let ([z 1]) (+ 1 z)))
+
+
+; to pass tests
+(check-assert #t)

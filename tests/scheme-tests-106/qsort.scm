@@ -1,7 +1,12 @@
-(define o (f g) (mkclosure (lambda ($closure x) 
-                                    ((CAPTURED-IN 0 $closure) 
-                                    ((CAPTURED-IN 1 $closure) x))) 
-                           (cons f (cons g '()))))
+; (val o 
+;    (mkclosure 
+;       (lambda ($closure f g) 
+;          (mkclosure 
+;             (lambda ($closure x) 
+;                ((CAPTURED-IN 1 $closure) ((CAPTURED-IN 0 $closure) x))) 
+;             (cons g (cons f '())))) 
+;       '()))
+
 ; TODO Closure convert by hand
 (define qsort (xs)
   (if (null? xs)

@@ -1,14 +1,3 @@
-(let ([r0 (lambda (r1) (if r1 #f #t))]) (set not r0))
-(let ([r0 (lambda (r1 r2) 
-             (mkclosure 
-                (lambda ($closure r1) 
-                   (let* ([r3 (CAPTURED-IN 0 $closure)]
-                          [r4 (let* ([r4 (CAPTURED-IN 1 $closure)]
-                                     [r5 r1]) 
-                                (r4 r5))]) 
-                     (r3 r4))) 
-                (cons r1 (cons r2 '()))))]) 
-  (set o r0))
 (let ([r0 (lambda (r1) 
              (let ([r2 (null? r1)]) 
                (if r2 
@@ -49,9 +38,6 @@
                               (r2 r3))]) 
                     (cons r1 r2)))))]) 
   (set iota^ r0))
-
-; (let ([r1 '(1 2)] [r3 qsort]) (r3 r1))
-
 (begin 
    (let ([r0 (let* ([r0 qsort]
                     [r1 (let* ([r1 65]
