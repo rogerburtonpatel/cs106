@@ -154,9 +154,9 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 }
 
                 uint8_t r0 = UX;
-                if (registers[r0].tag == Nil) {
+                if (registers[r0].tag != VMFunction) {
                     const char *funname = lastglobalset(vm, r0, fun, pc);
-                    nilfunerror(vm, funname, "check-error", r0);
+                    not_a_function_error(vm, funname, "check-error", r0);
                 }
                 add_test();
                 enter_check_error();
@@ -169,6 +169,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     }
 
                     struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
+                    (void)GCVALIDATE(func);
                     assert(func->arity == 0); /* this can NEVER have args */
                     /* push special frame */
                     // TODO talk about this funky line- *pc instead of 
@@ -437,15 +438,13 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     case VMClosure:
                         func = registers[r0].hof->f;
                         break;
-                    case Nil:;
+                    default:;
                         func = NULL; /* stops the compiler from complaining */
                         const char *funname = lastglobalset(vm, r0, fun, pc);
-                        nilfunerror(vm, funname, "call", r0);
+                        not_a_function_error(vm, funname, "call", r0);
                         break;
-                    default:;
-                    /* this call to AS_FUNCTION will give us a nice typerror */
-                    func = AS_VMFUNCTION(vm, registers[r0]);
                 }
+                (void)GCVALIDATE(func);
                 /* We'd like to do this up top, but we need to make sure the 
                 function exists first so we can print a helpful 
                 debug message with a name we know to be valid! */
@@ -514,15 +513,13 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     case VMClosure:
                         func = registers[r0].hof->f;
                         break;
-                    case Nil:;
+                    default:;
                         func = NULL; /* stops the compiler from complaining */
                         const char *funname = lastglobalset(vm, r0, fun, pc);
-                        nilfunerror(vm, funname, "call", r0);
+                        not_a_function_error(vm, funname, "call", r0);
                         break;
-                    default:;
-                    /* this call to AS_FUNCTION will give us a nice typerror */
-                    func = AS_VMFUNCTION(vm, registers[r0]);
                 }
+                (void)GCVALIDATE(func);
                                        
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
                     if (error_mode() == NORMAL) {
@@ -560,6 +557,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
 
             case MkClosure: {
                 struct VMFunction *f = AS_VMFUNCTION(vm, registers[UY]);
+                (void)GCVALIDATE(f);
                 size_t nslots = UZ;
                 VMNEW(struct VMClosure *, cl, 
                       vmsize_closure(nslots));
@@ -570,19 +568,22 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             }
             case SetClSlot: {
                 struct VMClosure *cl = AS_CLOSURE(vm, registers[UX]);
+                (void)GCVALIDATE(cl);
                 assert(UZ < cl->nslots);
-                cl->captured[UZ] 
-                = registers[UY];
+                cl->captured[UZ] = registers[UY];
                 break;
             }
             case GetClSlot: {
                 struct VMClosure *cl = AS_CLOSURE(vm, registers[UY]);
+                (void)GCVALIDATE(cl);
                 assert(UZ < cl->nslots);
-                registers[UX] = 
-                    cl->
-                    captured[UZ];
+                registers[UX] = cl-> captured[UZ];
                 break;
             }
+            /* R0- MANUAL GARBAGE COLLECTION */
+            case Gc: 
+                gc(vm);
+                break;
 
             default:
                 printf("Opcode Not implemented!\n");

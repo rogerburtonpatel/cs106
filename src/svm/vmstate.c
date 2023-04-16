@@ -105,8 +105,8 @@ void initialize_global(VMState vm, Value name, Value v) {
 }
 
 
-void nilfunerror(VMState vm, const char *funname, 
-                 const char *offending_op, uint8_t r0)
+void not_a_function_error(VMState vm, const char *funname, 
+                          const char *offending_op, uint8_t r0)
 {
     if (funname == NULL) {
         runerror(vm, 

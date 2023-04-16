@@ -82,7 +82,7 @@ const char *global_name(VMState state, unsigned index);
 
 
 /* some nice error functions */
-extern void nilfunerror(VMState vm, const char *funname, 
+extern void not_a_function_error(VMState vm, const char *funname, 
                  const char *offending_op, uint8_t r0);
 
 #endif /* VMSTATE_INCLUDED */

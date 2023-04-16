@@ -655,51 +655,53 @@ static void scan_vmstate(struct VMState *vm) {
   // root: any other field of `struct VMState` that could lead to a `Value`
 
 }
-
+// gchere. Todo remove
 extern void gc(struct VMState *vm) {
-  assert(vm);
-  assert(0 && "gc left as exercise");
+    assert(vm);
 
   /* Narrative sketch of the algorithm (see page 266):
 
-      1. Capture the list of allocated pages from `current`,
-         and reset `current` include just one available page.
-         I recommend capturing the list of allocated pages
-         in a local variable called `fromspace`.
-
-      2. Set flag `gc_in_progress` (so statistics are tracked correctly).
-
-      3. Set `availability_floor` to be half the total number of pages
-         on the VM heap (rounded up).
-
-      4. Color all the roots gray using `scan_vmstate`.
-
-      5. While the gray stack is not empty, pop a value and scan it.
-
-      6. Call `VMString_drop_dead_strings()`.
-
-      7. Take the pages captured in step 1 and make them available.
-
-      8. Use `growheap` to acquire more available pages until the
-         ratio of heap size to live data meets what you get from
-         `target_gamma`.  (The amount of live data is the number of
-         pages copied to `current` in steps 3 and 4.)
-
-      9. Update counter `total.collections` and
-         flags `gc_needed` and `gc_in_progress`.
-
-     10. If `svmdebug_value("gcstats")` is set and contains a + sign, 
-         print statistics as suggested by exercise 2 on page 299.
-
-   */
-
-  // functions that will be used:
-  (void) scan_vmstate;   // in step 3
-  (void) scan_value;     // in step 4
-  (void) VMString_drop_dead_strings; // in step 5
-  (void) make_available; // in step 6
-  (void) target_gamma;   // in step 7
-  (void) growheap;       // in step 7
+        1. Capture the list of allocated pages from `current`,
+           and reset `current` include just one available page.
+           I recommend capturing the list of allocated pages
+           in a local variable called `fromspace`. */
+    Page fromspace = current;
+    // while (count.available.pages > 1) {
+    //     take_available_page(); // <- TODO: this is wrong, but on slack it 
+                                  // seems we should call take_available_page.
+                                  // why?
+    // }
+    count.current.pages = 1;
+    /*  2. Set flag `gc_in_progress` (so statistics are tracked correctly). */
+    gc_in_progress = true;
+    /*  3. Set `availability_floor` to be half the total number of pages
+           on the VM heap (rounded up). */
+                                                // this for rounding up -v
+    availability_floor = (count.current.pages + count.available.pages) + 1 / 2;
+    /* 4. Color all the roots gray using `scan_vmstate`. */
+    scan_vmstate(vm);
+    /* 5. While the gray stack is not empty, pop a value and scan it. */
+    while (!VStack_isempty(gray)) {
+        Value v = VStack_pop(gray);
+        scan_value(&v);
+    }
+    /* 6. Call `VMString_drop_dead_strings()`. */
+    VMString_drop_dead_strings();
+    /* 7. Take the pages captured in step 1 and make them available. */
+    /* roger's note: here's the to-from swap */
+    int reclaimed = make_available(fromspace); 
+    (void)reclaimed; // TODO ask
+    /* 8. Use `growheap` to acquire more available pages until the
+        ratio of heap size to live data meets what you get from
+        `target_gamma`.  (The amount of live data is the number of
+        pages copied to `current` in steps 3 and 4.) */
+    growheap(target_gamma(vm), count.current.pages);
+    /* 9. Update counter `total.collections` and
+        flags `gc_needed` and `gc_in_progress`. */
+    total.collections++;
+    gc_needed = gc_in_progress = false;
+    /* 10. If `svmdebug_value("gcstats")` is set and contains a + sign, 
+        print statistics as suggested by exercise 2 on page 299. */
 
   if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
     fprintf(stderr, "Heap contains %d pages of which %d are live (ratio %.2f)\n",

@@ -4,15 +4,24 @@ TESTING- dress to impress
 1. vs, kn, fo idempotent testing
 2. vscheme differential testing
 
+CODE
+fix uft kn-vo qsort-debug.kn
+fix uft cl-vo qsort.cl
+
+INFRA
+make testing not j add error code so that negative error codes don't mess us up
+just offbranch bignums
+
 Office hours:
+GCVALIDATE: what do you mean by 'The reference is duplicated, 
+so use it only with a named variable or a reference to a field of a 
+named Value'? Can i use it on the raw result of AS_VMFUNCTION?
 iparsers.c:161- negative numbers
 vscheme parser for 'literals?
 anf confirm : directly to anf? not that hard ig
 free variables in a closure for freeIn
 Ask about setting globals to literals
 
-fix uft kn-vo qsort-debug.kn
-fix uft cl-vo qsort.cl
 
 # Depth
 

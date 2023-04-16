@@ -36,6 +36,7 @@ typedef enum opcode {
                       MkClosure, SetClSlot, GetClSlot, // R3
                       If, // R1
                       Goto, // iXYZ
+                      Gc, // R0- manual garbage collection for debugging
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;

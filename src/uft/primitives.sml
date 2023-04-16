@@ -72,6 +72,7 @@ struct
                          "inc", "dec"]   (* arity 1 *)
   val error          = [ "error" ]            (* arity 1; never returns *)
   val halt           = [ "halt" ]
+  val gc             = [ "gc" ]
   val checky         = [ "check", "expect", "check_error" ]  (* arity 2; one is literal *)
     (* check and expect can't really be used in source code... *)
 
@@ -100,6 +101,7 @@ struct
     o add 1 HAS_EFFECT side_effecting
     o add 1 HAS_EFFECT error
     o add 0 HAS_EFFECT halt
+    o add 0 HAS_EFFECT gc
     o add 2 HAS_EFFECT checky
     ) [ (* useful spot to add more effectful primitives *) 
       ]
