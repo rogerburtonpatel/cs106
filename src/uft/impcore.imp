@@ -1,0 +1,281 @@
+;;;;;;;;;;;;;;;;;;; CS 105 IMPCORE ASSIGNMENT ;;;;;;;;;;;;;;;
+
+;; Your Name: Roger A. Burtonpatel
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;;  Problem 1
+
+; TODO: explain prime squaring, do nth prime and bit, check work, TAKE PIC
+
+;; From of data: positive integers less than 20,000, reperesented by 
+;; decimal numerals of the form n = 10 * m + d. 
+
+;; Example inputs: 0, 1, 100, 101, 19999
+
+;; (double-digit n) Takes a positive integer less than 20,000, and returns a 
+;; positive integer whose decimal representation is the same as the decimal 
+;; representation of the input, except each digit appears twice.
+
+;; laws:
+;; (double-digit 0) == 0
+;; (double-digit (+ (* 10 m) d)) ==
+;;               (+ d (+ (* 10 (d) (* 100 (double-digit m)))))
+
+(define double-digit ( n )
+    (if (= n 0)
+        0
+       (+ (mod n 10) (+ (* 10 (mod n 10)) (* 100 (double-digit(/ n 10)))))))
+
+        (check-expect (double-digit 0) 0)
+        (check-expect (double-digit 1) 11)
+        (check-expect (double-digit 100) 110000)
+        (check-expect (double-digit 101) 110011)
+        (check-expect (double-digit 19999) 1199999999)
+        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;;  Problem 2
+
+;; Form of data: nonnegative integers represented as binary; they take the 
+;; form n = 2 * m + b; where m is a natural number and b is a bit. 
+
+;; Example inputs: 0, 1, 2, 9, 16, 255
+
+;; (population-count n) takes a non-negative integer n and 
+;; returns the number of 1 bits in the binary representation of that integer.
+
+;; laws:
+;;   (population-count 0) == 0
+;;   (population-count (+ (* 2 m) b)) == (+ (population-count m) b)
+;;   
+;; note: took me a bit to realize there is no "1" case; the 2nd 
+;;       case accounts for it. Thank you, 7 Lessons! 
+(define population-count (n)
+    (if ( = n 0)
+        0
+        (+ (population-count(/ n 2)) (mod n 2))))
+
+
+        (check-expect (population-count 0) 0)
+        (check-expect (population-count 1) 1)
+        (check-expect (population-count 2) 1)
+        (check-expect (population-count 9) 2)
+        (check-expect (population-count 16) 1)
+        (check-expect (population-count 255) 8)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;;  Problem 3
+
+;; Form of data: nonnegative integers represented as binary; they take the 
+;; form n = 2 * m + b; where m is a natural number and b is a bit. 
+
+;; Example inputs: 0, 1, 2, 9, 16, 255, -1, -255
+
+
+;; (binary n) returns the binary representation of the decimal n. 
+
+;; laws:
+;;   (binary 0) == 0
+;;   (binary (+ (* 2 m) b)) == (* (+ b 10) (binary (m)))
+
+
+(define binary (n)
+    (if (= n 0)
+        0
+        (+ (mod n 2) (* 10 (binary (/ n 2))))))
+
+        (check-expect (binary 0) 0)
+        (check-expect (binary 1) 1)
+        (check-expect (binary 2) 10)
+        (check-expect (binary 9) 1001)
+        (check-expect (binary 16) 10000)
+        (check-expect (binary 255) 11111111)
+        (check-expect (binary -1) -1)
+        (check-expect (binary -255) -11111111)        
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;;  Problem 4
+
+;; Form of data: integer numbers m and n, such that m <= n. Because of this,
+;; m - n is a natural number. 
+
+;; Example input: (0 0) (1 1) (0 1) (0 9) (9 18) (-9 9)
+
+;; (sigma m n) sums the natural numbers from m to n, satisfying the equation
+;; m + (m + 1) + (m + 2) + ... + n.
+
+;; laws:
+;;   (sigma m m) == (m)
+;;   (sigma m n) == (+ m (sigma (+ m 1) n)), where n > m
+
+;; initial note after writing laws but before writing code: seems too easy. 
+;; after testing: wrote them a bit incorrectly, but now they're fixed. 
+
+(define sigma (m n)
+    (if (= m n)
+        m
+        (+ m (sigma (+ m 1) n))))
+
+        ;; replace next line with good check-expect or check-assert tests
+        (check-expect (sigma 0 0) 0)
+        (check-expect (sigma 1 1) 1)
+        (check-expect (sigma 0 1) 1)
+        (check-expect (sigma 0 9) 45)
+        (check-expect (sigma 9 18) 135)
+        (check-expect (sigma -9 9) 0)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;;  Problem 5
+
+
+;; Forms of data: a positive integer n where (> n 2) to be evaulated for 
+;; its primacy and a positive integer i where (> i 2) used to test n's 
+;; primacy with (mod). Starts at 2 when (is-prime?) is called by prime. 
+;; Here, positive integers are represented by the Peano system. 
+
+;; Example input: (7 2), (22 2) : post-recursion cases: (7 3) (25 4)
+
+
+;; (is-prime? n) returns 0 if i divides n, 1 if i does not divide n and i 
+;;               squared is greater than n, and calls itself if neither 
+;;               of the above is true. 
+
+;; laws:
+;;   (is-prime? n i) == 0, where (= 0 (mod n i))
+;;   (is-prime? n i) == 1, where (and (not (= 0 (mod n i))) (> (* i i) n))
+;;   (is-prime? n i) == (is-prime? n (+ i 1)), 
+;;                       where (and (not (= 0 (mod n i))) (not (> (* i i) n)))
+
+
+;; NOTE: function uses the mathematical law that if an integer i squared is 
+;; greater than an integer n and i does not divide n, then n is prime. This 
+;; was a law I learned in Discrete math Office Hours. 
+
+(define is-prime? (n i)
+    (if (= 0 (mod n i))
+        #f
+        (if (> (* i i) n)
+            #t
+            (is-prime? n (+ i 1)))))
+
+        (check-assert (is-prime? 3 2))
+        (check-assert (is-prime? 7 2))
+        (check-assert (not (is-prime? 14 2)))
+        (check-assert (is-prime? 7 2))
+        (check-assert (not (is-prime? 25 4)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Forms of data: a nonnegative integer n
+
+;; Example input: 1, 2, 9, 103, 19999, (for fun) 12345678
+
+;; (prime? n) returns nonzero if n is prime and zero otherwise. 
+
+;; laws:
+;;   (prime? n) == 0, where (< n 2)
+;;   (prime? n) == 1, where (= n 2)
+;;   (prime? n) == (is-prime? n 2), where (> n 2)
+
+(define prime? (n)
+    (if (< n 2)
+        #f
+        (if (= n 2)
+            #t
+            (is-prime? n 2))))
+
+        (check-assert (not (prime? 1)))
+        (check-assert (prime? 2))
+        (check-assert (not(prime? 9)))
+        (check-assert (prime? 103))
+        (check-assert (not(prime? 19999)))
+        (check-assert (not(prime? 12345678))) ; fo fun 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;;  Problem 6
+
+;; Form of data: 
+;; - a natural number x where (> x 2), which represents the 
+;;   'grower' incremented by new function calls until it becomes 
+;;    the nth prime number. Always starts at 3, the first prime number after 2.
+;; - a positive integer p where (> p 1), which represents the 'counter' which 
+;;   counts up to n prime numbers. It is incremented by new function calls when 
+;;   x is verified to be prime using (prime?). Always starts at 2, which  
+;;   represents the 2nd prime number. 
+;; - a positive integer n where (> n 1), passed by (nthprime). This is used to
+;;   check against p whenever x is found to be prime to see if x is the nth 
+;;   prime number. 
+
+;; Example input: (3 2 4) (3 2 21) : post-recursion cases: (5 3 10) (11 5 10)
+
+;; (count-n-primes x p n) returns the nth prime number to (nthprime) for use. 
+;;                        x represents a growing natural number (starts at 3), 
+;;                        p a counter for prime numbers incremented whenever 
+;;                            x is prime (starts at 2), 
+;;                        n the target index of prime numbers. The function 
+;;                            returns when x is prime and (= p n).
+
+;; laws:
+;;   (count-n-primes x p n) == (count-n-primes (+ x 1) p n), 
+;;                                 where (not (prime? x))
+;;   (count-n-primes x p n) == (count-n-primes (+ x 1) (+ p 1) n),  
+;;                                 where (and (prime? x) (not (= p n)))
+;;   (count-n-primes x p n) == x,  where (and (prime? x) (= p n))
+
+
+;; I hope these laws are satisfactory; I took a lot of time thinking of how 
+;; to program this function. Doing laws first was definitely the move! 
+
+
+(define count-n-primes (x p n)
+    (if (prime? x)
+        (if (= p n)
+            x
+             (count-n-primes (+ x 1) (+ p 1) n))
+         (count-n-primes (+ x 1) p n)))
+
+        (check-assert (prime? (count-n-primes 3 2 4)))
+        (check-assert (not (prime? (+ 1 (count-n-primes 3 2 4)))))
+        (check-assert (prime? (count-n-primes 3 2 21)))
+        (check-assert (prime? (count-n-primes 5 3 10)))
+        (check-assert (prime? (count-n-primes 11 5 10)))
+        (check-assert (not (prime? (+ 1 (count-n-primes 11 5 10)))))
+
+        
+;; Example input: (3 2 4) (3 2 21) : post-recursion cases: (5 3 10) (11 5 10)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Form of data: a positive integer n, represented by by the Peano system 
+;; (starting at 1).
+
+;; Example input: 1, 2, 4, 21 
+
+;; (nthprime n) returns the nth prime number. These sequence defines 2 as
+;;              the first prime number, so (nthprime 1) == 2.
+
+;; laws:
+;;   (nthprime 1) == 2
+;;   (nthprime n) == (count-n-primes 3 2 n), where n > 1. 
+;;                   The reasoning for these parameters is explained in the 
+;;                       contract and laws for count-n-primes.
+;;    
+
+(define nthprime (n)
+    (if (= n 1)
+        2
+         (count-n-primes 3 2 n)))
+
+        (check-expect (nthprime 1) 2)
+        (check-expect (nthprime 2) 3)
+        (check-expect (nthprime 4) 7)
+        (check-assert (prime? (nthprime 21)))
+        (check-assert (not (prime? (+ 1 (nthprime 21)))))

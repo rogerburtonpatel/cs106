@@ -4,8 +4,12 @@ TESTING- dress to impress
 1. vs, kn, fo idempotent testing
 2. vscheme differential testing
 
+Office hours:
+iparsers.c:161- negative numbers
+vscheme parser for 'literals?
+anf confirm : directly to anf? not that hard ig
+free variables in a closure for freeIn
 Ask about setting globals to literals
-
 
 # Depth
 
@@ -28,6 +32,12 @@ to load and run code. This goal is to implement two machine instructions, one to
 
 
 # A-Normal Form
+
+
+---
+anproject: simple. either anf or not. can fail. error type
+antranslate: KNF->ANF
+but we want full a-normalization. 
 
 Right now:
 do reg pass first

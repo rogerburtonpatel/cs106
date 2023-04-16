@@ -1,0 +1,11 @@
+.load module 10
+loadliteral 1 2
+loadliteral 2 3
+goto 0
+loadliteral 5 false
+if 5
+goto -3
+loadliteral 3 false
+check 3 string 5 116 104 114 101 101
+loadliteral 4 false
+expect 4 string 5 116 104 114 101 101

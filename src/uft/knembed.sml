@@ -52,7 +52,6 @@ struct
       (case (P.name p, ns, v)
         of ("getglobal", [], K.STRING s)  => S.VAR s
          | ("setglobal", [n], K.STRING s) => S.SET (s, S.VAR n)
-                              (* todo want to ask about this one *)
          | (pn, names, v)       => S.APPLY (S.VAR pn, (List.map S.VAR names)
                                                        @ [S.LITERAL (value v)]))
     | exp (K.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)

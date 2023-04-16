@@ -1,2 +1,0 @@
-Check-expect failed: expected (+ 2 2) to evaluate to 5, but it's 4.
-svm: svm.c:49: main: Assertion `exe' failed.

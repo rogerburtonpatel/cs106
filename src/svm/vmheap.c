@@ -46,7 +46,7 @@
 /********************************* HEAP PAGES ********************************/
 
 #ifdef SMALLHEAP
-  #define PAGESIZE 4096   // bytes in one page
+  #define PAGESIZE 8192   // bytes in one page
      // if you don't have any big functions, shrink this number!
 #else
   #define PAGESIZE (64*1024)   // bytes in one page
@@ -615,31 +615,43 @@ static void scan_forwarded_payload(Value v) {
 
 
 static void scan_activation(struct Activation *p) {
-  assert(p);
-  assert(0 && "you have to implement this one");
+  forward_function(p->fun);
 }
 
 static void scan_vmstate(struct VMState *vm) {
-  assert(vm);
-  assert(0 && "you have to implement this one");
   // see book chapter page 265 about roots
 
   // roots: all registers that can affect future computation
   //    (these hold local variables and formal paramters as on page 265)
   //    (hint: don't scan high-numbered registers that can't
   //     affect future computations because they aren't used)
+  Value *stale_start = vm->registers + vm->R_window_start + vm->fun->nregs;
+  for (Value *v = vm->registers
+       ; v < stale_start
+       ; v++) {
+        scan_value(v);
+       }
+  memset(stale_start,
+         0, (char *)(vm->registers + NUM_REGISTERS) - (char *)stale_start);
+  /* cast is so we can get byte subtraction rather than sizeof(Value) 
+     subtraction, which are radically different */
 
   // root: any value that may be awaiting the `expect` primitive
-
+  scan_value(&(vm->awaiting_expect));
   // roots: all literal slots that are in use
-
+  for (uint16_t i = 0; i < vm->num_literals; i++) {
+    scan_value(&(vm->literals[i]));
+  }
   // roots: all global-variable slots that are in use
-
+  for (uint16_t i = 0; i < vm->num_globals; i++) {
+    scan_value(&(vm->globals[i]));
+  }
   // roots: each function on the call stack
-  (void) scan_activation; // likely to be useful here
-
+  for (uint16_t i = 0; i < vm->stackpointer; i++) {
+    scan_activation(&(vm->Stack[i]));
+  }
   // root: the currently running function (which might not be on the call stack)
-
+  forward_function(vm->fun);
   // root: any other field of `struct VMState` that could lead to a `Value`
 
 }

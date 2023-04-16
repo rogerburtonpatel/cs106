@@ -5,7 +5,9 @@
 
 
 typedef struct Activation {
-    Instruction *resume_loc;
+    struct VMFunction *fun;
+    int64_t counter;
+    // Instruction *resume_loc;
     uint32_t R_window_start;
     int32_t dest_reg_idx; /* relative to R_window_start */
 } Activation; /* NOT a pointer type! */

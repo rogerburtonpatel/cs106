@@ -1,0 +1,3 @@
+.load module 2
+loadliteral 0 -1
+println 0

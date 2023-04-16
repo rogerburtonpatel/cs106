@@ -12,7 +12,7 @@ BIN = $(TOP)/bin
 
 TESTERS = arraylist bignums
 
-UNITS = testfuns vmheap vmrun vmstate vmrun vmstring value iformat \
+UNITS = testfuns vmheap vmrun vmstate vmrun vmstring value iformat vtable \
         printbuf print check-expect testfuns vmerror argparse sxread linestream
 MAINS = svm-test
 

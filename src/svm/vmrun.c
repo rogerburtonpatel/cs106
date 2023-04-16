@@ -78,7 +78,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             Activation a = vm->Stack[--vm->stackpointer];
             vm->R_window_start = a.R_window_start;
             registers = vm->registers + a.R_window_start;
-            pc = a.resume_loc + 1;
+            pc = &(a.fun->instructions[0]) + a.counter + 1;
             break;
             } else {
                 fprintf(stderr, "Stack trace: some day!\n");
@@ -97,7 +97,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
         if (CANDUMP && dump_decode) {
             idump(stderr, 
             vm, 
-            ((int64_t)pc - (int64_t)&(vm->fun[0])) / 4, 
+            ((int64_t)pc - (int64_t)&(vm->fun->instructions[0])) / 4, 
             curr_instr, 
             0, 
             registers + UX, 
@@ -173,7 +173,8 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     /* push special frame */
                     // TODO talk about this funky line- *pc instead of 
                     // curr_instr so it fits under 80 cols!
-                    Activation a = {pc, vm->R_window_start, -(int)uYZ(*pc)};
+                    Activation a = {fun, pc - &(fun->instructions[0]), 
+                                    vm->R_window_start, -(int)uYZ(*pc)};
                     vm->Stack[vm->stackpointer++] = a;
                     pc = &func->instructions[0] - 1;
                 break;
@@ -212,7 +213,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
 
             case IDiv: {
                 uint8_t rZ = UZ;
-                Number_T d = (int64_t)AS_NUMBER(vm, registers[rZ]);
+                int64_t d = (int64_t)AS_NUMBER(vm, registers[rZ]);
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
@@ -351,11 +352,11 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 v        = registers[UY];
                 Value v2 = registers[UZ];
                 /* typechecking */
-                if (v2.tag != Emptylist) {
-                    // TODO CHANGE THIS REDUNDANCY
-                    struct VMBlock *oldcell = AS_CONS_CELL(vm, v2);
-                    v2 = mkConsValue(oldcell);
-                }
+                // if (v2.tag != Emptylist) {
+                //     // TODO CHANGE THIS REDUNDANCY
+                //     struct VMBlock *oldcell = AS_CONS_CELL(vm, v2);
+                //     v2 = mkConsValue(oldcell);
+                // }
                 // never forget the pain this caused v
                 // VMNEW(struct VMBlock *, cell, sizeof(int) + 2 * sizeof(Value));
                 VMNEW(struct VMBlock *, cell, vmsize_cons());
@@ -407,7 +408,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 // restore register window state and current instruction
                 vm->R_window_start = a.R_window_start;
                 registers = vm->registers + a.R_window_start;
-                pc = a.resume_loc;
+                pc = &(a.fun->instructions[0]) + a.counter;
 
                 if (a.dest_reg_idx < 0) {
                 /* we've failed a check-error test if this happens. */
@@ -472,11 +473,21 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 }
 
                 /* call stack save */
-                Activation a = {pc, vm->R_window_start, 
-                                 dest_reg_idx};
+                Activation a = {fun, pc - &(fun->instructions[0]), 
+                                vm->R_window_start, dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;
 
-                assert(func->arity == n);
+                if (func->arity != n) {
+                    if (error_mode() == NORMAL) {
+                        fprintf(stderr, "Offending function:");
+                        fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                        fprintf(stderr, "\n");
+                    }
+                    runerror(vm, 
+                        "attempted to call function in register %hhu"
+                        " with %d arguments; the function's arity is %d", 
+                        r0, n, func->arity);
+                }
 
                 /* move the register window */
                 vm->R_window_start += r0;
@@ -529,7 +540,17 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     registers[i] = registers[r0 + i];
                 }
 
-                assert(func->arity == n);
+                if (func->arity != n) {
+                    if (error_mode() == NORMAL) {
+                        fprintf(stderr, "Offending function:");
+                        fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                        fprintf(stderr, "\n");
+                    }
+                    runerror(vm, 
+                        "attempted to call function in register %hhu"
+                        " with %d arguments; the function's arity is %d", 
+                        r0, n, func->arity);
+                }
 
                 pc = &func->instructions[0] - 1; /* account for increment */
 
