@@ -1656,9 +1656,11 @@ val _ = op stringsxdefs : string * string list               -> xdef stream
                   val bfree = foldl addFree (free body) es
               in  union (s, diff (bfree, xs))
               end
-          | addFree (LETX (LETSTAR, [], body), s) = s
+          | addFree (LETX (LETSTAR, [], body), s) = addFree (body, s)
           | addFree (LETX (LETSTAR, (x, e) :: bs, body), s) =
-              union (addFree (e, s), diff (addFree (body, []), [x]))
+              union ( addFree (e, s)
+                    , diff (addFree (LETX (LETSTAR, bs, body), []), [x])
+                    )
 
     in  addFree (e, [])
     end
