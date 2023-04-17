@@ -18,7 +18,7 @@ structure AsmGen :> sig
   type vmop = Primitive.primitive      (* identifies a VM operator, like + or / *)
   type literal = ObjectCode.literal    (* we care only about numbers and strings *)
 
-  val newlabel : unit -> label  (* fresh every time *)
+  val newlabel : 'a -> label  (* fresh every time *)
 
   (********* instructions that can be generated ******)
 
@@ -53,6 +53,12 @@ structure AsmGen :> sig
                      (* fun, last *)
 
 
+  val mkblock : reg -> reg -> int -> instruction
+    (* x := new block with k slots; x[0] := y *)
+  val setblockslot : reg -> int -> reg -> instruction
+  val getblockslot : reg -> reg -> int -> instruction
+
+  val gotoVcon : reg -> (ObjectCode.literal * int * label) list -> instruction
 end
   =
 struct
@@ -72,7 +78,7 @@ struct
   local
     val labelsSupplied = ref 0
   in
-    fun newlabel () =
+    fun newlabel _ =
       let val n = 1 + !labelsSupplied
           val () = labelsSupplied := n
       in  "L" ^ (Int.toString n)
