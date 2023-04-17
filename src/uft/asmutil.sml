@@ -132,4 +132,12 @@ struct
        | [n] => true
        | n :: m :: ms => m = n + 1 andalso areConsecutive (m :: ms)
 
+  fun mkblock      x y k = i O.REGINT ("mkblock", x, y, k)
+  fun setblockslot x k y = i O.REGINT ("setblockslot", x, y, k)
+  fun getblockslot x y k = i O.REGINT ("getblockslot", x, y, k)
+  fun gotoVcon x choices = 
+    let fun choice (vcon, arity, label) = (vcon, arity, label)
+    in  A.GOTO_VCON (x, map choice choices)
+    end
+
 end
