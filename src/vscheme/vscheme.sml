@@ -1420,6 +1420,10 @@ val _ = op bindings  : (name * exp) list parser
      , ("(cond ([q a] ...))",
         let fun desugarCond qas = raise LeftAsExercise "desugar cond"
             val qa = bracket ("[question answer]", pair <$> exp <*> exp)
+            fun addCond ((question, answer), otherwise) =
+                  IFX (question, answer, otherwise)
+            val nomatch = APPLY (VAR "error", [LITERAL (SYM "no case matched in `cond`")])
+            val desugarCond = foldr addCond nomatch
      (* type declarations for consistency checking *)
      val _ = op desugarCond : (exp * exp) list -> exp
         in  desugarCond <$> many qa
