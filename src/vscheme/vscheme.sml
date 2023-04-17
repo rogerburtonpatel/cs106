@@ -1714,8 +1714,8 @@ fun eval (e, rho) =
                                       " but got (" ^ spaceSep (map valueString actuals) ^ ")"
                                                )
                                        end
-                   | v => raise RuntimeError ("Applied non-function " ^
-                                                                  valueString v)
+                   | v => raise RuntimeError ("Applied " ^ expString f ^
+                                              ", whose value is " ^ valueString v)
                )
         (* more alternatives for [[ev]] for \uscheme 309b *)
         | ev (LETX (LET, bs, body)) =
