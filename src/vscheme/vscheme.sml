@@ -2131,6 +2131,7 @@ val primitiveBasis =
                                                           true | _ => false)) ::
                         (* primitives for \uscheme\ [[::]] S209b *)
                         ("mkclosure", binaryOp (fn (a, b) => PAIR (ref a, ref b))) ::
+                        ("block", embedList) ::
                         ("cons", binaryOp (fn (a, b) => PAIR (ref a, ref b))) ::
                         ("car",  unaryOp  (fn (PAIR (ref car, _)) => car 
                                             | NIL => raise RuntimeError
@@ -2255,7 +2256,21 @@ val primitiveBasis =
                      , "    (car xs)"
                      , "    (nth (- n 1) (cdr xs))))"
                      , ""
+                     , "(define getblockslot (block k) (nth block k))"
                      , "(define CAPTURED-IN (i xs) (nth (+ i 1) xs))"
+
+, "(define list-of-length? (v k)"
+, "  (if (= k 0)"
+, "      (null? v)"
+, "      (&& (pair? v) (list-of-length? (cdr v) (- k 1)))))"
+
+, "(define matches-vcon-arity? (v con k)"
+, "  (if (= k 0)"
+, "      (= v con)"
+, "      (&& (list-of-length? v (+ k 1))"
+, "          (= (car v) con))))"
+, "(define getblockslot (v k) (nth k v))"
+
                      , 
 ";  definitions of predefined uScheme functions [[and]], [[or]], and [[not]] 97a "
                      , "(define and (b c) (if b  c  b))"
