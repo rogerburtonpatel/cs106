@@ -25,8 +25,8 @@ struct
     List.exists (fn y => y = x) s
   fun insert (x, ys) = 
     if member (x, ys) then ys else x::ys
-  fun union (xs, ys) = foldl insert ys xs
-  fun union' ss = foldl union empty ss
+  fun union (xs, ys) = foldr insert ys xs
+  fun union' ss = foldr union empty ss
 
   fun inter (xs, ys) =
     List.filter (fn x => member (x, ys)) xs
@@ -34,5 +34,5 @@ struct
     List.filter (fn x => not (member (x, ys))) xs
 
   fun elems xs = xs
-  fun ofList xs = foldl insert empty xs
+  fun ofList xs = foldr insert empty xs
 end
