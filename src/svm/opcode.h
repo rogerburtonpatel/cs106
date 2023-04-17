@@ -16,6 +16,8 @@ typedef enum opcode {
                       Println, // R1
                       LoadLiteral, // R1LIT
                       Check, Expect, // R1LIT
+                      GotoVcon, // R1U8
+                      IfVconMatch, // U8LIT, not meant to be evaluated
                       Unimp, // stand-in for opcodes not yet implemented
                       Unimp2, // stand-in for opcodes not yet implemented
 } Opcode;
