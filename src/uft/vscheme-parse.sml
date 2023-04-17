@@ -3,19 +3,20 @@
 (* You'll need to use the signature, 
     but don't need to know how it's implemented *)
 
-structure VSchemeParsers :> sig
+functor VSchemeParsersFun (val useVcons : bool) :> sig
   val exp  : Sx.sx -> VScheme.exp Error.error
   val defs : Sx.sx -> VScheme.def list Error.error
 end
   =
 struct
-  structure S = VScheme
+  structure S  = VScheme
 
-  fun showTokens ts = "[" ^ String.concatWith "\194\183" (map SxUtil.whatis ts) ^ "]"
+  fun whatAreTokens ts = "[" ^ String.concatWith "\194\183" (map SxUtil.whatis ts) ^ "]"
+  fun showTokens ts = "[" ^ String.concatWith "\194\183" (map SxUtil.show ts) ^ "]"
 
   structure P = MkListProducer (val species = "S-expression parser"
                                 type input = Sx.sx
-                                val show = showTokens
+                                val show = whatAreTokens
                                )
 
   (* wishing for Modula-style FROM IMPORT here ... *)
@@ -23,7 +24,7 @@ struct
   infixr 4 <$>     val op <$> = P.<$>
   infix 3 <~>      val op <~> = P.<~>
   infix 1 <|>      val op <|> = P.<|>
-  infix 3 >>        val op >> = P.>>
+  infix 3 >>       val op >> = P.>>
   
   val succeed = P.succeed
   val curry = P.curry
@@ -37,6 +38,10 @@ struct
   val one = P.one
   val notFollowedBy = P.notFollowedBy
   val eos = P.eos
+
+  infix 4 <$
+  fun v <$ p = succeed v <~> p
+
 
   fun id x = x
 
@@ -54,7 +59,10 @@ struct
 
   val rwords =
     ["set", "if", "while", "begin", "let", "let*", "letrec", "lambda", "quote",
-     "val", "define"]
+     "val", "define",
+     (* next are from uML, for module 12 *)
+     "case", "data", "implicit-data", "check-principal-type*"
+    ]
 
   fun reserved s = List.exists (P.eq s) rwords
 
@@ -64,11 +72,35 @@ struct
   val bool      = P.maybe (fn (Sx.BOOL b)    => SOME b  | _ => NONE) one
   val sxreal    = P.maybe (fn (Sx.REAL x)    => SOME x  | _ => NONE) one
 
-  fun kw word = P.sat (P.eq word) sym  (* keyword *)
-  val name =  P.sat (not o reserved) sym
-          <|> (sym >> P.perror "reserved word used as name")
+  fun badInput msg tokens =
+    SOME (Error.ERROR (msg ^ ": input " ^ showTokens tokens ^
+                       " --> " ^ whatAreTokens tokens ), [])
 
-  
+  fun bad msg = P.ofFunction (badInput msg)
+
+  fun kw word = P.sat (P.eq word) sym  (* keyword *)
+(*@ module < 13 *)
+  val name =  P.sat (not o reserved) sym
+          <|> (sym >> bad "reserved word used as name")
+(*@ module >= 13 *)
+  val namelike = sym
+
+  fun isVcon x =
+    useVcons andalso
+    let val lastPart = List.last (String.fields (curry op = #".") x)
+        val firstAfterdot = String.sub (lastPart, 0) handle Subscript => #" "
+    in  x = "cons" orelse x = "'()" orelse
+        Char.isUpper firstAfterdot orelse firstAfterdot = #"#" orelse
+        String.isPrefix "make-" x
+    end
+  fun isVvar x = x <> "->" andalso not (isVcon x)
+  val _ = if useVcons andalso isVvar "CAPTURED-IN" then Impossible.impossible "vvar"
+          else ()
+  val vvar = P.sat isVvar namelike
+  val name =  P.sat (not o reserved) vvar
+          <|> (P.check ((fn s => Error.ERROR ("reserved word \"" ^ s ^ "\" used as name")) <$> vvar))
+(*@ true *)
+
   fun parseSucceeds (SOME (Error.OK a, [])) = SOME (Error.OK a)
     | parseSucceeds (SOME (Error.ERROR msg, _)) = SOME (Error.ERROR msg)
     | parseSucceeds _ = NONE
@@ -79,9 +111,39 @@ struct
 
   val _ = oflist : 'a parser -> 'a parser
 
-  fun bracket word parser =
-    oflist (kw word >> (parser <~> P.eos <|> P.perror ("Bad " ^ word ^ " form")))
+  fun expected what = bad ("expected " ^ what)
 
+  fun bracket word parser =
+    oflist (kw word >> (parser <~> P.eos <|> P.pzero))
+(* P.perror ("Bad " ^ word ^ " form"))) *)
+
+  fun exactList what parser =
+    oflist (parser <~> P.eos <|> expected what)
+
+(*@ module >= 13 *)
+  val vcon = 
+    if useVcons then
+      let fun isEmptyList S.EMPTYLIST = true
+            | isEmptyList _ = false
+          val boolname = (fn p => if p then "#t" else "#f")
+      in     boolname <$> bool
+         <|> sat isVcon namelike
+         <|> "'()" <$ bracket "quote" (sat (isEmptyList o sexp) one)
+      end
+    else
+      P.pzero
+
+
+  val pattern = P.fix (fn pattern =>
+                Pattern.WILDCARD    <$ sat (curry op = "_") vvar
+      <|>       Pattern.VAR        <$> vvar
+      <|> curry Pattern.APPLY      <$> vcon <*> succeed []
+      <|> exactList "(C x1 x2 ...) in pattern"
+                  (curry Pattern.APPLY <$> vcon <*> many pattern)
+       )
+      <|> expected "pattern"
+
+(*@ true *)
   fun freeIn exp y =
     let fun member y [] = false
           | member y (z::zs) = y = z orelse member y zs
@@ -98,6 +160,18 @@ struct
           | has_y (S.LETX (S.LETREC, bs, e)) =
               not (member y (map fst bs)) andalso has_y e
           | has_y (S.LAMBDA (xs, e)) = not (member y xs) andalso has_y e
+(*@ module >= 13 *)
+          | has_y (S.VCON _) = false
+          | has_y (S.CASE (e, choices)) =
+              has_y e orelse List.exists choice_has_y choices
+          | has_y (S.COND qas) = List.exists (fn (q, a) => has_y q orelse has_y a) qas
+        and choice_has_y (pat, exp) =
+              not (binds_y pat) andalso has_y exp
+        and binds_y (Pattern.VAR x) = x = y
+          | binds_y (Pattern.WILDCARD) = false
+          | binds_y (Pattern.INT _) = false
+          | binds_y (Pattern.APPLY (_, pats)) = List.exists binds_y pats
+(*@ true *)
         and rhs_has_y (_, e) = has_y e
     in  has_y exp
     end
@@ -133,14 +207,24 @@ struct
 
   val realExp = S.LITERAL o S.REAL
 
+  fun name_not_pat what =
+   name <|> pattern >> P.perror ("this parser doesn't support patterns in `" ^ what ^ "` bindings")
+
   val exp = P.fix (fn exp =>
     let fun pair x y = (x, y)
-        val binding  = oflist (pair <$> name <*> exp)
+        val binding  = oflist (pair <$> name_not_pat "let" <*> exp)
         val bindings = oflist (many binding)
         fun asLambda (e as S.LAMBDA _) = Error.OK e
           | asLambda e = Error.ERROR "a letrec form may bind only `lambda` expressions"
         val lambda = P.check (asLambda <$> exp)
-        val lbindings = oflist (many (oflist (pair <$> name <*> lambda)))
+        val lbindings = oflist (many (oflist (pair <$> name_not_pat "letrec" <*> lambda)))
+        val quoted = S.LITERAL
+        (*@ module >= 13 *)
+        fun quoted sx =
+          case (useVcons, sx)
+            of (true, S.EMPTYLIST) => S.VCON "'()"
+             | _ => S.LITERAL sx
+        (*@ true *)
     in     bracket "set"       (curry  S.SET <$> name <*> exp)
        <|> bracket "if"        (curry3 S.IFX <$> exp <*> exp <*> exp)
        <|> bracket "while"     (curry  S.WHILEX <$> exp <*> exp)
@@ -150,10 +234,13 @@ struct
        <|> bracket "let"       (letx S.LET    <$> bindings <*> exp)
        <|> bracket "let*"      (letstar       <$> bindings <*> exp)
        <|> bracket "letrec"    (letx S.LETREC <$> lbindings <*> exp)
-       <|> bracket "quote"     (      (S.LITERAL o sexp) <$> one)
+       <|> bracket "quote"     (      (quoted o sexp) <$> one)
        <|> bracket "lambda"    (curry S.LAMBDA <$> oflist (many name) <*> exp) 
        <|> bracket "||"        (orSugar <$> many exp) 
        <|> bracket "&&"        (andSugar <$> many exp) 
+         (*@ module >= 13 *)
+       <|> bracket "case" (curry S.CASE <$> exp <*> many (exactList "[pattern exp]" (pair <$> pattern <*> exp)))
+        (*@ true *)
        <|> oflist eos >> P.perror "empty list as Scheme expression"
        <|> realExp <$> sxreal
        <|> S.LITERAL <$> (    kw "#t" >> P.succeed (S.BOOLV true)
@@ -161,6 +248,9 @@ struct
                           <|> S.BOOLV <$> bool
                           <|> S.INT <$> int
                          )
+        (*@ module >= 13 *)
+       <|> S.VCON <$> vcon
+        (*@ true *)
        <|> S.VAR <$> name
        <|> oflist (curry S.APPLY <$> exp <*> many exp) 
                    
@@ -252,13 +342,23 @@ struct
 
   fun single x = [x]
 
+  val funname
+      = (P.check ((fn f => Error.ERROR ("cannot use value constructor " ^ f ^ " as function name")) <$> vcon))
+      <|> name
+
+  val typedefIgnored =
+    many one >> succeed (S.EXP (S.LITERAL (S.SYM "type definition ignored")))
+
   val def =
     single <$>
-           (    bracket "val"    (curry S.VAL <$> name <*> exp)
-            <|> bracket "define" (define <$> name <*> oflist (many name) <*> exp)
-            <|> bracket "check-expect" (curry  S.CHECK_EXPECT <$> exp <*> exp)
-            <|> bracket "check-assert" (       S.CHECK_ASSERT <$> exp)
-            <|> bracket "check-error"  (unimp "check-error" <$> exp)
+           (    bracket "val"    (curry S.VAL <$> name_not_pat "val" <*> exp)
+            <|> bracket "define" (define <$> funname <*> oflist (many name) <*> exp)
+            <|> bracket "check-expect"  (curry  S.CHECK_EXPECT <$> exp <*> exp)
+            <|> bracket "check-assert"  (       S.CHECK_ASSERT <$> exp)
+            <|> bracket "check-error"   (unimp "check-error" <$> exp)
+            <|> bracket "data"          typedefIgnored
+            <|> bracket "implicit-data" typedefIgnored
+            <|> bracket "check-principal-type*" typedefIgnored
            )
     <|> bracket "record" (desugarRecord <$> name <*> oflist (many name))
     <|> single <$> S.EXP <$> exp
@@ -268,3 +368,6 @@ struct
   val exp = transform exp
   val defs = transform def
 end
+
+structure VSchemeParsers = VSchemeParsersFun (val useVcons = false)
+structure EschemeParsers = VSchemeParsersFun (val useVcons = true)
