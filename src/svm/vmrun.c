@@ -36,15 +36,15 @@
 #define UY uY(curr_instr)
 #define UZ uZ(curr_instr)
 
-#define VMSAVE() do { \
-    vm->fun = fun; \
-    vm->counter = pc - &(fun->instructions[0]); \
-} while (0)
+#define VMSAVE() \
+    (vm->fun     = fun, \
+     vm->counter = pc - &(fun->instructions[0]))
 
-#define VMLOAD() do { \
-   fun = vm->fun; \
-   pc = &(fun->instructions[vm->counter]); \
-} while (0)
+#define VMLOAD() \
+    (fun = vm->fun, \
+     pc  = fun->instructions + vm->counter)
+
+#define GC() (VMSAVE(), gc(vm), VMLOAD())
 
 extern int ntests, npassed;
 extern jmp_buf testjmp;
@@ -388,13 +388,17 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 }
                 break;
             }
-            case Goto:
-                pc += 1 + iXYZ(curr_instr); 
+            case Goto: {
+                int32_t offset = iXYZ(curr_instr);
+                if (gc_needed && offset < 0) {
+                    GC();
+                }
+                pc += 1 + offset; 
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
                           // then skipping the increment with continue
 
-
+            }
             /* FUNCTIONS */
             case Return: {
                 if (vm->stackpointer == 0) {
@@ -470,7 +474,8 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                         "attempting to call function in register %hhu"
                         " caused a Register Window Overflow", r0);
                 }
-
+                if (gc_needed)
+                    GC(); /* after all error checking, garbage collect */
                 /* call stack save */
                 Activation a = {fun, pc - &(fun->instructions[0]), 
                                 vm->R_window_start, dest_reg_idx};
@@ -531,7 +536,8 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                       "attempting to tailcall function in register %hhu"
                       "caused a Register Window Overflow", r0);
                 }
-
+                if (gc_needed)
+                    GC(); /* after all error checking, garbage collect */
                 /* copy over function and argument registers  */
                 for (int i = 0; i <= n; ++i) {
                     registers[i] = registers[r0 + i];
@@ -582,7 +588,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             }
             /* R0- MANUAL GARBAGE COLLECTION */
             case Gc: 
-                gc(vm);
+                GC();
                 break;
 
             default:

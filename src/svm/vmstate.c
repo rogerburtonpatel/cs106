@@ -47,6 +47,8 @@ VMState newstate(void) {
     for (int i = 0; i < MAX_GLOBALS; ++i) {
         vms->globals[i] = nilValue;
     }
+
+    vms->awaiting_expect = nilValue;
         
     return vms;
 }
@@ -87,8 +89,6 @@ uint32_t global_slot(VMState state, Value namev) {
 
 Value literal_value(VMState state, uint32_t index) {
     return state->literals[index];
-    return nilValue;
-
 }
 
 int literal_count(VMState state) {

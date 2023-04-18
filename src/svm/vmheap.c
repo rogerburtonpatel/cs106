@@ -306,6 +306,9 @@ static inline void *alloc_small(size_t n) {
 
 
 void *vmalloc_raw(size_t n) {
+  if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
+    fprintf(stderr, "Requested %zu bytes in vmalloc_raw\n", n);
+  }
   // the external interface; does not set any GC metadata
   if (n <= SMALL_OBJECT_LIMIT) {
     return alloc_small(n);
@@ -631,8 +634,13 @@ static void scan_vmstate(struct VMState *vm) {
        ; v++) {
         scan_value(v);
        }
-  memset(stale_start,
-         0, (char *)(vm->registers + NUM_REGISTERS) - (char *)stale_start);
+  for (Value *v = stale_start
+       ; v < vm->registers + NUM_REGISTERS
+       ; v++) {
+        *v = nilValue;
+       }
+  // memset(stale_start,
+  //        0, (char *)(vm->registers + NUM_REGISTERS) - (char *)stale_start);
   /* cast is so we can get byte subtraction rather than sizeof(Value) 
      subtraction, which are radically different */
 
@@ -656,61 +664,69 @@ static void scan_vmstate(struct VMState *vm) {
 
 }
 // gchere. Todo remove
-extern void gc(struct VMState *vm) {
+extern void gc(struct VMState *vm)
+{
     assert(vm);
-
+    /*  1. Set flag `gc_in_progress` (so statistics are tracked correctly). */
+    gc_in_progress = true;
   /* Narrative sketch of the algorithm (see page 266):
 
         1. Capture the list of allocated pages from `current`,
            and reset `current` include just one available page.
            I recommend capturing the list of allocated pages
            in a local variable called `fromspace`. */
+    int old_nobjects = count.current.objects;
+    int old_nbytes_requested = count.current.bytes_requested;
     Page fromspace = current;
-    // while (count.available.pages > 1) {
-    //     take_available_page(); // <- TODO: this is wrong, but on slack it 
-                                  // seems we should call take_available_page.
-                                  // why?
-    // }
-    count.current.pages = 1;
-    /*  2. Set flag `gc_in_progress` (so statistics are tracked correctly). */
-    gc_in_progress = true;
+    // TODO ASK: old_pages or 0 for availability_floor? anything else here?
+    int old_npages = count.current.pages;
+    count.current.pages = 0;
+    count.current.objects = 0;
+    count.current.bytes_requested = 0;
+    current = NULL;
+    take_available_page();
     /*  3. Set `availability_floor` to be half the total number of pages
            on the VM heap (rounded up). */
-                                                // this for rounding up -v
-    availability_floor = (count.current.pages + count.available.pages) + 1 / 2;
+                                      // this for rounding up -v
+    availability_floor = (old_npages + count.available.pages + 1) / 2;
+    // TODO watch this-- maybe count.current.pages
     /* 4. Color all the roots gray using `scan_vmstate`. */
     scan_vmstate(vm);
-    /* 5. While the gray stack is not empty, pop a value and scan it. */
+    /* 5. While the gray stack is not empty, pop a value and scan its payload. */
     while (!VStack_isempty(gray)) {
-        Value v = VStack_pop(gray);
-        scan_value(&v);
+        scan_forwarded_payload(VStack_pop(gray));
     }
     /* 6. Call `VMString_drop_dead_strings()`. */
     VMString_drop_dead_strings();
     /* 7. Take the pages captured in step 1 and make them available. */
     /* roger's note: here's the to-from swap */
     int reclaimed = make_available(fromspace); 
-    (void)reclaimed; // TODO ask
     /* 8. Use `growheap` to acquire more available pages until the
         ratio of heap size to live data meets what you get from
         `target_gamma`.  (The amount of live data is the number of
         pages copied to `current` in steps 3 and 4.) */
+    // TODO ask: will this work without this function implemented?
     growheap(target_gamma(vm), count.current.pages);
     /* 9. Update counter `total.collections` and
         flags `gc_needed` and `gc_in_progress`. */
+    // total.collections = total.bytes_requested - total.bytes_copied;
     total.collections++;
     gc_needed = gc_in_progress = false;
     /* 10. If `svmdebug_value("gcstats")` is set and contains a + sign, 
         print statistics as suggested by exercise 2 on page 299. */
 
   if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
-    fprintf(stderr, "Heap contains %d pages of which %d are live (ratio %.2f)\n",
+    fprintf(stderr, "Heap contains %d pages of which %d are live (ratio %.2f) after reclaiming %d pages during collection\n",
             count.available.pages + count.current.pages, count.current.pages,
-            (double)(count.available.pages + count.current.pages) / (double) count.current.pages);
+            (double)(count.available.pages + count.current.pages) / (double) count.current.pages, reclaimed);
     fprint(stderr, "%d of %d objects holding %, of %, requested bytes survived\n",
-            -1, -1, -1, -1);  // you fill in here
+            count.current.objects, 
+            old_nobjects, 
+            count.current.bytes_requested, 
+            old_nbytes_requested); 
     fprintf(stderr, "Survival rate is %.1f%% of objects and %.1f%% of bytes\n",
-            -1.0, -1.0);  // you fill in here
+           100.0 * (double)count.current.objects / old_nobjects, 
+           100.0 * (double)count.current.bytes_requested / old_nbytes_requested); 
   }
   
 }
@@ -718,6 +734,7 @@ extern void gc(struct VMState *vm) {
 static void growheap(double gamma, int nlive) {
   (void) gamma;
   (void) nlive;
+  // TODO loop in here
   // eventually you'll add code here to enlarge the heap
   // and to update `availability_floor`
 }
@@ -816,7 +833,7 @@ static int make_invalid_and_stomp(Page pages) {
 
 static int make_available(Page pages) {
   int reclaimed = 0;
-  while (pages) {
+  while (pages != NULL) {
     Page p = pages;
     pages = p->link;
     VALGRIND_DESTROY_MEMPOOL(p);
@@ -852,7 +869,7 @@ void xsearch(const char *what, void *p) {
 
 static Value global_gamma_value(VMState vm) {
   // WITHOUT allocating, return the value of the global variable &gamma
-  assert(0 && vm && "Need to find the value of &gamma (nil if not set)");  
+  // assert(0 && vm && "Need to find the value of &gamma (nil if not set)");  
   return nilValue;
 }
 
