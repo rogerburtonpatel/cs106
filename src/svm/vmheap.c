@@ -669,6 +669,9 @@ extern void gc(struct VMState *vm)
     assert(vm);
     /*  1. Set flag `gc_in_progress` (so statistics are tracked correctly). */
     gc_in_progress = true;
+    /*  3. Set `availability_floor` to be half the total number of pages
+           on the VM heap (rounded up). */
+    availability_floor = (count.current.pages + count.available.pages + 1) / 2;
   /* Narrative sketch of the algorithm (see page 266):
 
         1. Capture the list of allocated pages from `current`,
@@ -678,16 +681,12 @@ extern void gc(struct VMState *vm)
     int old_nobjects = count.current.objects;
     int old_nbytes_requested = count.current.bytes_requested;
     Page fromspace = current;
-    int old_npages = count.current.pages;
     count.current.pages = 0;
     count.current.objects = 0;
     count.current.bytes_requested = 0;
     current = NULL;
     take_available_page();
-    /*  3. Set `availability_floor` to be half the total number of pages
-           on the VM heap (rounded up). */
                                       // this for rounding up -v
-    availability_floor = (old_npages + count.available.pages + 1) / 2;
     // TODO watch this-- maybe count.current.pages
     /* 4. Color all the roots gray using `scan_vmstate`. */
     scan_vmstate(vm);

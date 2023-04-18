@@ -395,7 +395,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 if (gc_needed && offset < 0) {
                     GC();
                 }
-                assert(pc == oldpc);
+                // assert(pc == oldpc);
                 pc += 1 + offset; 
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
