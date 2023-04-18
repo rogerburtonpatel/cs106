@@ -868,6 +868,7 @@ void xsearch(const char *what, void *p) {
 }
 
 static Value global_gamma_value(VMState vm) {
+  (void)vm;
   // WITHOUT allocating, return the value of the global variable &gamma
   // assert(0 && vm && "Need to find the value of &gamma (nil if not set)");  
   return nilValue;
