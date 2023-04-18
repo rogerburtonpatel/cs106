@@ -618,12 +618,13 @@ static void scan_forwarded_payload(Value v) {
 
 
 static void scan_activation(struct Activation *p) {
+  assert(p);
   p->fun = forward_function(p->fun);
 }
 
 static void scan_vmstate(struct VMState *vm) {
+  assert(vm);
   // see book chapter page 265 about roots
-
   // roots: all registers that can affect future computation
   //    (these hold local variables and formal paramters as on page 265)
   //    (hint: don't scan high-numbered registers that can't
@@ -639,10 +640,6 @@ static void scan_vmstate(struct VMState *vm) {
        ; v++) {
         *v = nilValue;
        }
-  // memset(stale_start,
-  //        0, (char *)(vm->registers + NUM_REGISTERS) - (char *)stale_start);
-  /* cast is so we can get byte subtraction rather than sizeof(Value) 
-     subtraction, which are radically different */
 
   // root: any value that may be awaiting the `expect` primitive
   scan_value(&(vm->awaiting_expect));
@@ -667,17 +664,22 @@ static void scan_vmstate(struct VMState *vm) {
 extern void gc(struct VMState *vm)
 {
     assert(vm);
-    /*  1. Set flag `gc_in_progress` (so statistics are tracked correctly). */
-    gc_in_progress = true;
-    /*  3. Set `availability_floor` to be half the total number of pages
-           on the VM heap (rounded up). */
-    availability_floor = (count.current.pages + count.available.pages + 1) / 2;
-  /* Narrative sketch of the algorithm (see page 266):
 
-        1. Capture the list of allocated pages from `current`,
+    /* Narrative sketch of the algorithm (see page 266): */
+    /*  1. Set flag `gc_in_progress` (so statistics are tracked correctly). */
+    
+    gc_in_progress = true;
+
+    /*  2. Set `availability_floor` to be half the total number of pages
+           on the VM heap (rounded up). */
+    
+    availability_floor = (count.current.pages + count.available.pages + 1) / 2;
+
+    /*  3. Capture the list of allocated pages from `current`,
            and reset `current` include just one available page.
            I recommend capturing the list of allocated pages
            in a local variable called `fromspace`. */
+    
     int old_nobjects = count.current.objects;
     int old_nbytes_requested = count.current.bytes_requested;
     Page fromspace = current;
@@ -686,44 +688,55 @@ extern void gc(struct VMState *vm)
     count.current.bytes_requested = 0;
     current = NULL;
     take_available_page();
-                                      // this for rounding up -v
-    // TODO watch this-- maybe count.current.pages
+
     /* 4. Color all the roots gray using `scan_vmstate`. */
+    
     scan_vmstate(vm);
-    /* 5. While the gray stack is not empty, pop a value and scan its payload. */
+
+    /* 5. While the gray stack isn't empty, pop a value and scan its payload. */
+    
     while (!VStack_isempty(gray)) {
         scan_forwarded_payload(VStack_pop(gray));
     }
+
     /* 6. Call `VMString_drop_dead_strings()`. */
     VMString_drop_dead_strings();
+
     /* 7. Take the pages captured in step 1 and make them available. */
     /* roger's note: here's the to-from swap */
+    
     int reclaimed = make_available(fromspace); 
+
     /* 8. Use `growheap` to acquire more available pages until the
         ratio of heap size to live data meets what you get from
         `target_gamma`.  (The amount of live data is the number of
         pages copied to `current` in steps 3 and 4.) */
     growheap(target_gamma(vm), count.current.pages);
+
     /* 9. Update counter `total.collections` and
         flags `gc_needed` and `gc_in_progress`. */
-    // total.collections = total.bytes_requested - total.bytes_copied;
     total.collections++;
     gc_needed = gc_in_progress = false;
+
     /* 10. If `svmdebug_value("gcstats")` is set and contains a + sign, 
         print statistics as suggested by exercise 2 on page 299. */
-
-  if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
-    fprintf(stderr, "Heap contains %d pages of which %d are live (ratio %.2f) after reclaiming %d pages during collection\n",
-            count.available.pages + count.current.pages, count.current.pages,
-            (double)(count.available.pages + count.current.pages) / (double) count.current.pages, reclaimed);
-    fprint(stderr, "%d of %d objects holding %, of %, requested bytes survived\n",
+    if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
+      fprintf(stderr, "Heap contains %d pages of which %d are live (ratio %.2f)"
+                    " after reclaiming %d pages during collection\n",
+            count.available.pages + count.current.pages, 
+            count.current.pages,
+            (double)(count.available.pages + count.current.pages) 
+          / (double) count.current.pages, reclaimed);
+      fprint(stderr, "%d of %d objects holding %, of %, "
+                   "requested bytes survived\n",
             count.current.objects, 
             old_nobjects, 
             count.current.bytes_requested, 
             old_nbytes_requested); 
-    fprintf(stderr, "Survival rate is %.1f%% of objects and %.1f%% of bytes\n",
-           100.0 * (double)count.current.objects / old_nobjects, 
-           100.0 * (double)count.current.bytes_requested / old_nbytes_requested); 
+      fprintf(stderr, "Survival rate is %.1f%% "
+                      "of objects and %.1f%% of bytes\n",
+          100.0 * (double)count.current.objects / old_nobjects, 
+          100.0 * (double)count.current.bytes_requested / old_nbytes_requested); 
   }
   
 }

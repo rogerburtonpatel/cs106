@@ -8,6 +8,11 @@ CODE
 fix uft kn-vo qsort-debug.kn
 fix uft cl-vo qsort.cl
 
+all values have forwarded pointers that point to pages on the current list
+
+while mutator runs, objects that have a payload allocated on the heap have a 
+forwarding pointer that's null. 
+
 INFRA
 make testing not j add error code so that negative error codes don't mess us up
 just offbranch bignums
