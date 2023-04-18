@@ -618,7 +618,7 @@ static void scan_forwarded_payload(Value v) {
 
 
 static void scan_activation(struct Activation *p) {
-  forward_function(p->fun);
+  p->fun = forward_function(p->fun);
 }
 
 static void scan_vmstate(struct VMState *vm) {
@@ -659,7 +659,7 @@ static void scan_vmstate(struct VMState *vm) {
     scan_activation(&(vm->Stack[i]));
   }
   // root: the currently running function (which might not be on the call stack)
-  forward_function(vm->fun);
+  vm->fun = forward_function(vm->fun); // BUG LINE: didn't have assignment
   // root: any other field of `struct VMState` that could lead to a `Value`
 
 }

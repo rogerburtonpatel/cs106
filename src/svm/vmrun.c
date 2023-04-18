@@ -38,16 +38,19 @@
 
 #define VMSAVE() \
     (vm->fun     = fun, \
-     vm->counter = pc - &(fun->instructions[0]))
+     vm->counter = pc - &(fun->instructions[0]), \
+     vm->R_window_start = registers - vm->registers)
 
 #define VMLOAD() \
     (fun = vm->fun, \
-     pc  = fun->instructions + vm->counter)
+     pc  = fun->instructions + vm->counter, \
+     registers = vm->registers + vm->R_window_start)
 
 #define GC() (VMSAVE(), gc(vm), VMLOAD())
 
 extern int ntests, npassed;
 extern jmp_buf testjmp;
+
 
 
 extern int setjmp_proxy(jmp_buf t); /* see what a difference this makes! */
@@ -69,7 +72,6 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             /* Thank you to Norman for this debugging infrastructure */
             (void) dump_call;  // make it OK not to use `dump_call`
             VMLOAD();
-            registers = vm->registers; 
             /* registers always = vm->registers + vm->R_window_start */
             break;
         case ERROR_CALL:;
@@ -90,14 +92,13 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     }
 
 
-
     while (1) {
         Instruction curr_instr = *pc;
 
         if (CANDUMP && dump_decode) {
             idump(stderr, 
             vm, 
-            ((int64_t)pc - (int64_t)&(vm->fun->instructions[0])) / 4, 
+            ((int64_t)pc - (int64_t)&(vm->fun->instructions[0])) / 4, // TODO change this nonsense
             curr_instr, 
             0, 
             registers + UX, 
@@ -477,6 +478,9 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 if (gc_needed)
                     GC(); /* after all error checking, garbage collect */
                 /* call stack save */
+
+                func = registers[r0].f;
+
                 Activation a = {fun, pc - &(fun->instructions[0]), 
                                 vm->R_window_start, dest_reg_idx};
                 vm->Stack[vm->stackpointer++] = a;

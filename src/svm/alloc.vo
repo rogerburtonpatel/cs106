@@ -14,7 +14,7 @@ goto -9
 return 2
 setglobal 0 string 8 97 108 108 111 99 97 116 101
 getglobal 0 string 8 97 108 108 111 99 97 116 101
-loadliteral 1 1
+loadliteral 1 1000
 call 0 0 1
 check 0 string 15 40 97 108 108 111 99 97 116 101 32 49 48 48 48 41
 loadliteral 0 string 1 97
