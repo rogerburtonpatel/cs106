@@ -678,7 +678,6 @@ extern void gc(struct VMState *vm)
     int old_nobjects = count.current.objects;
     int old_nbytes_requested = count.current.bytes_requested;
     Page fromspace = current;
-    // TODO ASK: old_pages or 0 for availability_floor? anything else here?
     int old_npages = count.current.pages;
     count.current.pages = 0;
     count.current.objects = 0;
@@ -705,7 +704,6 @@ extern void gc(struct VMState *vm)
         ratio of heap size to live data meets what you get from
         `target_gamma`.  (The amount of live data is the number of
         pages copied to `current` in steps 3 and 4.) */
-    // TODO ask: will this work without this function implemented?
     growheap(target_gamma(vm), count.current.pages);
     /* 9. Update counter `total.collections` and
         flags `gc_needed` and `gc_in_progress`. */

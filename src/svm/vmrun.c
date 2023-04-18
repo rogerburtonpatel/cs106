@@ -38,12 +38,12 @@
 
 #define VMSAVE() \
     (vm->fun     = fun, \
-     vm->counter = pc - &(fun->instructions[0]), \
+     vm->counter = pc - vm->fun->instructions, \
      vm->R_window_start = registers - vm->registers)
 
 #define VMLOAD() \
     (fun = vm->fun, \
-     pc  = fun->instructions + vm->counter, \
+     pc  = vm->fun->instructions + vm->counter, \
      registers = vm->registers + vm->R_window_start)
 
 #define GC() (VMSAVE(), gc(vm), VMLOAD())
@@ -391,9 +391,11 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             }
             case Goto: {
                 int32_t offset = iXYZ(curr_instr);
+                Instruction *oldpc = pc;
                 if (gc_needed && offset < 0) {
                     GC();
                 }
+                assert(pc == oldpc);
                 pc += 1 + offset; 
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
