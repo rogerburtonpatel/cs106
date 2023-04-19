@@ -16,7 +16,7 @@ struct
 
   structure P = MkListProducer (val species = "S-expression parser"
                                 type input = Sx.sx
-                                val show = whatAreTokens
+                                val show = showTokens
                                )
 
   (* wishing for Modula-style FROM IMPORT here ... *)
@@ -61,7 +61,7 @@ struct
     ["set", "if", "while", "begin", "let", "let*", "letrec", "lambda", "quote",
      "val", "define",
      (* next are from uML, for module 12 *)
-     "case", "data", "implicit-data", "check-principal-type*"
+     "case", "data", "implicit-data", "check-principal-type*", "record", "check-type", ":"
     ]
 
   fun reserved s = List.exists (P.eq s) rwords
@@ -268,48 +268,50 @@ struct
     fun nullp x = S.APPLY(S.VAR "null?", [x])
     fun pairp x = S.APPLY(S.VAR "pair?", [x])
     val cons = fn (x, xs) => VSchemeUtils.cons x xs
+    structure P = Pattern
 
-        fun desugarRecord recname fieldnames =
-              recordConstructor recname fieldnames ::
+        fun desugarRecord _ recname fieldnames =
               recordPredicate recname fieldnames ::
               recordAccessors recname 0 fieldnames @
               recordMutators recname 0 fieldnames
         and recordConstructor recname fieldnames = 
               let val con = "make-" ^ recname
                   val formals = map (fn s => "the-" ^ s) fieldnames
-                  val body = cons (S.LITERAL (S.SYM con), varlist formals)
+                  val body = S.APPLY (S.VCON con, map S.VAR formals)
               in  S.DEFINE (con, (formals, body))
               end
         and recordPredicate recname fieldnames =
-              let val tag = S.SYM ("make-" ^ recname)
+              let val con = "make-" ^ recname
+                  val choices =
+                      [ (P.APPLY (con, map (fn _ => P.WILDCARD) fieldnames),
+                         S.LITERAL (S.BOOLV true))
+                      , (P.WILDCARD, S.LITERAL (S.BOOLV false))
+                      ]
                   val predname = recname ^ "?"
                   val r = S.VAR "r"
                   val formals = ["r"]
-                  val good_car = S.APPLY (S.VAR "=", [VSchemeUtils.car r, S.LITERAL tag])
-                  fun good_cdr looking_at [] = nullp looking_at
-                    | good_cdr looking_at (_ :: rest) =
-                        and_also (pairp looking_at, good_cdr (VSchemeUtils.cdr looking_at) rest)
-                  val body =
-                    and_also (pairp r, and_also (good_car, good_cdr (VSchemeUtils.cdr r) fieldnames))
-              in  S.DEFINE (predname, (formals, body))
+              in  S.DEFINE (predname, (formals, S.CASE (r, choices)))
               end
-        and recordAccessors recname n [] = []
-          | recordAccessors recname n (field::fields) =
-              let val predname = recname ^ "?"
-                  val accname = recname ^ "-" ^ field
-                  val formals = ["r"]
-                  val thefield = VSchemeUtils.car (cdrs (n+1, S.VAR "r"))
-                  val body = S.IFX ( S.APPLY (S.VAR predname, [S.VAR "r"])
-                                 , thefield
-                                 , error (S.SYM (concat ["value-passed-to-"
-                                               , accname
-                                               , "-is-not-a-"
-                                               , recname
-                                               ])))
-              in  S.DEFINE (accname, (formals, body)) ::
-                  recordAccessors recname (n+1) fields
+        and recordAccessors recname n fields =
+              let val con = "make-" ^ recname
+                  val pat = P.APPLY (con, map P.VAR fields)
+                  fun accessor field =
+                    let val accname = recname ^ "-" ^ field
+                        val choices =
+                            [ (pat, S.VAR field)
+                            , (P.WILDCARD
+                              , S.APPLY (S.VAR "error", [S.LITERAL (S.SYM ("value passed to " ^ accname ^ " is not a " ^ recname ^ " record"))])
+                              )
+                            ]
+                        val r = S.VAR "r"
+                        val formals = ["r"]
+                    in  S.DEFINE (accname, (formals, S.CASE (r, choices)))
+                    end
+              in  map accessor fields
               end
-          and recordMutators recname n [] = []
+
+          and recordMutators recname n _ = []
+(*
             | recordMutators recname n (field::fields) =
                 let val predname = recname ^ "?"
                     val mutname = "set-" ^ recname ^ "-" ^ field ^ "!"
@@ -325,6 +327,7 @@ struct
                 in  S.DEFINE (mutname, (formals, body)) ::
                     recordMutators recname (n+1) fields
                 end
+*)
         and and_also (p, q) = S.IFX (p, q, S.LITERAL (S.BOOLV false))
         and cdrs (0, xs) = xs
           | cdrs (n, xs) = VSchemeUtils.cdr (cdrs (n-1, xs))
@@ -349,6 +352,10 @@ struct
   val typedefIgnored =
     many one >> succeed (S.EXP (S.LITERAL (S.SYM "type definition ignored")))
 
+  val field = name <|> exactList "typed record field" (name <~> kw ":" <~> one)
+
+  val optionalTyvars = SOME <$> oflist (many one) <|> succeed NONE
+
   val def =
     single <$>
            (    bracket "val"    (curry S.VAL <$> name_not_pat "val" <*> exp)
@@ -359,8 +366,9 @@ struct
             <|> bracket "data"          typedefIgnored
             <|> bracket "implicit-data" typedefIgnored
             <|> bracket "check-principal-type*" typedefIgnored
+            <|> bracket "check-type" typedefIgnored
            )
-    <|> bracket "record" (desugarRecord <$> name <*> oflist (many name))
+    <|> bracket "record" (desugarRecord <$> optionalTyvars <*> name <*> oflist (many field))
     <|> single <$> S.EXP <$> exp
 
   fun transform parser sx = P.produce (parser <~> P.eos) [sx]
