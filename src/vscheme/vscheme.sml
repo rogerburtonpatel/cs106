@@ -1141,8 +1141,13 @@ and    value = SYM       of name
              | CLOSURE   of lambda * value ref env
              | PRIMITIVE of primitive
              | ARRAY     of value array
+             | LETREC_DEFERRED of value ref
 withtype primitive = exp * value list -> value (* raises RuntimeError *)
      and lambda    = name list * exp
+
+fun undefer (LETREC_DEFERRED p) = undefer (!p)
+  | undefer v = v
+
 (* definition of [[def]] for \uscheme 305b *)
 datatype def  = VAL    of name * exp
               | EXP    of exp
@@ -1175,6 +1180,8 @@ val _ = op valueString : value -> string
   | valueString (PRIMITIVE _) = "<primitive>"
   | valueString (ARRAY vs) =
     "[| " ^ String.concatWith " " (Array.foldr (fn (v, vs) => valueString v :: vs) [] vs) ^ " |]"
+  | valueString (LETREC_DEFERRED p) = "deferred " ^ valueString (!p)
+
 (* definition of [[expString]] for \uscheme S221a *)
 fun expString e =
   let fun bracket s = "(" ^ s ^ ")"
@@ -1219,6 +1226,7 @@ fun embedBool b = BOOLV b
 fun projectBool (BOOLV false) = false
   | projectBool (LUANIL)      = false
   | projectBool _             = true
+val projectBool = projectBool o undefer
 (* type declarations for consistency checking *)
 val _ = op embedBool   : bool  -> value
 val _ = op projectBool : value -> bool
@@ -1697,7 +1705,7 @@ fun eval (e, rho) =
         | ev (LAMBDA (xs, e)) = CLOSURE ((xs, e), rho)
         (* more alternatives for [[ev]] for \uscheme 308e *)
         | ev (e as APPLY (f, args)) = 
-               (case ev f
+               (case undefer (ev f)
                   of PRIMITIVE prim => prim (e, map ev args)
                    | closure as PAIR (ref (f as CLOSURE _), _) =>
                        ev (APPLY (LITERAL f, LITERAL closure :: args))
@@ -1730,24 +1738,39 @@ fun eval (e, rho) =
             end
         (* more alternatives for [[ev]] for \uscheme 309c *)
         | ev (LETX (LETREC, bs, body)) =
-            let val (names, values) = ListPair.unzip bs
+            if true then
+              let val (names, values) = ListPair.unzip bs
+                  fun fresh _ = (ref o LETREC_DEFERRED o ref o unspecified) ()
+                  val rho' = bindList (names, map fresh values, rho)
+                  fun update (x, e) =
+                        let val v = eval (e, rho')
+                            val loc = ! (find (x, rho'))
+                        in  case loc
+                              of LETREC_DEFERRED p => p := v
+                               | _ => raise InternalError "letrec not deferred"
+                        end
+              in  List.app update bs;
+                  eval (body, rho')
+              end
+            else
+              let val (names, values) = ListPair.unzip bs
 
-(* if any expression in [[values]] is not a [[lambda]], reject the [[letrec]] S208g *)
-                fun insistLambda (LAMBDA _) = ()
-                  | insistLambda e =
-                      raise RuntimeError (
-                                 "letrec tries to bind non-lambda expression " ^
-                                          expString e)
-                val _ = app insistLambda values
-                val rho' =
-                  bindList (names, map (fn _ => ref (unspecified())) values, rho
-                                                                               )
-                val updates = map (fn (n, e) => (n, eval (e, rho'))) bs
-        (* type declarations for consistency checking *)
-        val _ = List.app : ('a -> unit) -> 'a list -> unit
-            in  List.app (fn (n, v) => find (n, rho') := v) updates; 
-                eval (body, rho')
-            end
+  (* if any expression in [[values]] is not a [[lambda]], reject the [[letrec]] S208g *)
+                  fun insistLambda (LAMBDA _) = ()
+                    | insistLambda e =
+                        raise RuntimeError (
+                                   "letrec tries to bind non-lambda expression " ^
+                                            expString e)
+                  val _ = app insistLambda values
+                  val rho' =
+                    bindList (names, map (fn _ => ref (unspecified())) values, rho
+                                                                                 )
+                  val updates = map (fn (n, e) => (n, eval (e, rho'))) bs
+          (* type declarations for consistency checking *)
+                  val _ = List.app : ('a -> unit) -> 'a list -> unit
+              in  List.app (fn (n, v) => find (n, rho') := v) updates; 
+                  eval (body, rho')
+              end
 (* type declarations for consistency checking *)
 val _ = op embedList : value list -> value
 (* type declarations for consistency checking *)
@@ -2407,6 +2430,8 @@ val primitiveBasis =
 , "    (if pair"
 , "        (set-cdr! pair v)"
 , "        (set-cdr! t (cons (cons k v) (cdr t))))))"
+, ""
+, "(define non-atomic (_ v) v)"
 
                       ]
 
