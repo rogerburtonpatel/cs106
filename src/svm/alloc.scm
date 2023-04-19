@@ -1,11 +1,16 @@
 ; file alloc.scm
-(define allocate (N)
-  (let ([x #f])
+(set N 1000)
+
+  (let* ([x #f]
+        [y 'hello]
+        [z y])
     (begin
       (while (> N 0)
              (begin
                (set x (cons 'a 'b))
                (set N (- N 1))))
-      x)))
+      (println y)
+      (println z)
+      x))
 
-(check-expect (allocate 1000) (cons 'a 'b))
+

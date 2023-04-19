@@ -1,0 +1,13 @@
+.load module 12
+loadliteral 0 string 5 104 101 108 108 111
+loadliteral 1 string 5 104 101 108 108 111
+getglobal 2 string 5 108 105 115 116 54
+loadliteral 3 1
+loadliteral 4 2
+loadliteral 5 3
+loadliteral 6 4
+loadliteral 7 5
+loadliteral 8 6
+call 2 2 8
+println 0
+println 1
