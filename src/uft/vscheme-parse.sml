@@ -79,10 +79,6 @@ struct
   fun bad msg = P.ofFunction (badInput msg)
 
   fun kw word = P.sat (P.eq word) sym  (* keyword *)
-(*@ module < 13 *)
-  val name =  P.sat (not o reserved) sym
-          <|> (sym >> bad "reserved word used as name")
-(*@ module >= 13 *)
   val namelike = sym
 
   fun isVcon x =
@@ -99,7 +95,6 @@ struct
   val vvar = P.sat isVvar namelike
   val name =  P.sat (not o reserved) vvar
           <|> (P.check ((fn s => Error.ERROR ("reserved word \"" ^ s ^ "\" used as name")) <$> vvar))
-(*@ true *)
 
   fun parseSucceeds (SOME (Error.OK a, [])) = SOME (Error.OK a)
     | parseSucceeds (SOME (Error.ERROR msg, _)) = SOME (Error.ERROR msg)
@@ -120,7 +115,6 @@ struct
   fun exactList what parser =
     oflist (parser <~> P.eos <|> expected what)
 
-(*@ module >= 13 *)
   val vcon = 
     if useVcons then
       let fun isEmptyList S.EMPTYLIST = true
@@ -143,7 +137,6 @@ struct
        )
       <|> expected "pattern"
 
-(*@ true *)
   fun freeIn exp y =
     let fun member y [] = false
           | member y (z::zs) = y = z orelse member y zs
@@ -160,7 +153,6 @@ struct
           | has_y (S.LETX (S.LETREC, bs, e)) =
               not (member y (map fst bs)) andalso has_y e
           | has_y (S.LAMBDA (xs, e)) = not (member y xs) andalso has_y e
-(*@ module >= 13 *)
           | has_y (S.VCON _) = false
           | has_y (S.CASE (e, choices)) =
               has_y e orelse List.exists choice_has_y choices
@@ -171,7 +163,6 @@ struct
           | binds_y (Pattern.WILDCARD) = false
           | binds_y (Pattern.INT _) = false
           | binds_y (Pattern.APPLY (_, pats)) = List.exists binds_y pats
-(*@ true *)
         and rhs_has_y (_, e) = has_y e
     in  has_y exp
     end
@@ -219,12 +210,10 @@ struct
         val lambda = P.check (asLambda <$> exp)
         val lbindings = oflist (many (oflist (pair <$> name_not_pat "letrec" <*> lambda)))
         val quoted = S.LITERAL
-        (*@ module >= 13 *)
         fun quoted sx =
           case (useVcons, sx)
             of (true, S.EMPTYLIST) => S.VCON "'()"
              | _ => S.LITERAL sx
-        (*@ true *)
     in     bracket "set"       (curry  S.SET <$> name <*> exp)
        <|> bracket "if"        (curry3 S.IFX <$> exp <*> exp <*> exp)
        <|> bracket "while"     (curry  S.WHILEX <$> exp <*> exp)
@@ -238,9 +227,7 @@ struct
        <|> bracket "lambda"    (curry S.LAMBDA <$> oflist (many name) <*> exp) 
        <|> bracket "||"        (orSugar <$> many exp) 
        <|> bracket "&&"        (andSugar <$> many exp) 
-         (*@ module >= 13 *)
        <|> bracket "case" (curry S.CASE <$> exp <*> many (exactList "[pattern exp]" (pair <$> pattern <*> exp)))
-        (*@ true *)
        <|> oflist eos >> P.perror "empty list as Scheme expression"
        <|> realExp <$> sxreal
        <|> S.LITERAL <$> (    kw "#t" >> P.succeed (S.BOOLV true)
@@ -248,9 +235,7 @@ struct
                           <|> S.BOOLV <$> bool
                           <|> S.INT <$> int
                          )
-        (*@ module >= 13 *)
        <|> S.VCON <$> vcon
-        (*@ true *)
        <|> S.VAR <$> name
        <|> oflist (curry S.APPLY <$> exp <*> many exp) 
                    

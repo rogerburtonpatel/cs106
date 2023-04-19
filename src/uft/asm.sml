@@ -14,8 +14,6 @@ structure AssemblyCode = struct
     | DEFLABEL      of string
     | GOTO_LABEL    of string
     | IF_GOTO_LABEL of ObjectCode.reg * string
-(*@ module >= 13 *)
     | GOTO_VCON   of ObjectCode.reg * (ObjectCode.literal * int * string) list
                                        (* (vcon name, arity, label)  *)
-(*@ true *)
 end
