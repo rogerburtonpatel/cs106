@@ -1,138 +1,78 @@
-1. To claim this point, give us the number of the line of code in file vmrun.c 
-that implements R ⊕ r0  in the rule for call.
+1. It is convenient to be able to use new without delete or malloc without free.
+But it is even more convenient to write code without thinking about allocation
+at all. To claim this point, give an example from a language not in the Scheme
+family, where the implementation of a feature just allocates behind the scenes,
+and the garbage collector takes care of the rest. To earn the point, it must be
+a feature that a programmer can use without being forced to think, “I am
+allocating memory here.”
 
->
-vmrun.c:312-313 for `call`. We restore the original register window by popping
-the activation record that me make in vmrun.c:302. This record stores the 
-original R, so that (R ⊕ r0)(i) = R(r0 + i) can be freely used in the new 
-function as the semantics for register access. 
+> I bet no one else will say python! 
+  I can make a list:
+
+  items = [1, 2, 3]
+
+  concat another list to it:
+
+  items += [3, 4]
+
+  make a set out of it:
+
+  item_set = set(items)
+
+  All without EVER thinking about how much memory I need allocated, what copying
+  I need to do, what's live or dead... 
+
+  The data structures in python: lists, sets, etc- all allocate behind the 
+  scenes, and dead objects (structures that go out of scope, etc) are 
+  recycled. That's a beauty of the language; you can think about algorithms
+  closer to the mathematical level than the hardware level. 
 
 
-2. To claim this point, give us the number of the line of code in file vmrun.c 
-that computes σ(R(r)) and the line of code that updates location R′(r′) in σ.
-
->
-vmrun.c:243 gets us σ(R(r)) as the variable return_value by pulling it out of
-the σ that reads from the current (callee) Register window. vmrun.c:251 updates
-σ{R′(r′) ↦ σ(R(r)} by setting the original destination register to the returned
-value.  
-
-3. To claim this point, submit files overstack.vs and overreg.vs from step 14, 
-and confirm that they assemble, load, and detect overflow by the following 
-commands:
-
-uft vs-vo overstack.vs | valgrind svm
-uft vs-vo overreg.vs   | valgrind svm
-Confirm that
-
-Each command causes the svm to terminate with a sensible error message.
-
-The error messages are different in the two cases.
-
-No memory errors are detected by valgrind.
-
-> All set!
-
-4. To claim this point, submit the overtail.vs file from step 14, along with a 
-brief explanation—one or two sentences at most—of its similarities to and 
-differences from overstack.vs.
+2. To claim this point, get your SVM into shape where you can run it on a program
+and Valgrind reports no errors and no leaks. (You are welcome to do this in step
+14, before you start your garbage collector.) Commit the code and tag it with
+git tag valgrind-clean.
+Submit the output from valgrind running your SVM on the
+program of your choice.
 
 > 
-The files are functionally identical: the only main difference is that 
-overtail.vs tailcalls the_worst_zero_youve_ever_seen, which means the call 
-stack never grows > 1 and the register window never moves past the orignal shift
-from the call on overtail.vs:15. This allows it to perform the ~10000 operations
-required by the function, which `call` in overstack.vs:8 can't do because the 
-stack would overflow at 5000 frames. 
 
-5. To claim this point, identify one important invariant that the 
-representation of struct VMFunction must satisfy. (Hint: If any information is 
-redundant, it must be internally consistent.)
+3. To claim this point, identify the lines in your scan_vmstate function that scan
+registers and literals, and explain how you know which registers and literals to
+scan.
 
->
-Within a struct VMFuction, nregs MUST be equal to the largest register number
-within the contained instructions[] field. This is redundant information 
-because the largest register number could be found by combing through
-instructions[], but...
+4. To claim this point, look at the lines in your source code that initialize the
+payload for a ConsCell, and identify the line that initializes the payload’s
+forwarded pointer to NULL.
 
-6. To claim this point, explain how the invariant in the previous step is 
-exploited in the implementation of vmrun.
+5. If a value that is gray or black were accidentally put on the gray list a second
+time, this would violate one of the color invariants. To claim this point,
+explain what bad thing could happen if this invariant is violated.
 
-> 
-We can exploit the fact that it's held in a variable for us by making a quick
-and easy check agains it: in vmrun.c:292, 339 we use it to check against 
-NUM_REGISTERS. I had this wrong in my submission: the condition should be 
+6. In step 19, I observe that my VMSAVE macro flushes the current register-window
+pointer. But my VMLOAD does not reload it. To claim this point, explain why I
+would bother to save this value if I’m not reloading it.
 
-vm->R_window_start + func->nregs > NUM_REGISTERS
+7. To claim this point, explain why it’s not possible to forward a pointer of type
+Instruction *.
 
-using >, not >= because nregs is 1 greater than the largest register number. 
+8. Function forward_string copies a payload only if the forwarding pointer is NULL.
+To claim this point, suppose instead that forward_string copies a payload
+unconditionally every time it is called, and explain what could go wrong.
 
-This exploits the fact that this work (finding nregs) is done at load time, 
-and we want that cost to stay there and not leak into runtime. But we need
-to maintain the invariant, or we risk under- or over-representing the 
-Register window max, which can have minor consequences now 
-(in R_window overflow) and major consequences during GC. 
+9. To claim this point, say how you would set the heap-growth policy parameter to
+do less work by using a lot of space. Then say how you would change the policy
+to use less space at the cost of doing more work. If possible, support your
+answer with evidence of gcstats output from your collector. If not, explain why
+it is not possible.
 
-7. To claim this point, answer these two questions:
+10. In file value.c, function eqvalue compares two String values as equal only if
+they point to the same payload—if two Values point to different payloads they
+are considered different strings, even if the payloads contain the same
+characters.
 
-Explain what, if any, is the performance benefit of using register windows in 
-the SVM, as opposed to a fixed set of 256 VM registers.
-
-> 
-We don't have to carefully pick out which registers are alive and avoid them-
-we can just assume they're all important and skip that step altogether. 
-If finding alive registers is computationally expensive, this implementation
-helps performance. 
-
-
-Explain what, if any, is the performance cost (in your VM code) of using 
-register windows in the SVM, as opposed to a fixed set of 256 VM registers.
-
-> 
-We need to do a Register Window shift per function call (see vmrun.c:312-313), 
-save Activations on a stack (vmrun.c:302), and restore them (vmrun.c:241-248)
-every time we return. Phew! If these operations are more expensive than the 
-manual register management we'd have to do if we only had 256 registers, 
-then our implemenation shows a greater performance cost than gain. 
-
-8. When your SVM runs code that involves a call to an undefined function, 
-as in the Scheme example (wait---what? 42), the error message should show the 
-name of the function. To claim this point, identify the line numbers in vmrun.c 
-where this error message is issued. There should be at least two locations: 
-one for ordinary calls and one for tail calls.
-
-> 
-vmrun.c:261-272, 327-338 (call and tailcall, respectively) are the locations 
-where we check for this: if a register is set to a non-existant funciton, the
-get_global instruction we use to (fail to) retrieve this function will 
-set the register to Nil. Ergo, the if blocks check for a nil register. Stephanie
-pointed out in code review that by changing this condition to simply say 
-"flag any non-VMFunction value" helps us catch and provide better error messages
-for any moron that tries to call the number 4. The two branches of error message
-in the blocks are for if the function was ever set to a global, which will 
-happen in the 'user-calls-non-existent-function-case', or not, in which case
-the user is just trying to call a totally invalid register. 
-
-
------
-
-Resubmitting Depth pt. 13 from module 2, after looking with fresh eyes at 
-tokens.h
-
-In order to take in string literals, we would first need to add a name like
-TSTRING to the enum on tokens.h:31, so that the user is aware that they can 
-parse string literal tokens. We could add a comment to say that this 
-type must be a DOUBLE QUOTED string literal in the object code. 
-
-We would then need to add a function
-
-const char *tokens_get_string(Tokens *p, const char *original); 
-
-With the contract:
-
-tokens_get_string accepts a tokenized C string from the token stream and 
-returns the literal C string. It is only safe to call this function when 
-first_token_type(Tokens) == TSTRING. 
-
-This would assume that strings were able to be tokenized by the tokens()
-function; however, this change would not affect the interface. 
+Suppose that a string value appears in two different VM registers, so both
+registers point to the same payload. But then the garbage collector copies every
+register’s payload to a new location. To claim this point, explain how the
+collection manages to preserve pointer relationships so that after the
+collection, the registers are still considered to hold equal strings.
