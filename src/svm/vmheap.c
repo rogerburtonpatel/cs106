@@ -748,11 +748,22 @@ extern void gc(struct VMState *vm)
 }
 
 static void growheap(double gamma, int nlive) {
-  (void) gamma;
-  (void) nlive;
-  // TODO loop in here
-  // eventually you'll add code here to enlarge the heap
-  // and to update `availability_floor`
+  double current_gamma = ((double)count.current.pages  + 
+                                count.available.pages) / nlive;
+  bool grew = false;
+  while (current_gamma < gamma )
+        {
+          grew = true;
+          take_available_page();
+
+          current_gamma = ((double)count.current.pages  + 
+                                 count.available.pages) / nlive;
+        }
+  availability_floor = (count.current.pages + count.available.pages + 1) / 2;
+
+  if (grew && svmdebug_value("growheap"))
+    fprintf(stderr, "Grew heap to %d pages\n",
+                     count.current.pages + count.available.pages);
 }
 
 

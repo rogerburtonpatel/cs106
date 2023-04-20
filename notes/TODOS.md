@@ -4,6 +4,8 @@ TESTING- dress to impress
 1. vs, kn, fo idempotent testing
 2. vscheme differential testing DONE
 
+setjmp comparison
+
 MEMORY TESTING
 
 CODE
