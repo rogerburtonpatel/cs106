@@ -25,6 +25,15 @@
 
 typedef struct VMState *VMState;
 
+/* Invariants:
+   While the mutator is running:
+   Before the garbace collector runs:
+   .fun is the currently running function
+   .counter is how far the program counter is relative to the start
+    of .fun's instruction stream
+   .R_window_start is the distance from the local variable 'registers'
+    in vmrun and this .register field. 
+*/
 struct VMState {
 
   struct VMFunction *fun;
