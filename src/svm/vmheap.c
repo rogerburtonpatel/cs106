@@ -629,14 +629,15 @@ static void scan_vmstate(struct VMState *vm) {
   //    (these hold local variables and formal paramters as on page 265)
   //    (hint: don't scan high-numbered registers that can't
   //     affect future computations because they aren't used)
-  Value *stale_start = vm->registers + vm->R_window_start + vm->fun->nregs;
-  for (Value *v = vm->registers
+  Value *registers = vm->registers;
+  Value *stale_start = registers + vm->R_window_start + vm->fun->nregs;
+  for (Value *v = registers
        ; v < stale_start
        ; v++) {
         scan_value(v);
        }
   for (Value *v = stale_start
-       ; v < vm->registers + NUM_REGISTERS
+       ; v < registers + NUM_REGISTERS
        ; v++) {
         *v = nilValue;
        }
@@ -644,15 +645,20 @@ static void scan_vmstate(struct VMState *vm) {
   // root: any value that may be awaiting the `expect` primitive
   scan_value(&(vm->awaiting_expect));
   // roots: all literal slots that are in use
-  for (uint16_t i = 0; i < vm->num_literals; i++) {
+  // TODO ASK NORMAN: should i pull these values out of pointers explicitly, 
+  // or is the compiler smart enough to put loop variables into a register?
+  uint16_t num_literals = vm->num_literals;
+  for (uint16_t i = 0; i < num_literals; i++) {
     scan_value(&(vm->literals[i]));
   }
   // roots: all global-variable slots that are in use
-  for (uint16_t i = 0; i < vm->num_globals; i++) {
+  uint16_t num_globals = vm->num_globals;
+  for (uint16_t i = 0; i < num_globals; i++) {
     scan_value(&(vm->globals[i]));
   }
   // roots: each function on the call stack
-  for (uint16_t i = 0; i < vm->stackpointer; i++) {
+  uint16_t stackpointer = vm->stackpointer;
+  for (uint16_t i = 0; i < stackpointer; i++) {
     scan_activation(&(vm->Stack[i]));
   }
   // root: the currently running function (which might not be on the call stack)

@@ -2,7 +2,9 @@
 
 TESTING- dress to impress
 1. vs, kn, fo idempotent testing
-2. vscheme differential testing
+2. vscheme differential testing DONE
+
+MEMORY TESTING
 
 CODE
 fix uft kn-vo qsort-debug.kn
