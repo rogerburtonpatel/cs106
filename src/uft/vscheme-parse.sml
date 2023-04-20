@@ -128,9 +128,12 @@ struct
       P.pzero
 
 
+  fun intpattern k = Pattern.APPLY (Int.toString k, [])
+
   val pattern = P.fix (fn pattern =>
                 Pattern.WILDCARD    <$ sat (curry op = "_") vvar
       <|>       Pattern.VAR        <$> vvar
+      <|>       intpattern         <$> int
       <|> curry Pattern.APPLY      <$> vcon <*> succeed []
       <|> exactList "(C x1 x2 ...) in pattern"
                   (curry Pattern.APPLY <$> vcon <*> many pattern)
