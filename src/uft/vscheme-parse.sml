@@ -164,7 +164,6 @@ struct
               not (binds_y pat) andalso has_y exp
         and binds_y (Pattern.VAR x) = x = y
           | binds_y (Pattern.WILDCARD) = false
-          | binds_y (Pattern.INT _) = false
           | binds_y (Pattern.APPLY (_, pats)) = List.exists binds_y pats
         and rhs_has_y (_, e) = has_y e
     in  has_y exp
