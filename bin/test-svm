@@ -6,6 +6,24 @@ function die {
   exit 2
 }
 
+arg0=$(basename "$0")
+
+if [[ $# -eq 0 ]]; then
+  base=$(basename $0)
+  echo "Usage: $base [-v [-v]] [-bin directory] *.scm *.es
+    or find . -name '*.scm' -exec $base [-v [-v]] [-bin directory] '{}' ';'
+         where -v      shows more info
+               -v -v   shows even more info
+               -bin    says where uft and svm are located
+
+       A test comprises these files
+         *.scm          vScheme source
+         *.es           eScheme source
+         *.1            Output expected on standard output, if any
+         *.2            Output expected on standard error, if any
+         *.argv         Arguments to be passed in global variable argv, if any"
+  exit 1
+fi
 
 
 output=$(mktemp)
@@ -14,6 +32,8 @@ predefvo=$(mktemp)
 
 testout=$(mktemp)
 testerr=$(mktemp)
+ufterr=$(mktemp)
+vo=$(mktemp)
 
 trap "rm -f $output $predefvo $testout $testerr" 0 1 2 3 6 9  # not sure if /bin/sh supports...
 
@@ -36,6 +56,8 @@ done
 vscheme -predef | uft ho-vo > $predefvo
 
 failure=
+rc=0
+
 
 function passes {
   if [[ "$verbose" = yesyes* ]]; then echo "$1 passes $2"; fi
@@ -46,6 +68,7 @@ function fails {
   if [[ -z "$failure" ]]; then
     failure="$2"
   fi
+  if [[ $rc -lt 2 ]]; then rc=2; fi
 }
 
 function check_stdout {
@@ -54,13 +77,29 @@ function check_stdout {
       passes $1 stdout
     else
       fails $1 stdout
+      if [[ "$verbose" = yesyes* && "$failure" = stdout ]]; then
+        echo "Expected on stdout:"
+        cat "$2"
+        echo "Seen on stdout:"
+        cat "$3"
+        echo "----------------------------"
+      fi
     fi
   else
-    case "$(cat $3)" in
-      The?only?test?passed.|Both?tests?passed.|All*tests?passed.) passes $1 stdout ;;
-      *) fails $1 stdout ;;
-    esac
+    typeset stdout="$(cat "$3")"
+    if [[ -n "$stdout" ]]; then
+      case "$(cat $3)" in
+        The?only?test?passed.|Both?tests?passed.|All*tests?passed.) passes $1 stdout ;;
+        *) fails $1 stdout 
+           if [[ "$verbose" = yesyes* ]]; then
+             cat "$3"
+             echo "------------------------"
+           fi
+           ;;
+      esac
+    fi
   fi
+
 }
 
 function check_stderr {
@@ -88,6 +127,7 @@ function large_object_failure  {
 
       
 
+
 for i
 do
   base=${i%.scm}
@@ -101,7 +141,7 @@ do
   case $i in
     *.scm) lang=ho-vo ;;
     *.es)  lang=es-vo ;;
-    *) die "unknown file type" ;;
+    *) die "$arg0: I don't know how to run test file '$i'" ;;
   esac
 
   command=(svm $predefvo -)
@@ -109,17 +149,35 @@ do
     command+=(-- $(cat $argv) )
   fi
 
-  trap "echo hello : do nothing" ABRT
+  if [[ "$verbose" = yesyes* ]]; then
+    echo "Running test $i"
+  fi
 
-  uft $lang "$i" | ( ${command[@]} > $testout 2>$testerr || false ) 2> /dev/null
-  testexit=$?
+  uft $lang "$i" > $vo 2>$ufterr
+  uftexit=$?
 
-  if large_object_failure $testerr; then
-    echo "$i cannot be run: heap pages aren't big enough"
+  if [[ $uftexit -ne 0 ]]; then
+     fails "$i" uft
+     if [[ -n "$verbose" ]]; then
+       cat $ufterr
+     fi
+  elif ! cmp -s $ufterr /dev/null; then
+     fails "$i" uft
+     if [[ -n "$verbose" ]]; then
+       cat $ufterr
+     fi
   else
-    check_stderr $i $stderr $testerr
-    check_stdout $i $stdout $testout
-    # check_exit $i $exit $testexit
+    ( ${command[@]} < $vo > $testout 2>$testerr || false ) 2> /dev/null
+    testexit=$?
+
+    if large_object_failure $testerr; then
+      echo "$i cannot be run: heap pages aren't big enough"
+      if [[ $rc -eq 0 ]]; then rc=1 ; fi
+    else
+      check_stderr $i $stderr $testerr
+      check_stdout $i $stdout $testout
+      # check_exit $i $exit $testexit
+    fi
   fi
 
   if [[ -n "$failure" && -z "$verbose" ]]; then
@@ -127,3 +185,4 @@ do
   fi
 done
 
+exit $rc
