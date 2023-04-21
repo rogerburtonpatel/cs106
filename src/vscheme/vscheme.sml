@@ -127,11 +127,13 @@ fun predefinedFunctionError s = eprintln ("while reading predefined functions, "
 (* utility functions for string manipulation and printing S70f *)
 fun intString n =
   String.map (fn #"~" => #"-" | c => c) (Int.toString n)
+val oldConversion  = StringCvt.FIX (SOME 2)
+val realConversion = StringCvt.GEN (SOME 6) (* match printf("%g") *)
 fun realString x =
  (if Real.== (x, real (Real.floor x)) then
     intString (Real.floor x)
   else
-    String.map (fn #"~" => #"-" | c => c) (Real.fmt (StringCvt.FIX (SOME 2)) x)
+    String.map (fn #"~" => #"-" | c => c) (Real.fmt realConversion x)
  ) handle Overflow => Real.toString x
 
 (* utility functions for string manipulation and printing S70g *)
