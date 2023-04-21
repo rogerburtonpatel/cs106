@@ -1181,7 +1181,7 @@ val _ = op valueString : value -> string
   | valueString (CLOSURE ((xs, _), _)) = "<function(" ^ Int.toString (length xs) ^ ")>"
   | valueString (PRIMITIVE _) = "<primitive>"
   | valueString (ARRAY vs) =
-    "[| " ^ String.concatWith " " (Array.foldr (fn (v, vs) => valueString v :: vs) [] vs) ^ " |]"
+    "[" ^ String.concatWith " " (Array.foldr (fn (v, vs) => valueString v :: vs) [] vs) ^ "]"
   | valueString (LETREC_DEFERRED p) = "deferred " ^ valueString (!p)
 
 (* definition of [[expString]] for \uscheme S221a *)
