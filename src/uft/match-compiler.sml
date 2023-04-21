@@ -107,9 +107,7 @@ struct
           = NONE                  otherwise
      *)
     = fn (pi, P.APPLY (vcon, pats)) => SOME (pi, vcon, pats)
-       | (pi, P.INT k) => SOME (pi, Int.toString k, [])
        | _ => NONE
-
 
 
   (********** USEFUL OPERATIONS ON PATHS AND FRONTIERS ********)
@@ -138,28 +136,16 @@ struct
 
   (* the match compiler *)
 
-  fun refineConstraint r (vcon, arity) (constraint as (pi, pattern)) = 
+  fun refineConstraint r (vcon, arity) (constraint as (pi', pattern)) = 
     (case maybeConstructed constraint
       of SOME (path, vcon', pats) => 
-        if pi <> REGISTER r then 
-           COMPATIBLE [(pi, pattern)] 
+        if pi' <> REGISTER r then 
+           COMPATIBLE [(pi', pattern)] 
         else if vcon = vcon' andalso arity = List.length pats then 
            COMPATIBLE (ListUtil.mapi (fn (i, p) => (CHILD (r, i + 1), p)) pats)
         else 
            INCOMPATIBLE
        | NONE => COMPATIBLE [constraint])
-
-
-      (* let fun matchApplication (vc, arity) (APPLY (vc', pats)) = 
-                if vc = vc' andalso arity = List.length pats then 
-                    let val patPathPairs = ListUtil.mapi (fn (p, i) => (p, CHILD (r, i + 1))) pats
-                    in COMPATIBLE patPathPairs
-                    end
-                else INCOMPATIBLE
-            | matchApplication (vc, arity) _ = Impossible.impossible
-    
-    | refineConstraint r c (pi, pattern) = 
-      if pi <> REGISTER r then COMPATIBLE [(pi, pattern)] else INCOMPATIBLE *)
 
   val _ = refineConstraint :
         register -> labeled_constructor -> constraint -> constraint list compatibility
@@ -171,13 +157,20 @@ struct
 
 
 (* frontier is the part of the scruity you haven't matched yet *)
+(* TODO honestly i have no idea if this is correct; it matches my thoughts but
+   it might be a fallacy that if it typechecks it's right *)
+  fun refineFrontier r labeled_con (F (thing, constraints)) = 
+    let val all_constraints = 
+     compatibilityConcat (List.map (refineConstraint r labeled_con) constraints)
+    in case all_constraints
+         of COMPATIBLE cs => SOME (F (thing, cs))
+          | INCOMPATIBLE => NONE
+    end
 
-
-  val refineFrontier :
+  val _ = refineFrontier :
         register -> labeled_constructor -> 'a frontier -> 'a frontier option
       (* returns the refinement of the given frontier, if compatible
        *)
-    = fn _ => Impossible.exercise "refineFrontier"
 
   fun decisionTree _ =
     Impossible.exercise "decisionTree"

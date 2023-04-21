@@ -114,16 +114,7 @@ static struct count { // things that can be counted on lists
     int pages;
   } available; // this is free space; there aren't any objects
 } count; // C semantics guarantee all 0 at startup
-static struct count { // things that can be counted on lists
-  struct {
-    int pages;
-    int objects;         // number of objects allocated
-    int64_t bytes_requested; // number of bytes requested for those objects
-  } current;
-  struct {
-    int pages;
-  } available; // this is free space; there aren't any objects
-} count; // C semantics guarantee all 0 at startup
+
 
 /* TERMINOLOGY AND INVARIANTS:
 
