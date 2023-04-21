@@ -1075,7 +1075,7 @@ fun setup_error_format interactivity =
 local
   val throttleCPU = case OS.Process.getEnv "BPCOPTIONS"
                       of SOME "nothrottle" => false
-                       | _ => true
+                       | _ => not (String.isSuffix "vscheme.opt" (CommandLine.name ()))
   val defaultRecursionLimit = 6000 (* about 1/5 of 32,000? *)
   val recursionLimit = ref defaultRecursionLimit
   val evalFuel       = ref 1000000
