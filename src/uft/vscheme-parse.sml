@@ -251,7 +251,84 @@ struct
 
   fun l1 arityx K = arityx (single o K)
 
-  local
+  local  (* record desugaring, uScheme style *) 
+    fun nullp x = S.APPLY(S.VAR "null?", [x])
+    fun pairp x = S.APPLY(S.VAR "pair?", [x])
+    val cons = fn (x, xs) => VSchemeUtils.cons x xs
+
+        fun desugarRecord _ recname fieldnames =
+              recordConstructor recname fieldnames ::
+              recordPredicate recname fieldnames ::
+              recordAccessors recname 0 fieldnames @
+              recordMutators recname 0 fieldnames
+        and recordConstructor recname fieldnames = 
+              let val con = "make-" ^ recname
+                  val formals = map (fn s => "the-" ^ s) fieldnames
+                  val body = cons (S.LITERAL (S.SYM con), varlist formals)
+              in  S.DEFINE (con, (formals, body))
+              end
+        and recordPredicate recname fieldnames =
+              let val tag = S.SYM ("make-" ^ recname)
+                  val predname = recname ^ "?"
+                  val r = S.VAR "r"
+                  val formals = ["r"]
+                  val good_car = S.APPLY (S.VAR "=", [VSchemeUtils.car r, S.LITERAL tag])
+                  fun good_cdr looking_at [] = nullp looking_at
+                    | good_cdr looking_at (_ :: rest) =
+                        and_also (pairp looking_at, good_cdr (VSchemeUtils.cdr looking_at) rest)
+                  val body =
+                    and_also (pairp r, and_also (good_car, good_cdr (VSchemeUtils.cdr r) fieldnames))
+              in  S.DEFINE (predname, (formals, body))
+              end
+        and recordAccessors recname n [] = []
+          | recordAccessors recname n (field::fields) =
+              let val predname = recname ^ "?"
+                  val accname = recname ^ "-" ^ field
+                  val formals = ["r"]
+                  val thefield = VSchemeUtils.car (cdrs (n+1, S.VAR "r"))
+                  val body = S.IFX ( S.APPLY (S.VAR predname, [S.VAR "r"])
+                                 , thefield
+                                 , error (S.SYM (concat ["value-passed-to-"
+                                               , accname
+                                               , "-is-not-a-"
+                                               , recname
+                                               ])))
+              in  S.DEFINE (accname, (formals, body)) ::
+                  recordAccessors recname (n+1) fields
+              end
+          and recordMutators recname n [] = []
+            | recordMutators recname n (field::fields) =
+                let val predname = recname ^ "?"
+                    val mutname = "set-" ^ recname ^ "-" ^ field ^ "!"
+                    val formals = ["r", "v"]
+                    val setfield = VSchemeUtils.setcar (cdrs (n+1, S.VAR "r")) (S.VAR "v")
+                    val body = S.IFX ( S.APPLY (S.VAR predname, [S.VAR "r"])
+                                   , setfield
+                                   , error (S.SYM (concat ["value-passed-to"
+                                                 , mutname
+                                                 , "-is-not-a-"
+                                                 , recname
+                                                 ])))
+                in  S.DEFINE (mutname, (formals, body)) ::
+                    recordMutators recname (n+1) fields
+                end
+        and and_also (p, q) = S.IFX (p, q, S.LITERAL (S.BOOLV false))
+        and cdrs (0, xs) = xs
+          | cdrs (n, xs) = VSchemeUtils.cdr (cdrs (n-1, xs))
+
+        and list [] = S.LITERAL S.EMPTYLIST
+          | list (v::vs) = cons (S.LITERAL v, list vs)
+        and error x = S.APPLY (S.VAR "error", [S.LITERAL x])
+
+        and varlist [] = S.LITERAL S.EMPTYLIST
+          | varlist (x::xs) = cons (S.VAR x, varlist xs)
+  in 
+    val desugarRecordLists = desugarRecord
+  end
+  
+
+
+  local  (* record desugaring, constructed data and case expressions *) 
     fun nullp x = S.APPLY(S.VAR "null?", [x])
     fun pairp x = S.APPLY(S.VAR "pair?", [x])
     val cons = fn (x, xs) => VSchemeUtils.cons x xs
@@ -326,8 +403,12 @@ struct
         and varlist [] = S.LITERAL S.EMPTYLIST
           | varlist (x::xs) = cons (S.VAR x, varlist xs)
   in 
-    val desugarRecord = desugarRecord
+    val desugarRecordCase = desugarRecord
   end
+
+
+  val desugarRecord =
+      if useVcons then desugarRecordCase else desugarRecordLists
 
 
   fun single x = [x]
