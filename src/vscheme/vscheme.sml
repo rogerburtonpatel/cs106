@@ -2432,8 +2432,6 @@ val primitiveBasis =
 , "    (if pair"
 , "        (set-cdr! pair v)"
 , "        (set-cdr! t (cons (cons k v) (cdr t))))))"
-, ""
-, "(define non-atomic (_ v) v)"
 
                       ]
 
