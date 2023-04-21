@@ -1,0 +1,49 @@
+.load module 20
+.load 0 function 2 19
+null? 3 2
+if 3
+goto 14
+getglobal 3 string 7 114 101 118 101 114 115 101
+getglobal 4 string 5 102 111 108 100 108
+.load 5 function 2 5
+getclslot 5 0 0
+copy 6 1
+call 5 5 6
+cons 0 5 2
+return 0
+mkclosure 5 5 1
+setclslot 5 1 0
+getglobal 6 string 5 108 105 115 116 49
+copy 7 1
+car 8 2
+call 7 7 8
+call 6 6 7
+cdr 7 2
+call 4 4 7
+tailcall 3 4
+goto 2
+loadliteral 0 emptylist
+return 0
+setglobal 0 string 3 109 97 112
+getglobal 0 string 3 109 97 112
+.load 1 function 1 2
+not 0 1
+return 0
+loadliteral 2 emptylist
+call 0 0 2
+check 0 string 13 40 109 97 112 32 110 111 116 32 39 40 41 41
+loadliteral 0 emptylist
+expect 0 string 3 39 40 41
+getglobal 0 string 3 109 97 112
+.load 1 function 1 2
+not 0 1
+return 0
+loadliteral 2 string 2 35 116
+loadliteral 3 emptylist
+cons 2 2 3
+call 0 0 2
+check 0 string 15 40 109 97 112 32 110 111 116 32 39 40 35 116 41 41
+loadliteral 0 string 2 35 102
+loadliteral 1 emptylist
+cons 0 0 1
+expect 0 string 5 39 40 35 102 41

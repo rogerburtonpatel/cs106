@@ -52,7 +52,6 @@ struct
       (case (P.name p, ns, v)
         of ("getglobal", [], K.STRING s)  => S.VAR s
          | ("setglobal", [n], K.STRING s) => S.SET (s, S.VAR n)
-                              (* todo want to ask about this one *)
          | (pn, names, v)       => S.APPLY (S.VAR pn, (List.map S.VAR names)
                                                        @ [S.LITERAL (value v)]))
     | exp (K.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)
@@ -80,6 +79,9 @@ struct
               S.LETX (S.LETREC, map (fn (name, ((bindings, body), captured)) => 
                                     (name, exp body)) 
                                     bindings, exp body)
+                                    
+    | exp (K.BLOCK _) = Impossible.exercise "embed K.BLOCK"
+    | exp (K.SWITCH_VCON _) = Impossible.exercise "embed K.SWITCH_VCON"
 
   
   val _ = exp : VScheme.name KNormalForm.exp -> VScheme.exp 

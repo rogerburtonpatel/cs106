@@ -124,11 +124,11 @@ structure VSchemeUtils : sig
 
   val setcar : exp -> exp -> exp
 
-  val freeIn : UnambiguousVScheme.exp -> string -> bool
-
   val constructed : Pattern.vcon -> exp list -> exp
   val block : exp list -> exp
   val switchVcon : exp -> (VScheme.value * exp) list -> exp option -> exp
+  val withJoinPoints : exp list -> exp -> exp
+  val joinAt : int -> exp
 
 end
   =

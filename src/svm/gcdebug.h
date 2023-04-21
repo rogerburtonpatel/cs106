@@ -1,6 +1,10 @@
 #ifndef GCDEBUG_INCLUDED
 #define GCDEBUG_INCLUDED
 
+// #ifdef __APPLE__
+// #define NOVALGRIND
+// #endif
+
 #include <stdlib.h>
 
 void gc_debug_init(void); // required before using other things in this interface

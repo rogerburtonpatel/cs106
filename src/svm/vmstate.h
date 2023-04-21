@@ -25,10 +25,19 @@
 
 typedef struct VMState *VMState;
 
+/* Invariants:
+   While the mutator is running:
+   Before the garbace collector runs:
+   .fun is the currently running function
+   .counter is how far the program counter is relative to the start
+    of .fun's instruction stream
+   .R_window_start is the distance from the local variable 'registers'
+    in vmrun and this .register field. 
+*/
 struct VMState {
 
-  Instruction *instructions;
-  Instruction *pc;
+  struct VMFunction *fun;
+  int64_t counter;
   Value registers[NUM_REGISTERS];
   Value literals[MAX_LITERALS];
   
@@ -42,6 +51,9 @@ struct VMState {
   uint16_t num_globals;
 
    // store is the vmheap
+
+   Value awaiting_expect;  // value passed to the pending `check`, if any
+
 };
 
 VMState newstate();       // allocate and initialize (to empty)
@@ -79,7 +91,7 @@ const char *global_name(VMState state, unsigned index);
 
 
 /* some nice error functions */
-extern void nilfunerror(VMState vm, const char *funname, 
+extern void not_a_function_error(VMState vm, const char *funname, 
                  const char *offending_op, uint8_t r0);
 
 #endif /* VMSTATE_INCLUDED */

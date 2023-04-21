@@ -107,6 +107,7 @@ struct
           = NONE                  otherwise
      *)
     = fn (pi, P.APPLY (vcon, pats)) => SOME (pi, vcon, pats)
+       | (pi, P.INT k) => SOME (pi, Int.toString k, [])
        | _ => NONE
 
 
@@ -137,14 +138,40 @@ struct
 
   (* the match compiler *)
 
-  val refineConstraint :
+  fun refineConstraint r (vcon, arity) (constraint as (pi, pattern)) = 
+    (case maybeConstructed constraint
+      of SOME (path, vcon', pats) => 
+        if pi <> REGISTER r then 
+           COMPATIBLE [(pi, pattern)] 
+        else if vcon = vcon' andalso arity = List.length pats then 
+           COMPATIBLE (ListUtil.mapi (fn (i, p) => (CHILD (r, i + 1), p)) pats)
+        else 
+           INCOMPATIBLE
+       | NONE => COMPATIBLE [constraint])
+
+
+      (* let fun matchApplication (vc, arity) (APPLY (vc', pats)) = 
+                if vc = vc' andalso arity = List.length pats then 
+                    let val patPathPairs = ListUtil.mapi (fn (p, i) => (p, CHILD (r, i + 1))) pats
+                    in COMPATIBLE patPathPairs
+                    end
+                else INCOMPATIBLE
+            | matchApplication (vc, arity) _ = Impossible.impossible
+    
+    | refineConstraint r c (pi, pattern) = 
+      if pi <> REGISTER r then COMPATIBLE [(pi, pattern)] else INCOMPATIBLE *)
+
+  val _ = refineConstraint :
         register -> labeled_constructor -> constraint -> constraint list compatibility
       (* assuming register r holds C/n,
             refineConstraint r C/n (π, p)
          returns the refinement of constraint (π, p),
          provided p is compatible with C/n at π
        *)
-    = fn _ => Impossible.exercise "refineConstraint (in lab)"
+
+
+(* frontier is the part of the scruity you haven't matched yet *)
+
 
   val refineFrontier :
         register -> labeled_constructor -> 'a frontier -> 'a frontier option

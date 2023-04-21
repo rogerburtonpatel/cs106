@@ -138,32 +138,40 @@ Instruction parseR1GLO(VMState vm, Opcode opcode, Tokens operands, unsigned *max
 }
 
 /* Get Literal Value from the token stream and return corresponding Value */
-static Value get_literal(Tokens *litp, const char *input) {
-
+static Value get_literal(Tokens *litp, const char *input)
+{
     int tokenType = first_token_type(*litp);
-
-    if (tokenType == TNAME) {
-        Name name = tokens_get_name(litp, input);
-        if (name == truename) {
-            return mkBooleanValue(true);
-        } else if (name == falsename) {
-            return mkBooleanValue(false);
-        } else if (name == nilname) {
-            return nilValue;
-        } else if (name == emptyname) {
-            return emptylistValue;
-        } else if (name == stringname) {
-            uint32_t len = tokens_get_int(litp, input);
-            StringBuffer sb = Vmstring_buffer(len);
-            for (uint32_t i = 0; i < len; ++i) {
-                Vmstring_putc(sb, tokens_get_byte(litp, input));
+    switch (tokenType) {
+        case TNAME: {
+            Name name = tokens_get_name(litp, input);
+            if (name == truename) {
+                return mkBooleanValue(true);
+            } else if (name == falsename) {
+                return mkBooleanValue(false);
+            } else if (name == nilname) {
+                return nilValue;
+            } else if (name == emptyname) {
+                return emptylistValue;
+            } else if (name == stringname) {
+                uint32_t len = tokens_get_int(litp, input);
+                StringBuffer sb = Vmstring_buffer(len);
+                for (uint32_t i = 0; i < len; ++i) {
+                    Vmstring_putc(sb, tokens_get_byte(litp, input));
+                }
+                VMString vstr = Vmstring_of_buffer(&sb);
+                return mkStringValue(vstr);
+            } else {
+                assert(0);
             }
-            VMString vstr = Vmstring_of_buffer(&sb);
-            return mkStringValue(vstr);
+            break;
         }
-    } else if (tokenType == TU32) {
-        return mkNumberValue((Number_T) tokens_get_int(litp, input));
+        case TU32:
+        /* TODO: ask about this! */
+            return mkNumberValue((Number_T) 
+                                 (int32_t)tokens_get_int(litp, input));
+        case TDOUBLE:
+          return mkNumberValue((Number_T)tokens_get_signed_number(litp, input));
+        default:
+            assert(0);    
     }
-  // fall-through for TDOUBLE type
-    return mkNumberValue((Number_T) tokens_get_signed_number(litp, input));
 }

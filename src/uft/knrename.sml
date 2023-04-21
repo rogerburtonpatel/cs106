@@ -55,10 +55,18 @@ struct
                             (fn (n, cl) => pair <$> f n <*> clRename f cl) 
                             bindings
         in curry K.LETREC <$> bindings' <*> mapx f body
-        end)
+        end
+      | K.BLOCK xs => K.BLOCK <$> errorList (map f xs)
+      | K.SWITCH_VCON (x, choices, fallthru) =>
+          let fun choice (pat, e) = pair pat <$> mapx f e
+          in  curry3 K.SWITCH_VCON <$> f x
+                                  <*> Error.mapList choice choices
+                                  <*> mapx f fallthru
+          end)
         (* Thank you matt *)
     and clRename f ((formals, body), captured) = 
       curryClBody <$> Error.mapList f formals <*> mapx f body <*> Error.mapList f captured
+
 (* TODO- fix this. Thanks matt! *)
 
 end

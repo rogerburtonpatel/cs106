@@ -25,6 +25,15 @@ structure KNormalForm = struct
     | CAPTURED of int
     | CLOSURE  of 'a closure
     | LETREC of ('a * 'a closure) list * 'a exp
+    | BLOCK of 'a list
+       (* allocate a block and initialize each slot with the
+          corresponding register *)
+
+    | SWITCH_VCON of 'a * ((Pattern.vcon * int) * 'a exp) list * 'a exp
+       (* given SWITCH_VCON (r, choices, other), if the value in register
+          r matches any (vcon, k) pair, then evaluate the corresponding
+          expression, otherwise evaluate the other expression *)
+
   withtype 'a closure = ('a list * 'a exp) * 'a list
     (* (funcode, registers holding values of captured variables) *)  
   and 'a funcode = 'a list * 'a exp  (* lambda with no free names *)

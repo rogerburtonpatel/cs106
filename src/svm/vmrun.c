@@ -19,6 +19,7 @@
 #include "value.h"
 #include "vmstate.h"
 #include "vmrun.h"
+#include "vmsizes.h"
 
 #include "print.h"
 
@@ -35,8 +36,21 @@
 #define UY uY(curr_instr)
 #define UZ uZ(curr_instr)
 
+#define VMSAVE() \
+    (vm->fun     = fun, \
+     vm->counter = pc - vm->fun->instructions, \
+     vm->R_window_start = registers - vm->registers)
+
+#define VMLOAD() \
+    (fun = vm->fun, \
+     pc  = vm->fun->instructions + vm->counter, \
+     registers = vm->registers + vm->R_window_start)
+
+#define GC() (VMSAVE(), gc(vm), VMLOAD())
+
 extern int ntests, npassed;
 extern jmp_buf testjmp;
+
 
 
 extern int setjmp_proxy(jmp_buf t); /* see what a difference this makes! */
@@ -45,8 +59,12 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     const char *dump_call =  svmdebug_value("call");
 
     Instruction *pc;
+    /* Invariant: registers always = vm->registers + vm->R_window_start */
     Value *registers;
     Value v;
+    /* Invariant: vm->fun and fun are always the currently running function
+       before gargage collection, vm->fun */
+    vm->fun = fun;
 
     if (fun->size < 1) {
         return;
@@ -56,9 +74,13 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
         case INITIAL_CALL:;
             /* Thank you to Norman for this debugging infrastructure */
             (void) dump_call;  // make it OK not to use `dump_call`
-            pc = vm->instructions = fun->instructions;
-            registers = vm->registers; 
-            /* registers always = vm->registers + vm->R_window_start */
+            VMLOAD();
+            Activation base_record = 
+                {.fun = fun,
+                 .counter        = 0,
+                 .R_window_start = 0,
+                 .dest_reg_idx   = 0,};
+            vm->Stack[vm->stackpointer++] = base_record;
             break;
         case ERROR_CALL:;
             if (error_mode() == TESTING) {
@@ -66,7 +88,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             Activation a = vm->Stack[--vm->stackpointer];
             vm->R_window_start = a.R_window_start;
             registers = vm->registers + a.R_window_start;
-            pc = a.resume_loc + 1;
+            pc = &(a.fun->instructions[0]) + a.counter + 1;
             break;
             } else {
                 fprintf(stderr, "Stack trace: some day!\n");
@@ -78,14 +100,13 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     }
 
 
-
     while (1) {
         Instruction curr_instr = *pc;
 
         if (CANDUMP && dump_decode) {
             idump(stderr, 
             vm, 
-            ((int64_t)pc - (int64_t)vm->instructions) / 4, 
+            ((int64_t)pc - (int64_t)&(vm->Stack[0].fun->instructions[0])) / 4, // TODO change this nonsense
             curr_instr, 
             0, 
             registers + UX, 
@@ -98,7 +119,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 /* I'm ok with having a counter variable external to the vmstate
                    and storing it when we Halt, because it saves a dereference
                    every time, and we only Halt once. */
-                vm->pc = pc;
+                VMLOAD();
                 return;
             case Print:
                 print("%v", registers[UX]);
@@ -142,9 +163,10 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 }
 
                 uint8_t r0 = UX;
-                if (registers[r0].tag == Nil) {
-                    const char *funname = lastglobalset(vm, r0, fun, pc);
-                    nilfunerror(vm, funname, "check-error", r0);
+                if (registers[r0].tag != VMFunction) {
+                    const char *funname = 
+                                        lastglobalset(vm, r0, vm->Stack[0].fun, pc);
+                    not_a_function_error(vm, funname, "check-error", r0);
                 }
                 add_test();
                 enter_check_error();
@@ -157,12 +179,19 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     }
 
                     struct VMFunction *func = AS_VMFUNCTION(vm, registers[r0]);
+                    (void)GCVALIDATE(func);
                     assert(func->arity == 0); /* this can NEVER have args */
                     /* push special frame */
                     // TODO talk about this funky line- *pc instead of 
                     // curr_instr so it fits under 80 cols!
-                    Activation a = {pc, vm->R_window_start, -(int)uYZ(*pc)};
-                    vm->Stack[vm->stackpointer++] = a;
+                    Activation error_frame = 
+                            {.fun = fun, 
+                            .counter        = pc - fun->instructions, 
+                            .R_window_start = vm->R_window_start, 
+                            .dest_reg_idx   = -(int)uYZ(*pc)};
+
+                    vm->Stack[vm->stackpointer++] = error_frame;
+                    vm->fun = fun = func;
                     pc = &func->instructions[0] - 1;
                 break;
             }
@@ -200,7 +229,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
 
             case IDiv: {
                 uint8_t rZ = UZ;
-                Number_T d = (int64_t)AS_NUMBER(vm, registers[rZ]);
+                int64_t d = (int64_t)AS_NUMBER(vm, registers[rZ]);
                 if (d == 0) {
                     runerror(vm, "division by zero");
                 }
@@ -338,13 +367,9 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             case Cons: {
                 v        = registers[UY];
                 Value v2 = registers[UZ];
-                /* typechecking */
-                if (v2.tag != Emptylist) {
-                    // TODO CHANGE THIS REDUNDANCY
-                    struct VMBlock *oldcell = AS_CONS_CELL(vm, v2);
-                    v2 = mkConsValue(oldcell);
-                }
-                VMNEW(struct VMBlock *, cell, sizeof(int) + 2 * sizeof(Value));
+                // never forget the pain this caused v
+                // VMNEW(struct VMBlock *, cell, sizeof(int) + 2 * sizeof(Value));
+                VMNEW(struct VMBlock *, cell, vmsize_cons());
                 cell->nslots   = 2;
                 cell->slots[0] = v;
                 cell->slots[1] = v2;
@@ -372,13 +397,17 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 }
                 break;
             }
-            case Goto:
-                pc += 1 + iXYZ(curr_instr); 
+            case Goto: {
+                int32_t offset = iXYZ(curr_instr);
+                if (gc_needed && offset < 0) {
+                    GC();
+                }
+                pc += 1 + offset; 
                 continue; // follows the semantics by adding 1 + for the normal
                           // counter increment, then adding the goto value, 
                           // then skipping the increment with continue
 
-
+            }
             /* FUNCTIONS */
             case Return: {
                 if (vm->stackpointer == 0) {
@@ -386,27 +415,30 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                                  "from non-function.", UX);
                 }
 
-                Activation a = vm->Stack[--vm->stackpointer];
+                Activation callee = vm->Stack[--vm->stackpointer];
 
                 Value return_value = registers[UX];
 
                 // restore register window state and current instruction
-                vm->R_window_start = a.R_window_start;
-                registers = vm->registers + a.R_window_start;
-                pc = a.resume_loc;
+                vm->R_window_start = callee.R_window_start;
+                registers = vm->registers + callee.R_window_start;
+                vm->fun = fun = callee.fun;
+                pc = &(callee.fun->instructions[0]) + callee.counter;
 
-                if (a.dest_reg_idx < 0) {
+                if (callee.dest_reg_idx < 0) {
                 /* we've failed a check-error test if this happens. */
-                    int slot = -a.dest_reg_idx;
+                    int slot = -callee.dest_reg_idx;
                     v = literal_value(vm, (uint16_t)slot);
                     fail_check_error(vm, AS_CSTRING(vm, v));
                 } else {
-                    registers[a.dest_reg_idx] = return_value;
+                    registers[callee.dest_reg_idx] = return_value;
                 }
                 break;
             }
             // TODO pull out more error messaging into vmstate helper funs
             case Call: {
+                if (gc_needed)
+                    GC();
                 uint8_t r0 = UY;
                 uint8_t rn = UZ;
                 uint8_t n  = rn - r0;
@@ -422,15 +454,13 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     case VMClosure:
                         func = registers[r0].hof->f;
                         break;
-                    case Nil:;
-                        func = NULL; /* stops the compiler from complaining */
-                        const char *funname = lastglobalset(vm, r0, fun, pc);
-                        nilfunerror(vm, funname, "call", r0);
-                        break;
                     default:;
-                    /* this call to AS_FUNCTION will give us a nice typerror */
-                    func = AS_VMFUNCTION(vm, registers[r0]);
+                        func = NULL; /* stops the compiler from complaining */
+                        const char *funname = lastglobalset(vm, r0, vm->Stack[0].fun, pc);
+                        not_a_function_error(vm, funname, "call", r0);
+                        break;
                 }
+                (void)GCVALIDATE(func);
                 /* We'd like to do this up top, but we need to make sure the 
                 function exists first so we can print a helpful 
                 debug message with a name we know to be valid! */
@@ -457,25 +487,44 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                         " caused a Register Window Overflow", r0);
                 }
 
-                /* call stack save */
-                Activation a = {pc, vm->R_window_start, 
-                                 dest_reg_idx};
-                vm->Stack[vm->stackpointer++] = a;
 
-                assert(func->arity == n);
+
+                Activation new_record = 
+                            {.fun = fun, 
+                            .counter        = pc - fun->instructions, 
+                            .R_window_start = vm->R_window_start, 
+                            .dest_reg_idx   = dest_reg_idx};
+            
+                vm->Stack[vm->stackpointer++] = new_record;
+
+                if (func->arity != n) {
+                    if (error_mode() == NORMAL) {
+                        fprintf(stderr, "Offending function:");
+                        fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                        fprintf(stderr, "\n");
+                    }
+                    runerror(vm, 
+                        "attempted to call function in register %hhu"
+                        " with %d arguments; the function's arity is %d", 
+                        r0, n, func->arity);
+                }
 
                 /* move the register window */
                 vm->R_window_start += r0;
                 registers = vm->registers + vm->R_window_start;
 
                /*  transfer control= move instruction pointer to start of 
-                function instruction stream */
+                function instruction stream, 
+                and set current running function to this one */
+                vm->fun = fun = func;
                 pc = &func->instructions[0] - 1; /* account for increment */
 
                 /* return will undo this based on the activation!  */
                 break;
             }
             case Tailcall: {
+                if (gc_needed)
+                    GC();
                 uint8_t r0 = UX;
                 uint8_t rn = UY;
                 uint8_t n  = rn - r0;
@@ -489,15 +538,13 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     case VMClosure:
                         func = registers[r0].hof->f;
                         break;
-                    case Nil:;
+                    default:;
                         func = NULL; /* stops the compiler from complaining */
                         const char *funname = lastglobalset(vm, r0, fun, pc);
-                        nilfunerror(vm, funname, "call", r0);
+                        not_a_function_error(vm, funname, "call", r0);
                         break;
-                    default:;
-                    /* this call to AS_FUNCTION will give us a nice typerror */
-                    func = AS_VMFUNCTION(vm, registers[r0]);
                 }
+                (void)GCVALIDATE(func);
                                        
                 if (rn + vm->R_window_start >= NUM_REGISTERS) {
                     if (error_mode() == NORMAL) {
@@ -509,25 +556,39 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                       "attempting to tailcall function in register %hhu"
                       "caused a Register Window Overflow", r0);
                 }
-
+                
                 /* copy over function and argument registers  */
                 for (int i = 0; i <= n; ++i) {
                     registers[i] = registers[r0 + i];
                 }
 
-                assert(func->arity == n);
+                if (func->arity != n) {
+                    if (error_mode() == NORMAL) {
+                        fprintf(stderr, "Offending function:");
+                        fprintfunname(stderr, vm, mkVMFunctionValue(func));
+                        fprintf(stderr, "\n");
+                    }
+                    runerror(vm, 
+                        "attempted to call function in register %hhu"
+                        " with %d arguments; the function's arity is %d", 
+                        r0, n, func->arity);
+                }
 
+               /*  transfer control= move instruction pointer to start of 
+                function instruction stream, 
+                and set current running function to this one */
+                vm->fun = fun = func;
                 pc = &func->instructions[0] - 1; /* account for increment */
-
 
                 break;
             }
 
             case MkClosure: {
                 struct VMFunction *f = AS_VMFUNCTION(vm, registers[UY]);
+                (void)GCVALIDATE(f);
                 size_t nslots = UZ;
                 VMNEW(struct VMClosure *, cl, 
-                      sizeof(*cl) + (sizeof(Value) * nslots));
+                      vmsize_closure(nslots));
                 cl->f = f;
                 cl->nslots = nslots;
                 registers[UX] = mkClosureValue(cl);
@@ -535,19 +596,22 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             }
             case SetClSlot: {
                 struct VMClosure *cl = AS_CLOSURE(vm, registers[UX]);
+                (void)GCVALIDATE(cl);
                 assert(UZ < cl->nslots);
-                cl->captured[UZ] 
-                = registers[UY];
+                cl->captured[UZ] = registers[UY];
                 break;
             }
             case GetClSlot: {
                 struct VMClosure *cl = AS_CLOSURE(vm, registers[UY]);
+                (void)GCVALIDATE(cl);
                 assert(UZ < cl->nslots);
-                registers[UX] = 
-                    cl->
-                    captured[UZ];
+                registers[UX] = cl-> captured[UZ];
                 break;
             }
+            /* R0- MANUAL GARBAGE COLLECTION */
+            case Gc: 
+                GC();
+                break;
 
             default:
                 printf("Opcode Not implemented!\n");

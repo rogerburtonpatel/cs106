@@ -12,7 +12,15 @@
 #include "print.h"
 #include "svmdebug.h"
 #include "value.h"
+#include "gcdebug.h"
+#include "print.h"
+#include "svmdebug.h"
+#include "value.h"
 #include "vmheap.h"
+#include "vmsizes.h"
+#include "vstack.h"
+#include "vmstate.h"
+#include "vtable.h"
 #include "vmsizes.h"
 #include "vstack.h"
 #include "vmstate.h"
@@ -46,7 +54,7 @@
 /********************************* HEAP PAGES ********************************/
 
 #ifdef SMALLHEAP
-  #define PAGESIZE 4096   // bytes in one page
+  #define PAGESIZE 8192   // bytes in one page
      // if you don't have any big functions, shrink this number!
 #else
   #define PAGESIZE (64*1024)   // bytes in one page
@@ -86,6 +94,9 @@ Page current;
   //
   // Initialized by `fresh_allocation_page`, and may be updated
   // by an allocation.
+  //
+  // Initialized by `fresh_allocation_page`, and may be updated
+  // by an allocation.
 
 Page available;
   // empty pages that can be used to satisfy future allocation requests
@@ -93,6 +104,16 @@ Page available;
 static char *hp, *heaplimit;
   // if not NULL, pointers into current page
 
+static struct count { // things that can be counted on lists
+  struct {
+    int pages;
+    int objects;         // number of objects allocated
+    int64_t bytes_requested; // number of bytes requested for those objects
+  } current;
+  struct {
+    int pages;
+  } available; // this is free space; there aren't any objects
+} count; // C semantics guarantee all 0 at startup
 static struct count { // things that can be counted on lists
   struct {
     int pages;
@@ -275,6 +296,9 @@ static inline void *alloc_small(size_t n) {
   // allocate a small object
 
   // because of alignment, actual size may be larger than requested size
+  // allocate a small object
+
+  // because of alignment, actual size may be larger than requested size
   assert(n > 0);
   long nbytes = (long) roundup(n, sizeof (union align));
 
@@ -306,6 +330,9 @@ static inline void *alloc_small(size_t n) {
 
 
 void *vmalloc_raw(size_t n) {
+  if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
+    fprintf(stderr, "Requested %zu bytes in vmalloc_raw\n", n);
+  }
   // the external interface; does not set any GC metadata
   if (n <= SMALL_OBJECT_LIMIT) {
     return alloc_small(n);
@@ -616,96 +643,151 @@ static void scan_forwarded_payload(Value v) {
 
 static void scan_activation(struct Activation *p) {
   assert(p);
-  assert(0 && "you have to implement this one");
+  p->fun = forward_function(p->fun);
 }
 
 static void scan_vmstate(struct VMState *vm) {
   assert(vm);
-  assert(0 && "you have to implement this one");
   // see book chapter page 265 about roots
-
   // roots: all registers that can affect future computation
   //    (these hold local variables and formal paramters as on page 265)
   //    (hint: don't scan high-numbered registers that can't
   //     affect future computations because they aren't used)
+  Value *registers = vm->registers;
+  Value *stale_start = registers + vm->R_window_start + vm->fun->nregs;
+  for (Value *v = registers
+       ; v < stale_start
+       ; v++) {
+        scan_value(v);
+       }
+  for (Value *v = stale_start
+       ; v < registers + NUM_REGISTERS
+       ; v++) {
+        *v = nilValue;
+       }
 
   // root: any value that may be awaiting the `expect` primitive
-
+  scan_value(&(vm->awaiting_expect));
   // roots: all literal slots that are in use
-
+  // TODO ASK NORMAN: should i pull these values out of pointers explicitly, 
+  // or is the compiler smart enough to put loop variables into a register?
+  uint16_t num_literals = vm->num_literals;
+  for (uint16_t i = 0; i < num_literals; i++) {
+    scan_value(&(vm->literals[i]));
+  }
   // roots: all global-variable slots that are in use
-
+  uint16_t num_globals = vm->num_globals;
+  for (uint16_t i = 0; i < num_globals; i++) {
+    scan_value(&(vm->globals[i]));
+  }
   // roots: each function on the call stack
-  (void) scan_activation; // likely to be useful here
-
+  uint16_t stackpointer = vm->stackpointer;
+  for (uint16_t i = 0; i < stackpointer; i++) {
+    scan_activation(&(vm->Stack[i]));
+  }
   // root: the currently running function (which might not be on the call stack)
-
+  vm->fun = forward_function(vm->fun); // BUG LINE: didn't have assignment
   // root: any other field of `struct VMState` that could lead to a `Value`
 
 }
+// gchere. Todo remove
+extern void gc(struct VMState *vm)
+{
+    assert(vm);
 
-extern void gc(struct VMState *vm) {
-  assert(vm);
-  assert(0 && "gc left as exercise");
+    /* Narrative sketch of the algorithm (see page 266): */
+    /*  1. Set flag `gc_in_progress` (so statistics are tracked correctly). */
+    
+    gc_in_progress = true;
 
-  /* Narrative sketch of the algorithm (see page 266):
+    /*  2. Set `availability_floor` to be half the total number of pages
+           on the VM heap (rounded up). */
+    
+    availability_floor = (count.current.pages + count.available.pages + 1) / 2;
 
-      1. Capture the list of allocated pages from `current`,
-         and reset `current` include just one available page.
-         I recommend capturing the list of allocated pages
-         in a local variable called `fromspace`.
+    /*  3. Capture the list of allocated pages from `current`,
+           and reset `current` include just one available page.
+           I recommend capturing the list of allocated pages
+           in a local variable called `fromspace`. */
+    
+    int old_nobjects = count.current.objects;
+    int old_nbytes_requested = count.current.bytes_requested;
+    Page fromspace = current;
+    count.current.pages = 0;
+    count.current.objects = 0;
+    count.current.bytes_requested = 0;
+    current = NULL;
+    take_available_page();
 
-      2. Set flag `gc_in_progress` (so statistics are tracked correctly).
+    /* 4. Color all the roots gray using `scan_vmstate`. */
+    
+    scan_vmstate(vm);
 
-      3. Set `availability_floor` to be half the total number of pages
-         on the VM heap (rounded up).
+    /* 5. While the gray stack isn't empty, pop a value and scan its payload. */
+    
+    while (!VStack_isempty(gray)) {
+        scan_forwarded_payload(VStack_pop(gray));
+    }
 
-      4. Color all the roots gray using `scan_vmstate`.
+    /* 6. Call `VMString_drop_dead_strings()`. */
+    VMString_drop_dead_strings();
 
-      5. While the gray stack is not empty, pop a value and scan it.
+    /* 7. Take the pages captured in step 1 and make them available. */
+    /* roger's note: here's the to-from swap */
+    
+    int reclaimed = make_available(fromspace); 
 
-      6. Call `VMString_drop_dead_strings()`.
+    /* 8. Use `growheap` to acquire more available pages until the
+        ratio of heap size to live data meets what you get from
+        `target_gamma`.  (The amount of live data is the number of
+        pages copied to `current` in steps 3 and 4.) */
+    growheap(target_gamma(vm), count.current.pages);
 
-      7. Take the pages captured in step 1 and make them available.
+    /* 9. Update counter `total.collections` and
+        flags `gc_needed` and `gc_in_progress`. */
+    total.collections++;
+    gc_needed = gc_in_progress = false;
 
-      8. Use `growheap` to acquire more available pages until the
-         ratio of heap size to live data meets what you get from
-         `target_gamma`.  (The amount of live data is the number of
-         pages copied to `current` in steps 3 and 4.)
-
-      9. Update counter `total.collections` and
-         flags `gc_needed` and `gc_in_progress`.
-
-     10. If `svmdebug_value("gcstats")` is set and contains a + sign, 
-         print statistics as suggested by exercise 2 on page 299.
-
-   */
-
-  // functions that will be used:
-  (void) scan_vmstate;   // in step 3
-  (void) scan_value;     // in step 4
-  (void) VMString_drop_dead_strings; // in step 5
-  (void) make_available; // in step 6
-  (void) target_gamma;   // in step 7
-  (void) growheap;       // in step 7
-
-  if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
-    fprintf(stderr, "Heap contains %d pages of which %d are live (ratio %.2f)\n",
-            count.available.pages + count.current.pages, count.current.pages,
-            (double)(count.available.pages + count.current.pages) / (double) count.current.pages);
-    fprint(stderr, "%d of %d objects holding %, of %, requested bytes survived\n",
-            -1, -1, -1, -1);  // you fill in here
-    fprintf(stderr, "Survival rate is %.1f%% of objects and %.1f%% of bytes\n",
-            -1.0, -1.0);  // you fill in here
+    /* 10. If `svmdebug_value("gcstats")` is set and contains a + sign, 
+        print statistics as suggested by exercise 2 on page 299. */
+    if (svmdebug_value("gcstats") && strchr(svmdebug_value("gcstats"), '+')) {
+      fprintf(stderr, "Heap contains %d pages of which %d are live (ratio %.2f)"
+                    " after reclaiming %d pages during collection\n",
+            count.available.pages + count.current.pages, 
+            count.current.pages,
+            (double)(count.available.pages + count.current.pages) 
+          / (double) count.current.pages, reclaimed);
+      fprint(stderr, "%d of %d objects holding %, of %, "
+                   "requested bytes survived\n",
+            count.current.objects, 
+            old_nobjects, 
+            count.current.bytes_requested, 
+            old_nbytes_requested); 
+      fprintf(stderr, "Survival rate is %.1f%% "
+                      "of objects and %.1f%% of bytes\n",
+          100.0 * (double)count.current.objects / old_nobjects, 
+          100.0 * (double)count.current.bytes_requested / old_nbytes_requested); 
   }
   
 }
 
 static void growheap(double gamma, int nlive) {
-  (void) gamma;
-  (void) nlive;
-  // eventually you'll add code here to enlarge the heap
-  // and to update `availability_floor`
+  double current_gamma = ((double)count.current.pages  + 
+                                count.available.pages) / nlive;
+  bool grew = false;
+  while (current_gamma < gamma )
+        {
+          grew = true;
+          take_available_page();
+
+          current_gamma = ((double)count.current.pages  + 
+                                 count.available.pages) / nlive;
+        }
+  availability_floor = (count.current.pages + count.available.pages + 1) / 2;
+
+  if (grew && svmdebug_value("growheap"))
+    fprintf(stderr, "Grew heap to %d pages\n",
+                     count.current.pages + count.available.pages);
 }
 
 
@@ -802,7 +884,7 @@ static int make_invalid_and_stomp(Page pages) {
 
 static int make_available(Page pages) {
   int reclaimed = 0;
-  while (pages) {
+  while (pages != NULL) {
     Page p = pages;
     pages = p->link;
     VALGRIND_DESTROY_MEMPOOL(p);
@@ -837,8 +919,9 @@ void xsearch(const char *what, void *p) {
 }
 
 static Value global_gamma_value(VMState vm) {
+  (void)vm;
   // WITHOUT allocating, return the value of the global variable &gamma
-  assert(0 && vm && "Need to find the value of &gamma (nil if not set)");  
+  // assert(0 && vm && "Need to find the value of &gamma (nil if not set)");  
   return nilValue;
 }
 

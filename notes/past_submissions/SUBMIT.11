@@ -1,0 +1,65 @@
+CS 106 Homework Submission
+
+What person or group is submitting this homework?
+
+  - Roger
+
+What work are you proud of?
+
+  - Getting my SVM into ship-shape before hopelessly destroying it with the 
+    garbage collector 
+
+What code would you like help improving?  Are there bugs you'd like
+help finding during code review?
+
+  - Currently we're just buggy. My git tag valgrind-clean works great, but with
+    gc we have a heap (pun intended) of problems. 
+    I'll look later tonight when I have more time, but I've got to submit now! 
+    Current bug: alloc.scm leads to my pc jumping into space to the 'halt' at 
+    the end of a function. It'll be a gdb-kinda night; if I find it, yay! 
+
+What code, if any, would you especially like the course staff to
+review?  Why?
+
+  - I think if the problem isn't my gc and it isn't my macros, it might be in
+    scan_vmstate(). So that function, as well as gc() to make sure I'm not 
+    crazy. 
+
+In this course, all code may be shared freely.  Aside from code that
+is distributed with the assignment, does your submission contain any
+other code that you got from someone else?  If so, what code is it
+(file names and line numbers please) and who supplied it?
+
+  - Matt helped me with gc() at vmheap.c:683-687 with caching the old values. 
+    Stephanie and I discussed vmheap.c:697; she was right about scanning 
+    forwarded payloads. Huge thanks to both, and to nr for his review of 
+    vmheap.c:667-732 (ahem- all of gc()). Much, much appreciated! 
+
+In response to last week's code review, have you made any material
+changes?  What were they?  By file name and line number, where are
+they found in the code?  If you remember, who helped you during code
+review?
+
+  - I don't think we've had feedback on module 10 yet unless I'm mistaken. 
+
+
+We have a plenary code review tomorrow.  Are you willing to present
+(as a group, if applicable)?
+
+  - Honestly, yes, with full disclosure that it doesn't work, and we can talk 
+    about what common pitfalls people had. If that'd be valuable, I'd be 
+    happy to present. 
+
+Supposing you are not selected to present at tomorrow's plenary code
+review, what code would you like to see presented?  What would you
+learn the most from?
+
+  - How people saved their program counter with a 'counter' variable, whatever
+    else they might have saved in VMSAVE, and how they thought through the gc
+    algorithm. 
+
+Again supposing you are not selected to present, are you willing to
+serve on the review panel? (Or if there are more than one of you, who
+is willing to serve?)
+
+  - Yes!!!

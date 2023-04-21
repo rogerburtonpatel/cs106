@@ -133,7 +133,9 @@ fun letrec gen (bindings, body) =
            | K.FUNCODE lambda => funcode dest lambda
            | K.CAPTURED i => S (A.captured dest i)
            | K.CLOSURE (lambda, captured) => putClIntoReg dest lambda captured
-           | K.LETREC lr => letrec (toRegK' dest) lr)
+           | K.LETREC lr => letrec (toRegK' dest) lr
+           | K.BLOCK _ => Impossible.exercise "codegen K.BLOCK"
+           | K.SWITCH_VCON _ => Impossible.exercise "codegen K.SWITCH_VCON")
   and forEffectK' (ex: reg KNormalForm.exp) : instruction hughes_list  =
     (case ex
       of K.LITERAL _ => empty
@@ -161,7 +163,9 @@ fun letrec gen (bindings, body) =
         | K.FUNCODE (rs, e) => empty
         | K.CAPTURED i => empty
         | K.CLOSURE cl => empty
-        | K.LETREC lr => letrec forEffectK' lr)
+        | K.LETREC lr => letrec forEffectK' lr
+        | K.BLOCK _ => Impossible.exercise "codegen K.BLOCK"
+        | K.SWITCH_VCON _ => Impossible.exercise "codegen K.SWITCH_VCON")
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         (* toRegK' 255 e o S (A.return 255) *)
         (case e
@@ -181,7 +185,9 @@ fun letrec gen (bindings, body) =
            | K.VMOPLIT _ => toRegK' r0 e o (S (A.return r0))
            | K.CAPTURED i => S (A.captured r0 i)
            | K.CLOSURE (lambda, captured) => (putClIntoReg r0 lambda captured) o S (A.return r0)
-           | K.LETREC lr => letrec toReturnK' lr)
+           | K.LETREC lr => letrec toReturnK' lr
+           | K.BLOCK _ => Impossible.exercise "codegen K.BLOCK"
+           | K.SWITCH_VCON _ => Impossible.exercise "codegen K.SWITCH_VCON")
            (* todo pass to toreg *)
   and funcode r (rs, e) = S (A.loadfunc r (List.length rs) (toReturnK' e []))
   and putClIntoReg r lambda captured = (funcode r lambda) 

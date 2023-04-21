@@ -7,4 +7,6 @@
 #define GCVALIDATE(P) (P)
 #else
 #define GCVALIDATE(P) (assert((P)->forwarded == NULL), (P))
+// safer
+// #define GCVALIDATE(P) (assert((P) != NULL), assert((P)->forwarded == NULL), (P))
 #endif

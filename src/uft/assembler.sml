@@ -104,6 +104,7 @@ struct
                       |  Error.OK objs    => 
                         (curry op ::) (O.LOADFUNC (r, i, objs)) <$> objinstrs
                     )
+                 | A.GOTO_VCON _ => Impossible.exercise "GOTO_VCON"
               )
       in fold g (succeed []) instrs
       end

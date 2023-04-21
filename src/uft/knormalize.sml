@@ -13,7 +13,7 @@ end
   =
 struct 
   structure K  = KNormalForm
-  structure F  = ClosedScheme
+  structure C  = ClosedScheme
   structure E  = Env
   structure P  = Primitive
 
@@ -122,34 +122,34 @@ struct
         val nbRegs = nbRegsWith (exp rho) 
         (*  ^ normalize and bind in _this_ environment *)
     in  (case ex
-          of F.PRIMCALL (p, es) => nbRegs bindAnyReg A es (curry K.VMOP p)
-           | F.LITERAL v => K.LITERAL v
-           | F.LOCAL n => 
+          of C.PRIMCALL (p, es) => nbRegs bindAnyReg A es (curry K.VMOP p)
+           | C.LITERAL v => K.LITERAL v
+           | C.LOCAL n => 
              let val r = Env.find (n, rho)
              in K.NAME r
              end
-           | F.SETLOCAL (n, e) => 
+           | C.SETLOCAL (n, e) => 
              let val r = Env.find (n, rho)
              in K.SET (r, exp rho A e)
              end
-           | F.GLOBAL n => KNormalUtil.getglobal n
+           | C.GLOBAL n => KNormalUtil.getglobal n
            (* Note that in prettyprinting this you won't see the 'begin' *)
-           | F.SETGLOBAL (n, e) => 
+           | C.SETGLOBAL (n, e) => 
             bindWithTranslateExp A rho e 
                 (fn reg => K.BEGIN (KNormalUtil.setglobal (n, reg), K.NAME reg))
-           | F.BEGIN es  => translateBegin rho A es
-           | F.IFX (e, e1, e2) => 
+           | C.BEGIN es  => translateBegin rho A es
+           | C.IFX (e, e1, e2) => 
               bindWithTranslateExp A rho e 
                              (fn reg => K.IFX (reg, exp rho A e1, exp rho A e2))
-           | F.WHILEX (e, e') => 
+           | C.WHILEX (e, e') => 
             let val t = smallest A
             in K.WHILEX (t, exp rho A e, exp rho A e')
             end
-           | F.FUNCALL (e, es) => 
+           | C.FUNCALL (e, es) => 
             bindSmallest A (exp rho A e) 
                          (fn reg => nbRegs bindSmallest (A -- reg) es 
                                            (fn regs => K.FUNCALL (reg, regs)))
-           | F.LET (bindings, body) => 
+           | C.LET (bindings, body) => 
              let val (names, rightSides) = ListPair.unzip bindings
                  val bindNamestoRegs     = ListPair.foldr Env.bind rho
              in nbRegs bindSmallest A rightSides 
@@ -157,12 +157,12 @@ struct
                                       (List.foldl (flip (op --)) A regs)
                                       body)
              end
-          | F.CLOSURE (lambda, []) => K.FUNCODE (funcode lambda rho A)
-          | F.CLOSURE (lambda, captured) => 
+          | C.CLOSURE (lambda, []) => K.FUNCODE (funcode lambda rho A)
+          | C.CLOSURE (lambda, captured) => 
               nbRegs bindAnyReg A captured 
                     (fn regs => K.CLOSURE ((funcode lambda rho A), regs))
-          | F.CAPTURED i => K.CAPTURED i
-          | F.LETREC (bindings, body) => 
+          | C.CAPTURED i => K.CAPTURED i
+          | C.LETREC (bindings, body) => 
             let val (A', rs)     = allocAndRemoveRegs A bindings 
                 val (names, cls) = ListPair.unzip bindings 
                 val rho'         = ListPair.foldrEq Env.bind rho (names, rs)
@@ -174,6 +174,8 @@ struct
                 in map' closure cls 
                    (fn cs => K.LETREC (ListPair.zip (rs, cs), exp rho' A' body))
                 end
+          | C.CONSTRUCTED _ => Impossible.exercise "K-normalize data construction"
+          | C.CASE _ => Impossible.exercise "K-normalize case expression"
              )
     end
 
@@ -193,25 +195,25 @@ struct
     in (argregs, exp boundEnv availRegs e)
     end
 
-  val funcode : F.funcode -> reg Env.env -> regset -> reg K.funcode = funcode
+  val funcode : C.funcode -> reg Env.env -> regset -> reg K.funcode = funcode
 
   fun def ex = 
     let val A   = RS 0
         val rho = Env.empty
     in 
     (case ex
-      of F.EXP e => exp rho A e
-       | F.CHECK_EXPECT (s1, e1, s2, e2) =>
+      of C.EXP e => exp rho A e
+       | C.CHECK_EXPECT (s1, e1, s2, e2) =>
           K.BEGIN (bindWithTranslateExp A rho e1 (vmopStringK P.check s1), 
                       bindWithTranslateExp A rho e2 (vmopStringK P.expect s2))
-       | F.CHECK_ASSERT (s, e) =>
+       | C.CHECK_ASSERT (s, e) =>
           bindWithTranslateExp A rho e (vmopStringK P.check_assert s)
-       | F.CHECK_ERROR (s, e) => 
+       | C.CHECK_ERROR (s, e) => 
         bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
                           (fn reg => 
                             K.VMOPLIT (P.check_error, [reg], K.STRING s))
-       | F.VAL valdef => exp rho A (F.SETGLOBAL valdef)
-       | F.DEFINE (n, lambda) => K.LETX (0, K.FUNCODE (funcode lambda rho A), 
+       | C.VAL valdef => exp rho A (C.SETGLOBAL valdef)
+       | C.DEFINE (n, lambda) => K.LETX (0, K.FUNCODE (funcode lambda rho A), 
                                             KNormalUtil.setglobal (n, 0)))
     end
 end

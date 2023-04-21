@@ -51,7 +51,9 @@ struct
           let val (names, rhss) = ListPair.unzip bindings
           in S.diff (S.union' (free body :: freeSets rhss), S.ofList names)
           end
-       | X.LAMBDA  (ns, e)  => S.diff (free e, S.ofList ns))
+       | X.LAMBDA  (ns, e)  => S.diff (free e, S.ofList ns)
+       | X.CASE c => Case.free free c
+       | X.CONSTRUCTED c => Constructed.free free c)
     (* in fr expr S.empty *)
     end 
 
@@ -108,6 +110,8 @@ struct
               in C.LETREC (ListPair.zip (names, map closure lambdas'), exp body)
               end
           | exp (X.LAMBDA lambda) = C.CLOSURE (closure lambda)
+          | exp (X.CASE c) = C.CASE (Case.map exp c)
+          | exp (X.CONSTRUCTED c) = C.CONSTRUCTED (Constructed.map exp c)
 
         val _ = closure : X.lambda -> C.closure
     in  exp e

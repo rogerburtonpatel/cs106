@@ -1,0 +1,99 @@
+Submitted code with a token and reflection after midnight of April 11 with 
+same token. Thanks so much!
+
+1. To claim this point, give an example definition that contains a lambda whose
+body includes at least one name in each of these of these categories: a
+primitive, a global name that does not refer to a primitive, a local name, and a
+captured name. In your answer, identify one name from your example in each
+category.
+
+> (define stupid-hof-fst (x) (lambda (y) (if (function? map) x y)))
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    primitive: function?
+    global: map
+    local to inner lambda: y
+    captured in inner lambda: x
+
+2. To claim this point, identify the lines of your code that determine what
+variables are captured by a closures, and explain why these variables never
+include a global variable—even though according to the proof system, global
+variables are technically “free.”
+
+> closure-convert.sml:80 builds the list of captured names by grabbing the 
+  free variables of the lambda (all interior free names, minus its arguments).
+  the `free` function, defined at closure-convert.sml:32-58, doesn't 
+  identify global variables as free because it doesn't want them to be 
+  part of this list of captured names. We want to look up global variables
+  with our `getglobal` conventions, and captured variables using 
+  CAPTURED-IN. Because globals are stored in a lookup table (lies; it's a list)
+  at runtime, we want to only refer to them using our `getglobal`/`setglobal`
+  API, and not muddle them with names we're capturing. It would be a 
+  waste of space in our VMClosure, and make our low-level code much harder
+  to read. 
+
+  J to make sure I'm answering this correctly: we (only) identify X.LOCAL and 
+  X.SETLOCAL names to be free, at closure-convert.sml:37, 39. 
+
+3. To claim this point, identify the lines of source code in your UFT where
+closures and captured variables are embedded into ordinary vScheme.
+
+> clscheme.sml:55-61. We use the literal "$closure" and "CAPTURED-IN" syntax
+  of our closure-converted code to embed the results for our prettyprinter.
+  vscheme recognizes these constructs, and the semantics don't change. 
+  (Thanks for doing letrec!)
+
+4. To claim this point, identify the lines of code in your vmrun.c that 
+correspond to the CAPTURED-IN function that is predefined in vScheme.
+
+> vmrun.c:536-549. We use instructions GetClSlot and SetClSlot to talk about 
+  indexed captured variables in the same way as CAPTURED-IN i $closure:
+  cl->captured is $closure, UZ is i, and if a result is returned by GetClSlot
+  it's put in registers[UX].
+
+5. To claim this point, identify the lines of code in your K-normalizer that
+K-normalize a closure, and explain how the code keeps track of which variable is
+in what register both where the closure is allocated and inside the closure.
+
+> knormalize.sml:149-152. 
+knormalize.sml:176-183 do the heavy lifting of binding the argument variables
+to registers with helper `funcode`. This function accumulates boundEnv with 
+the bindings and subtracts the used registers from availRegs (these are 
+consecutive registers so DEFINE works.) 
+nbRegs with bindAnyReg in the K.CLOSURE tranlation gives us the bindings 
+for the captured variables. These regs are used in the final K.CLOSURE:
+we keep track of the var-register relationships of the overall closure 
+closure allocation by binding the whole thing with bindAnyReg using regset
+A, which holds the available registers. We bind the internals of `captured`
+with the rest of the work done by nbRegs' use of bindAnyReg, passing the
+newly-used registers to the K.CLOSURE as its captured list. Finally, we 
+normalize and bind within the body as discussed above in `funcode`. 
+The mini-orchestra makes sure there aren't clashes where registers bound
+and `local` to one instance aren't being referenced before being re-bound
+in another. 
+
+6. Suppose that something goes wrong in your closure conversion and that not all
+captured variables are properly identified. (Perhaps there is a bug in the free
+function and it overlooks a free variable.) To claim this point, identify the
+line of code in your K-normalizer where the compiler would fail, and explain how
+the failure would manifest.
+
+> 
+
+7. Imagine that the detector in Mutability.detect doesn’t work—it always returns
+Error.OK applied to its argument, regardless of whether there are bad mutations
+in the source code. Assuming that there are bad mutations in the source code, if
+the detector doesn’t work, the compiler will fail downstream. To claim this
+point, identify the line in your source code where the failure should occur.
+
+> 
+
+8. To claim this point, identify the lines of code in your K-normalizer that 
+build the environment used to compile all the right-hand sides and the body of a
+LETREC.
+
+> 
+
+99. If your submission for module 9 did not alias variables, you have already 
+earned the bonus point. Otherwise, to claim the bonus point, correct any unsafe
+aliasing that your K-normalizer may have done, and invent a new, original test
+case that shows the difference.

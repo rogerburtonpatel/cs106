@@ -1,0 +1,105 @@
+#!/bin/bash
+# 
+# Purpose: TODO: fill in 
+# 
+
+## Usage: TODO: fill in
+## 
+## 
+## 
+## author: TODO: you
+## date:  Sun Mar 12 03:30:21 EDT 2023
+
+
+BASEDIR=$DIR106
+
+SVMDIR=$BASEDIR/src/svm
+UFTDIR=$BASEDIR/src/uft
+TESTDIR=$BASEDIR/tests/scheme-tests-106
+
+
+shopt -s nullglob
+
+
+build ()
+{
+    target="$1"
+    cd "$BASEDIR/src/$target"
+
+    output=`make 2>&1`
+    if [[ "$?" -ne "0" ]]; then
+        echo $output
+        echo "Exiting on $target compilation failure."
+        exit 1
+    fi
+
+}
+
+numtests=0
+numfail=0
+
+# for people wanting to make changes: $1, $2 are arguments to a function
+update_failure () { 
+    failure=$1
+    testname=$2
+    out=$3
+    
+    if [[ "$failure" -ne "0" ]]; then 
+        >&2 echo "Failed test $testname"
+        >&2 echo "Output: "
+        >&2 echo "$out"
+        numfail=$((numfail + 1))
+    fi
+    
+}
+
+run_one_test ()
+{
+    local operation=$1
+
+        numtests=$((numtests + 1))
+        out=$(bash -c "$operation" 2>&1)
+        update_failure $? $file "$out"
+
+
+        echo $out | grep -Eq 'The only test passed|Both tests passed|All [0-9]+ tests passed'
+        update_failure $? $file "$out"
+        # TODO change this grep
+                                                  # grep returns 0 if found; 
+                                                  # the whole line will return
+                                                  # nonzero if not OR if 
+                                                  # svm fails
+                                                  
+}
+
+
+run_tests () {
+
+    for file in $TESTDIR/*.scm; do
+        run_one_test "run-ho-with-predef $file"
+    done
+
+    if [[ "$numtests" -eq "0" ]]; then
+        >&2 echo "No tests run. Check why that might be."
+        exit 1
+    fi
+
+    if [[ "$numfail" -eq "0" ]]; then 
+        echo "All tests passed."
+    else 
+        numpassed=$((numtests - $numfail))
+        echo "$numpassed / $numtests tests passed. \
+See above output for details."
+    exit 1
+    fi
+}
+
+main () {
+    build "svm"
+    build "uft"
+    run_tests
+}
+
+main
+
+shopt -u nullglob

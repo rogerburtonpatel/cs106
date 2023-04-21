@@ -38,6 +38,7 @@ VMState newstate(void) {
 
     vms->stackpointer = vms->R_window_start = 0;
     vms->num_literals = vms->num_globals = 0;
+    vms->counter = 0;
     
     /* registers are static memory-- we'll just init them to nils */
     for (int i = 0; i < NUM_REGISTERS; ++i) {
@@ -46,6 +47,8 @@ VMState newstate(void) {
     for (int i = 0; i < MAX_GLOBALS; ++i) {
         vms->globals[i] = nilValue;
     }
+
+    vms->awaiting_expect = nilValue;
         
     return vms;
 }
@@ -56,8 +59,10 @@ VMState newstate(void) {
 // This isn't enough to benefit from constant vs. linear time in a way 
 // perceptable to humans. 
 int literal_slot(VMState state, Value literal) {
-    VMNEW(Value, *lit, (sizeof(*lit)));
-    *lit = literal;
+    // TODO DEPTH POINT: This for garbage collection. 
+    // Value needs a forwarding pointer. 
+    // VMNEW(Value *, lit, (sizeof(*lit)));
+    // *lit = literal;
     Value *literals = state->literals;
     for (int i = 0; i < state->num_literals; ++i) {
         if (identical(literals[i], literal)) {
@@ -84,8 +89,6 @@ uint32_t global_slot(VMState state, Value namev) {
 
 Value literal_value(VMState state, uint32_t index) {
     return state->literals[index];
-    return nilValue;
-
 }
 
 int literal_count(VMState state) {
@@ -102,8 +105,8 @@ void initialize_global(VMState vm, Value name, Value v) {
 }
 
 
-void nilfunerror(VMState vm, const char *funname, 
-                 const char *offending_op, uint8_t r0)
+void not_a_function_error(VMState vm, const char *funname, 
+                          const char *offending_op, uint8_t r0)
 {
     if (funname == NULL) {
         runerror(vm, 

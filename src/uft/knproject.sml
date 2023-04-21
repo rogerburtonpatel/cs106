@@ -91,6 +91,9 @@ struct
     
     | exp (X.LAMBDA (ns, e)) = curry K.FUNCODE <$> succeed ns <*> exp e
 
+    | exp (X.CASE _) = Impossible.exercise "knproject case"
+    | exp (X.CONSTRUCTED _) = Impossible.exercise "knproject constructed"
+
     and translateLetPure x (K.LETX (y, e1, e2)) e3 = 
         if x = y orelse KU.freeIn e3 y
         then (* sadly we have to do this out manually *)

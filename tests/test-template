@@ -3,7 +3,7 @@
 # Purpose: TODO: fill in 
 # 
 
-## Usage: TODO: fill in
+## Usage: TESTDIR_PLACEHOLDER
 ## 
 ## 
 ## 
@@ -17,6 +17,7 @@ SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
 TESTDIR=$BASEDIR/tests/TESTDIR_PLACEHOLDER
 
+shopt -s nullglob
 
 
 build ()
@@ -60,7 +61,7 @@ run_one_test ()
         update_failure $? $file "$out"
 
 
-        echo $out | grep -Eq 'The only test passed|Both tests passed|All tests passed'
+        echo $out | grep -Eq 'The only test passed|Both tests passed|All [0-9]+ tests passed'
         update_failure $? $file "$out"
         # TODO change this grep
                                                   # grep returns 0 if found; 
@@ -85,7 +86,8 @@ run_tests () {
     # done
 
     if [[ "$numtests" -eq "0" ]]; then
-        echo "No tests run. Check why that might be"
+        >&2 echo "No tests run. Check why that might be."
+        exit 1
     fi
 
     if [[ "$numfail" -eq "0" ]]; then 
@@ -105,3 +107,5 @@ main () {
 }
 
 main
+
+shopt -u nullglob

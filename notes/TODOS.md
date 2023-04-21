@@ -2,8 +2,35 @@
 
 TESTING- dress to impress
 1. vs, kn, fo idempotent testing
-2. vscheme differential testing
+2. vscheme differential testing DONE
 
+setjmp comparison
+
+point 99?
+
+MEMORY TESTING
+
+CODE
+fix uft kn-vo qsort-debug.kn
+fix uft cl-vo qsort.cl
+
+all values have forwarded pointers that point to pages on the current list
+
+while mutator runs, objects that have a payload allocated on the heap have a 
+forwarding pointer that's null. 
+
+INFRA
+make testing not j add error code so that negative error codes don't mess us up
+just offbranch bignums
+
+Office hours:
+GCVALIDATE: what do you mean by 'The reference is duplicated, 
+so use it only with a named variable or a reference to a field of a 
+named Value'? Can i use it on the raw result of AS_VMFUNCTION?
+iparsers.c:161- negative numbers
+vscheme parser for 'literals?
+anf confirm : directly to anf? not that hard ig
+free variables in a closure for freeIn
 Ask about setting globals to literals
 
 
@@ -28,6 +55,12 @@ to load and run code. This goal is to implement two machine instructions, one to
 
 
 # A-Normal Form
+
+
+---
+anproject: simple. either anf or not. can fail. error type
+antranslate: KNF->ANF
+but we want full a-normalization. 
 
 Right now:
 do reg pass first

@@ -79,6 +79,8 @@ instruction_info instructions[] = {
 
   {"if",   If,   parseR1,    "if rX" },
   {"goto", Goto, parseR0I24, "goto XYZ" },
+
+  {"gc", Gc, parseR0, "gc" }, /* manual garbage collection for debugging */
 };
 
 int number_of_instructions = sizeof(instructions) / sizeof(instructions[0]);

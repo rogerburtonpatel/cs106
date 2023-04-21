@@ -8,6 +8,7 @@ $(SML_LIB)/basis/basis.mlb
   env.sml         
   set.sml         
   ioutil.sml      
+  listutil.sml    
 
   
 
@@ -43,6 +44,7 @@ $(SML_LIB)/basis/basis.mlb
 
   primitives.sml   
 
+  case.sml      
   vscheme.sml   
 
   pp.mlb
@@ -50,7 +52,9 @@ $(SML_LIB)/basis/basis.mlb
   ppwrapper.sml
   wppscheme.sml
 
-  disambiguate.sml  
+  match-compiler.sml 
+  match-viz.sml      
+  disambiguate.sml   
 
   sxlex.sml          
   sx.sml

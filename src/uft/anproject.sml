@@ -94,6 +94,8 @@ struct
       end
     
     | exp (X.LAMBDA (ns, e)) = curry A.FUNCODE <$> (succeed ns) <*> exp e
+        | exp (X.CASE _) = Impossible.exercise "knproject case"
+    | exp (X.CONSTRUCTED _) = Impossible.exercise "knproject constructed"
     (* error "no non-global functions in projection to \
                                                               \A-Normal form!" *)
   (* val fundef : string ANormalForm.exp -> string ANormalForm.exp = 

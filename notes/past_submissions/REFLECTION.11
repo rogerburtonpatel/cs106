@@ -1,0 +1,176 @@
+1. It is convenient to be able to use new without delete or malloc without free.
+But it is even more convenient to write code without thinking about allocation
+at all. To claim this point, give an example from a language not in the Scheme
+family, where the implementation of a feature just allocates behind the scenes,
+and the garbage collector takes care of the rest. To earn the point, it must be
+a feature that a programmer can use without being forced to think, “I am
+allocating memory here.”
+
+> I bet no one else will say python! 
+  I can make a list:
+
+  items = [1, 2, 3]
+
+  concat another list to it:
+
+  items += [3, 4]
+
+  make a set out of it:
+
+  item_set = set(items)
+
+  All without EVER thinking about how much memory I need allocated, what copying
+  I need to do, what's live or dead... 
+
+  The data structures in python: lists, sets, etc- all allocate behind the 
+  scenes, and dead objects (structures that go out of scope, etc) are 
+  recycled. That's a beauty of the language; you can think about algorithms
+  closer to the mathematical level than the hardware/heap level. 
+
+
+2. To claim this point, get your SVM into shape where you can run it on a 
+program and Valgrind reports no errors and no leaks. (You are welcome to do this
+in step 14, before you start your garbage collector.) 
+Commit the code and tag it with git tag valgrind-clean.
+Submit the output from valgrind running your SVM on the
+program of your choice.
+
+> 
+rburto03@vm-hw01:uft 513 $ uft ho-vo ../../tests/105-hws-test-106/sat-solve.scm 
+                           | valgrind svm ../../build/predef-ho.vo -
+==1198957== Memcheck, a memory error detector
+==1198957== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1198957== Using Valgrind-3.19.0 and LibVEX; rerun with -h for copyright info
+==1198957== Command: svm ../../build/predef-ho.vo -
+==1198957== 
+All 28 tests passed.
+==1198957== 
+==1198957== HEAP SUMMARY:
+==1198957==     in use at exit: 0 bytes in 0 blocks
+==1198957==   total heap usage: 15,815 allocs, 14,990 frees, 1,753,160 bytes allocated
+==1198957== 
+==1198957== All heap blocks were freed -- no leaks are possible
+==1198957== 
+==1198957== For lists of detected and suppressed errors, rerun with: -s
+==1198957== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+3. To claim this point, identify the lines in your scan_vmstate function that 
+scan registers and literals, and explain how you know which registers and 
+literals to scan. 
+
+> We identify the point at which to STOP scanning registers at vmheap.c:631. 
+  We scan from the true start of the register array (no windowing) up to that
+  point. We scan these because they're all the registers that can affect future 
+  computations: they're all the registers that are either active on the 
+  current frame (because they're between R_window_start and nregs) or on a 
+  lower frame in the call stack. In short, they're SOMEWHERE within a 
+  scope that can be reaccessed if the program terminates normally. 
+  We scan these from vmheap.c:632-636. 
+
+  We also zero out the registers from stale_start up at vmheap.c:637-641 so that
+  if we ever those registers ever go back in scope they aren't erroneously
+  scanned (they'd be stale.)
+
+  We scan literals from vmheap.c:650-652, up to vm->num_literals. These are 
+  the only ones that aren't nil, so they're the only ones worth scanning. 
+
+4. To claim this point, look at the lines in your source code that initialize 
+the payload for a ConsCell, and identify the line that initializes the payload’s
+forwarded pointer to NULL.
+
+> Initializing payload: vmrun.c:364-367
+  VMNEW at vmrun.c:364 'calls' GCINIT, which (defined at gcmeta.h:4 but gets
+  inlined at vmrun.c:364 by the preprocesser) sets the forwarding pointer to 
+  NULL. 
+
+5. If a value that is gray or black were accidentally put on the gray list a 
+second time, this would violate one of the color invariants. 
+To claim this point, explain what bad thing could happen if this invariant is 
+violated.
+
+> We could copy the item, and potentially its payload if it existed (like in 
+  a closure), a second time into to-space. We'd fill up to-space more and more
+  quickly, and would have to gc again sooner than normal. We'd lose access
+  to the old closure because we'd forward to a different place, and although it
+  would likely be garbage collected later down the line (provided nothing 
+  else goes wrong), it'd be filling up page space and would lead to an earlier
+  gc than necessary.  
+ 
+6. In step 19, I observe that my VMSAVE macro flushes the current register-
+window pointer. 
+But my VMLOAD does not reload it. To claim this point, explain why I would 
+bother to save this value if I’m not reloading it.
+
+> So that we can access the current active window to compute the point at which
+  'register validity' ends; i.e. to compute what I call stale_start, and to 
+  zero-out the other values. tldr, we need the value for a computation in 
+  gc, so we need to save it to vm (which, unlike the local variables of vmrun,
+  gc has access to) but it doesn't change during gc, so we don't need to reload 
+  it. 
+
+7. To claim this point, explain why it’s not possible to forward a pointer of 
+type Instruction *.
+
+> It's not allocated on the VMHEAP. Also, without a function to reference 
+(the function whose stream it points within), it's kind of a useless value:
+after gc, everything moves, so copying the raw pointer doesn't guarentee 
+anything because the location of the stream it references might have moved. 
+
+8. Function forward_string copies a payload only if the forwarding pointer is 
+NULL. To claim this point, suppose instead that forward_string copies a payload
+unconditionally every time it is called, and explain what could go wrong.
+
+> Well, for one, the assertion at vmheap.c:429 would fail. Yikes! 
+  Assuming that also isn't checked, we could also call 
+  p->forwarded = copy_string(p) 
+  at vmheap.c:477 many times if the original 
+  value's string payload->forwarded doesn't get NULL checked if we have the 
+  values holding the same VMString pointer in multiple registers. We could 
+  copy the string twice, and then have two different registers with that 
+  are supposed to contain the same 'string value', but the Value.s 's point
+  to different strings because we call VMNEW twice! Double yikes! (this goes
+  beyond just 2- it could happen arbitrarily many times per 'same string value'
+  in multiple registers.)
+
+
+9. To claim this point, say how you would set the heap-growth policy parameter 
+to do less work by using a lot of space. Then say how you would change the 
+policy to use less space at the cost of doing more work. If possible, support 
+your answer with evidence of gcstats output from your collector. If not, explain
+why it is not possible.
+
+> We could set &gamma to be very high: if it's around 10 (that means 10 times 
+  more heap space than live data), we would need to garbage collect MUCH more 
+  rarely than if gamma were closer to 2.1 (the current default). We'd be 
+  doing less work- calling gc less; ergo stopping the world less. 
+  
+  We could change &gamma to be really small: we'd be garbage collecting VERY
+  often, because our ratio of heap size to live data would hit the given
+  &gamma with very few allocations, but our heap would grow only by a small 
+  amount to restore the target gamma-- with a few new pages, we'd have the ratio
+  restored again. 
+
+  I'd love to support evidence with gcstats, but they're a bit buggy at this
+  point. Once I get them working, we can examine how many times we call gc
+  relative to the gamma value, and how many heap pages we end up with at the
+  end of every collection and heap expansion. 
+
+10. In file value.c, function eqvalue compares two String values as equal only if
+they point to the same payload—if two Values point to different payloads they
+are considered different strings, even if the payloads contain the same
+characters.
+
+Suppose that a string value appears in two different VM registers, so both
+registers point to the same payload. But then the garbage collector copies every
+register’s payload to a new location. To claim this point, explain how the
+collection manages to preserve pointer relationships so that after the
+collection, the registers are still considered to hold equal strings.
+
+> The first string will already be forwarded: its forwarding pointer will point
+to its new location in memory. When it's rescanned (since we call scan_value
+on each live register, it WILL be rescanned), we're able to see that the
+forwarding pointer already points to to-space. We therefore won't copy it over,
+but just return the forwarding poitner. This is what the value's string pointer
+will get set to, so every value that has that string in it (assuming it is the
+ACTUAL same string, not just 2 strings with the same characters) points to the 
+same final location in to-space after garbage collection. 
