@@ -175,7 +175,14 @@ struct
                    (fn cs => K.LETREC (ListPair.zip (rs, cs), exp rho' A' body))
                 end
           | C.CONSTRUCTED _ => Impossible.exercise "K-normalize data construction"
-          | C.CASE _ => Impossible.exercise "K-normalize case expression"
+          | C.CASE (e, choices) => bindWithTranslateExp A rho e 
+   (* (... normalize e into a register, using the following continuation ...)  *)
+                (fn t =>
+                  let fun treeGen r etree = Impossible.exercise "treeGen"
+                      val _ = treeGen : regset -> C.exp MC.tree -> reg K.exp
+                      val A' = (A -- t)
+                  in  treeGen A' (vizTree (MC.decisionTree (t, choices)))
+                  end)
              )
     end
 

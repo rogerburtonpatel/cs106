@@ -185,3 +185,7 @@ nr: "You can comfort yourself in the fact that as long as you're in dark mode
  but it's not much of an exaggeration."
 
 "The standard basis is part of the standard, dude." 
+
+"The cheapest, fastest, and most reliable parts of any computer system 
+are the ones that aren't there."
+
