@@ -45,13 +45,20 @@ DEPS := $(OBJ:.o=.d)
 
 CPPFLAGS += -MMD -MP
 # -Werror
-CFLAGS = -std=c11 -pedantic -Wall -Wextra  -g -I/usr/include -g3 # -I/usr/sup/cii40/include/cii
+CFLAGS = -std=c11 -pedantic -Wall -Wextra -g0 -I/usr/include
 ifeq ($(detected_OS), Darwin  ) # yeah, you __need__ the two spaces here.
 	CFLAGS += -DNOVALGRIND
 endif
 
+all: CFLAGS += -O2
+all: executable
+
+# Build executable with debug symbols and CANDEBUG flag
+debug: CFLAGS += -g3 -DCANDUMP
+debug: executable
+
 .PHONY: all obj clean
-all: $(EXE)
+executable: $(EXE)
 	@: do nothing, and say nothing about doing nothing
 
 obj: $(OBJ) $(MOBJ)

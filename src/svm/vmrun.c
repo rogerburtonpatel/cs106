@@ -30,7 +30,11 @@
 #include "vmheap.h"
 #include "vmstring.h"
 
+#ifndef CANDUMP
+#define CAMDUMP 0
+#else 
 #define CANDUMP 1
+#endif
 
 #define UX uX(curr_instr)
 #define UY uY(curr_instr)
@@ -55,9 +59,11 @@ extern jmp_buf testjmp;
 
 extern int setjmp_proxy(jmp_buf t); /* see what a difference this makes! */
 void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
-    const char *dump_decode = svmdebug_value("decode");
-    const char *dump_call =  svmdebug_value("call");
-
+    #if CANDUMP
+        const char *dump_decode = svmdebug_value("decode");
+        const char *dump_call =  svmdebug_value("call");
+        (void)dump_call; /* not used for now */
+    #endif 
     Instruction *pc;
     /* Invariant: registers always = vm->registers + vm->R_window_start */
     Value *registers;
@@ -73,7 +79,6 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     switch (status) {
         case INITIAL_CALL:;
             /* Thank you to Norman for this debugging infrastructure */
-            (void) dump_call;  // make it OK not to use `dump_call`
             VMLOAD();
             Activation base_record = 
                 {.fun = fun,
@@ -103,16 +108,18 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     while (1) {
         Instruction curr_instr = *pc;
 
-        if (CANDUMP && dump_decode) {
-            idump(stderr, 
-            vm, 
-            ((int64_t)pc - (int64_t)&(vm->Stack[0].fun->instructions[0])) / 4, // TODO change this nonsense
-            curr_instr, 
-            0, 
-            registers + UX, 
-            registers + UY, 
-            registers + UZ);
+        #if CANDUMP
+          if (dump_decode) {
+              idump(stderr, 
+              vm, 
+              ((int64_t)pc - (int64_t)&(vm->Stack[0].fun->instructions[0])) / 4, // TODO change this nonsense
+              curr_instr, 
+              0, 
+              registers + UX, 
+              registers + UY, 
+              registers + UZ);
         }
+        #endif
         switch (opcode(curr_instr)) {
             /* BASIC */
             case Halt:
