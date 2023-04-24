@@ -50,7 +50,9 @@ update_failure () {
         >&2 echo "Output: "
         >&2 echo "$out"
         numfail=$((numfail + 1))
+        return 1
     fi
+    return 0
     
 }
 
@@ -61,10 +63,6 @@ run_one_test ()
         numtests=$((numtests + 1))
         out=$(bash -ce "$operation")
         update_failure $? $file "$out"
-                                                  # grep returns 0 if found; 
-                                                  # the whole line will return
-                                                  # nonzero if not OR if 
-                                                  # svm fails
                                                   
 }
 

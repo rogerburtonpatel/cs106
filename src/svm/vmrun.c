@@ -112,7 +112,6 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             assert(0);
     }
 
-
     while (1) {
         Instruction curr_instr = *pc;
 
@@ -396,10 +395,15 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 registers[UX] = AS_CONS_CELL(vm, registers[UY])->slots[1];
                 break;
             
-            /* Unusual R2U8 case */
+            /* EXTENDED LITERALS: Unusual R2U8/R2 case */
             case PlusImm:
                 registers[UX] = mkNumberValue(AS_NUMBER(vm, registers[UY]) 
-                                                                    + UZ);
+                                                                    + (UZ - 128));
+                break;
+            
+            case Gt0:
+                registers[UX] = 
+                               mkBooleanValue(AS_NUMBER(vm, registers[UY]) > 0);
                 break;
 
             /* (UN)CONDITIONAL MOVEMENT */

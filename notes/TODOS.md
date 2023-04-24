@@ -1,7 +1,7 @@
 # Actual todos
 
 TESTING- dress to impress
-1. vs, kn, fo idempotent testing
+1. vs, kn, fo idempotent testing on the backburner
 2. vscheme differential testing DONE
 
 setjmp comparison
@@ -15,8 +15,11 @@ point 99?
 MEMORY TESTING
 
 CODE
-fix uft kn-vo qsort-debug.kn
-fix uft cl-vo qsort.cl
+why doesn't uft ho-cl | uft cl-vo work?
+
+same with ho-kn | kn-vo 
+
+see this in qsort-debug.kn, qsort.cl
 
 all values have forwarded pointers that point to pages on the current list
 

@@ -20,6 +20,7 @@ typedef enum opcode {
                       LoadLiteral, // R1LIT
                       GetGlobal, SetGlobal, // R1GLO
                       Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, Eq, // R3
+                      Gt0, PlusImm, // Depth: EXTENDED LITERALS- R2
                       MkBlock, GetBlockSlot, SetBlockSlot, // R2U8
                       GotoVcon, // R1U8
                       IfVconMatch, // U8LIT, not meant to be evaluated
@@ -31,7 +32,7 @@ typedef enum opcode {
                       Hash, // R2
                       IsFunction, IsNumber, IsSymbol, IsPair, // R2 
                       IsBoolean, IsNull, IsNil, // R2
-                      RegCopy, Swap, PlusImm, // R2
+                      RegCopy, Swap, // R2
                       Return, // R1
                       Call, // R3
                       Tailcall, // R2

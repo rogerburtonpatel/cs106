@@ -55,6 +55,7 @@ instruction_info instructions[] = {
   { "copy", RegCopy, parseR2, "rX := rY"},
   { "move", RegCopy, parseR2, "rX := rY"},
   { "swap", Swap, parseR2, "rX, rY := rY, rX"},
+  { "gt0",  Gt0, parseR2, "rX := rY > 0"},
   { "+imm", PlusImm, parseR2U8, "rX := rY + IMM"},
  
   { "nil?", IsNil, parseR2, "rX := nil? rY"},

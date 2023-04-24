@@ -44,8 +44,6 @@ static void dofile(struct VMState *vm, FILE *input) {
   while (setjmp(testjmp) &&  (rc = 1))
   ;
     vmrun(vm, module, rc == 0 ? INITIAL_CALL : ERROR_CALL);
-    // vmrun(vm, module);
-  
   }
   report_unit_tests();
 }

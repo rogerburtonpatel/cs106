@@ -50,7 +50,9 @@ update_failure () {
         >&2 echo "Output: "
         >&2 echo "$out"
         numfail=$((numfail + 1))
+        return 1
     fi
+    return 0
     
 }
 
@@ -61,6 +63,10 @@ run_one_test ()
         numtests=$((numtests + 1))
         out=$(bash -c "$operation" 2>&1)
         update_failure $? $file "$out"
+        # prevents double error counting
+        if [[ "$?" -ne 0 ]]; then 
+            return 
+        fi
 
 
         echo $out | grep -Eq 'The only test passed|Both tests passed|All [0-9]+ tests passed'

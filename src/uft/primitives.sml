@@ -49,6 +49,11 @@ structure Primitive :> sig
   val setclslot    : primitive
   val getclslot    : primitive
   val getblockslot : primitive
+  (* for extended literals *)
+  val plus         : primitive
+  val gt0          : primitive
+  val plusimm      : primitive
+
 end
   =
 struct
@@ -61,7 +66,7 @@ struct
                 ]
   val unary   = [ "boolean?", "null?", "number?", "pair?", "function?", "nil?"
                 , "symbol?", "car", "cdr", "boolOf", "copy", "swap", "+imm",
-                "neg", "not", "hash"]
+                "neg", "not", "hash", "gt0"]
                 (* TODO CHANGE ASMPARSE FOR NEG AND NOT *)
 
 
@@ -127,6 +132,10 @@ struct
   val setclslot    = HAS_EFFECT    { name = "setclslot",    arity = 3 }
   val getclslot    = SETS_REGISTER { name = "getclslot",    arity = 2 }
   val getblockslot = SETS_REGISTER { name = "getblockslot", arity = 2 }
+  (* for extended literals *)
+  val plus         = SETS_REGISTER { name = "+",            arity = 2 }
+  val gt0          = SETS_REGISTER { name = "gt0",          arity = 1 }
+  val plusimm      = SETS_REGISTER { name = "+imm",         arity = 2 }
 end
 
 

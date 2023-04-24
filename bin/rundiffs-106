@@ -34,7 +34,9 @@ update_failure () {
         >&2 echo "Output: "
         >&2 echo "$out"
         numfail=$((numfail + 1))
+        return 1
     fi
+    return 0
     
 }
 

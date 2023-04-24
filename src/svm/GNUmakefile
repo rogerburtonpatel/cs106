@@ -57,6 +57,9 @@ all: executable
 debug: CFLAGS += -g3 -DCANDUMP
 debug: executable
 
+debug-optimized: CFLAGS += -O2 -g3 -DCANDUMP
+debug-optimized: executable
+
 .PHONY: all obj clean
 executable: $(EXE)
 	@: do nothing, and say nothing about doing nothing

@@ -71,7 +71,6 @@ struct
     1. Weird let* construct
     2. the max thing *)
 
-(* TODO CLEAN up MAX problem *)
   fun bindSmallest rset e k = 
       let val t = smallest rset
       in  K.LETX (t, e, k t)
@@ -124,7 +123,19 @@ struct
         val nbRegs = nbRegsWith (exp rho) 
         (*  ^ normalize and bind in _this_ environment *)
     in  (case ex
-          of C.PRIMCALL (p, es) => nbRegs bindAnyReg A es (curry K.VMOP p)
+          of C.PRIMCALL (p, es) =>
+          (case (P.name p, es) 
+            of (">", [e, C.LITERAL (C.INT 0)]) => 
+            nbRegs bindAnyReg A [e] (curry K.VMOP P.gt0)
+            | ("+", es as [e,  C.LITERAL (C.INT n)]) => 
+              if n < 128 andalso n >= ~128 then 
+                nbRegs bindAnyReg A [e] (fn y =>
+                                              K.VMOP (P.plusimm, y @ [n + 128]))
+              else 
+                nbRegs bindAnyReg A es (curry K.VMOP p)
+            | ("-", [e,  C.LITERAL (C.INT n)]) => 
+              exp rho A (C.PRIMCALL (P.plus, [e, C.LITERAL (C.INT (~n))]))
+            | _ => nbRegs bindAnyReg A es (curry K.VMOP p))
            | C.LITERAL v => K.LITERAL v
            | C.LOCAL n => 
              let val r = Env.find (n, rho)

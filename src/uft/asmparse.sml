@@ -239,7 +239,7 @@ struct
   val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", ">=", "<=", 
                 "="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
-                "null?", "nil?", "car", "cdr", "hash", "neg", "not"]
+                "null?", "nil?", "car", "cdr", "hash", "neg", "not", "gt0"]
   val oneops = ["print", "println", "printu", "error",
                 "inc", "dec"]
 
@@ -479,12 +479,14 @@ struct
             | ("swap", [x, y]) =>
               spaceSep [reg x, ",", reg y, ":=", reg y, ",", reg x] 
             | ("+imm", [x, y, z]) =>
-                let val n = z - 128
+                let val n = z - 128 (* we want this later *)
                 in  if n < 0 then
                         spaceSep [reg x, ":=", reg y, "-",  int (~n)]
                     else
                         spaceSep [reg x, ":=", reg y, "+",  int n]
-                end                  
+                end           
+            | ("gt0", [x, y]) =>
+              spaceSep [reg x, ":=", reg y, ">", "0"]
             | ("boolOf", [x, y]) =>
                 spaceSep [reg x, ":=", "boolOf", reg y]
             | ("copy", [x, y]) =>

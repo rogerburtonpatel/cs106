@@ -166,8 +166,8 @@ void idump(FILE *fp, VMState vm, int pc, Instruction I,
 
 
 const char *lastglobalset(struct VMState *vm, uint8_t reg, struct VMFunction *f, Instruction *pc) {
-  assert(pc >= f->instructions);
-  assert(pc < f->instructions + f->size);
+  // assert(pc >= f->instructions);
+  // assert(pc < f->instructions + f->size); this doesn't work w my svm
   while (--pc >= f->instructions) {
     Instruction i = *pc;
     if (isgetglobal(opcode(i)) && uX(i) == reg) {

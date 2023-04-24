@@ -47,7 +47,11 @@ struct
 
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
     | exp (K.NAME x)       = S.VAR x
-    | exp (K.VMOP (p, ns)) = S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
+    | exp (K.VMOP (p, ns)) = 
+    (* (case P.name p 
+      of "+imm" => S.APPLY (S.VAR ("+imm"), [S.VAR (hd ns), S.LITERAL (S.SYM (List.last ns))])
+      | _ => *)
+    S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
     | exp (K.VMOPLIT (p, ns, v)) = 
       (case (P.name p, ns, v)
         of ("getglobal", [], K.STRING s)  => S.VAR s

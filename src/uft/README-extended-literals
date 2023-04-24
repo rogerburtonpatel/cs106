@@ -1,0 +1,120 @@
+countdown.scm before extension:
+r0 := 10
+_G[ "i" ] := r0
+goto L1
+L2:
+r0 := _G[ "i" ]
+println r0
+r0 := _G[ "i" ]
+r1 := 1
+r0 := r0 - r1
+_G[ "i" ] := r0
+L1:
+r0 := _G[ "i" ]
+r1 := 0
+r0 := r0 > r1
+if r0 goto L2
+
+countdown.scm after extension:
+
+r0 := 10
+_G[ "i" ] := r0
+goto L1
+L2:
+r0 := _G[ "i" ]
+println r0
+r0 := _G[ "i" ]
+r1 := 1
+r0 := r0 - r1
+_G[ "i" ] := r0
+L1:
+r0 := _G[ "i" ]
+r0 := r0 > 0
+if r0 goto L2
+
+before gt0:
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+Total instructions run: 118
+
+after gt0: 
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+Total instructions run: 107
+
+
+before both:
+150207009
+
+% uft ho-vo ../svm/div2.scm| time svm ../../build/predef-ho.vo - 
+Total instructions run: 183
+Total instructions run: 150195807
+Both tests passed.
+svm ../../build/predef-ho.vo -  0.90s user 0.00s system 97% cpu 0.924 total
+%
+
+% uft ho-vo ../svm/div2.scm| time svm ../../build/predef-ho.vo -
+Total instructions run: 183
+Total instructions run: 150207009
+Both tests passed.
+svm ../../build/predef-ho.vo -  0.90s user 0.00s system 97% cpu 0.926 total
+%
+
+% uft ho-vo div2.scm | svm ../../build/predef-ho.vo -
+Total instructions run: 183
+Total instructions run: 150207009
+Both tests passed.
+
+with gt0 only:
+
+% uft ho-vo ../svm/div2.scm | svm ../../build/predef-ho.vo -
+Total instructions run: 183
+Total instructions run: 150206407
+Both tests passed.
+%
+
+602 runtime instructions saved. 
+
+with +imm only:
+
+% uft ho-vo ../svm/div2.scm | svm ../../build/predef-ho.vo -
+Total instructions run: 183
+Total instructions run: 150196409
+Both tests passed.
+%
+
+10600 runtime instructions saved. 
+
+after both gt0 and plusimm:
+150195807
+
+% uft ho-vo div2.scm | svm ../../build/predef-ho.vo -
+Total instructions run: 183
+Total instructions run: 150195807
+Both tests passed.
+%
+
+
+% echo '(println (- 150207009 150195807))' | uft ho-vo | svm
+11202
+% 
+
+% echo '(check-expect (- 150207009 150195807) (+ 10600 602))' | uft ho-vo | svm
+The only test passed.
+%

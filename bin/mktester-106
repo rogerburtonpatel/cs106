@@ -22,7 +22,11 @@ TESTDIR=$BASEDIR/tests
 TEMPLATE=$TESTDIR/test-template
 
 # change if your sed is different! on halligan this will be /usr/bin/sed. 
-SED=/opt/homebrew/bin/gsed
+if [ `uname` = "Darwin" ]; then
+    SED=/opt/homebrew/bin/gsed
+else 
+    SED=sed
+fi
 
 usage () 
 {
