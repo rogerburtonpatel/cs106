@@ -31,7 +31,7 @@
 #include "vmstring.h"
 
 #ifndef CANDUMP
-#define CAMDUMP 0
+#define CANDUMP 0
 #else 
 #define CANDUMP 1
 #endif
@@ -59,11 +59,9 @@ extern jmp_buf testjmp;
 
 extern int setjmp_proxy(jmp_buf t); /* see what a difference this makes! */
 void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
-    #if CANDUMP
-        const char *dump_decode = svmdebug_value("decode");
-        const char *dump_call =  svmdebug_value("call");
-        (void)dump_call; /* not used for now */
-    #endif 
+    const char *dump_decode = svmdebug_value("decode");
+    const char *dump_call =  svmdebug_value("call");
+    (void)dump_call; /* not used for now */
     Instruction *pc;
     /* Invariant: registers always = vm->registers + vm->R_window_start */
     Value *registers;
@@ -108,8 +106,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     while (1) {
         Instruction curr_instr = *pc;
 
-        #if CANDUMP
-          if (dump_decode) {
+          if (CANDUMP && dump_decode) {
               idump(stderr, 
               vm, 
               ((int64_t)pc - (int64_t)&(vm->Stack[0].fun->instructions[0])) / 4, // TODO change this nonsense
@@ -119,7 +116,6 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
               registers + UY, 
               registers + UZ);
         }
-        #endif
         switch (opcode(curr_instr)) {
             /* BASIC */
             case Halt:
