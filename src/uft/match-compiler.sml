@@ -7,6 +7,7 @@ signature DECISION_TREE = sig
   type pat = Pattern.pat
   datatype 'a tree = TEST      of register * 'a edge list * 'a tree option
                    | LET_CHILD of (register * int) * (register -> 'a tree)
+                                            (* ^ slot number *)
                    | MATCH     of 'a * register Env.env
   and      'a edge = E of labeled_constructor * 'a tree
 end
@@ -27,6 +28,8 @@ struct
 
   fun fst (x, y) = x
   fun snd (x, y) = y
+  infixr 0 $
+  fun f $ g = f g
 
 
   (************** BASIC DATA STRUCTURES *************)
@@ -140,7 +143,7 @@ struct
     (case maybeConstructed constraint
       of SOME (path, vcon', pats) => 
         if pi' <> REGISTER r then 
-           COMPATIBLE [(pi', pattern)] 
+           COMPATIBLE [constraint] 
         else if vcon = vcon' andalso arity = List.length pats then 
            COMPATIBLE (ListUtil.mapi (fn (i, p) => (CHILD (r, i + 1), p)) pats)
         else 
@@ -157,13 +160,12 @@ struct
 
 
 (* frontier is the part of the scruity you haven't matched yet *)
-(* TODO honestly i have no idea if this is correct; it matches my thoughts but
-   it might be a fallacy that if it typechecks it's right *)
-  fun refineFrontier r labeled_con (F (thing, constraints)) = 
+(* it was right! *)
+  fun refineFrontier r labeled_con (F (rule, constraints)) = 
     let val all_constraints = 
      compatibilityConcat (List.map (refineConstraint r labeled_con) constraints)
     in case all_constraints
-         of COMPATIBLE cs => SOME (F (thing, cs))
+         of COMPATIBLE cs => SOME (F (rule, cs))
           | INCOMPATIBLE => NONE
     end
 
@@ -171,10 +173,75 @@ struct
         register -> labeled_constructor -> 'a frontier -> 'a frontier option
       (* returns the refinement of the given frontier, if compatible
        *)
+  fun asReg (REGISTER r) k = k r
+    | asReg (CHILD c)    k = LET_CHILD (c, k)
 
-  fun decisionTree _ =
-    Impossible.exercise "decisionTree"
+  fun registerize [] k = k Env.empty
+    | registerize ((pi, P.VAR x)::pairs) k = 
+       asReg pi (fn t => registerize pairs (fn env => k (Env.bind (x, t, env))))
+    | registerize ((_, pat)::_) _ = Impossible.impossible ("non-VAR `" ^
+                                         WppScheme.patString pat ^ "` at MATCH")
 
+  (* thank you to norman for this one! *)
+  fun anyApplication (F (_, pairs)) = 
+        Option.join (List.find isSome (map maybeConstructed pairs))
+
+  infix 0 forPath 
+  fun newPath forPath oldPath = 
+    let fun constraint (c as (pi, pattern)) = if pi = oldPath then 
+                                                (newPath, pattern) 
+                                              else c
+    in fn (F (i, constraints)) => F (i, map constraint constraints)
+    end
+
+  fun nub xs = Set.elems $ Set.ofList xs
+
+  fun constructorAppliedAt pi frontier =
+    case patternAt pi frontier
+      of SOME (Pattern.APPLY (vcon, ps)) => SOME (vcon, List.length ps)
+       | _ => NONE
+
+  fun unconstraintedAt pi frontier = 
+     case patternAt pi frontier
+      of SOME (Pattern.VAR _)  => true
+       | SOME Pattern.WILDCARD => 
+          Impossible.impossible "wildcard presence violates invariant!"
+       | NONE => true
+       | SOME _ => false
+
+  (* this is pretty much all nr's code, with some renaming to more closely 
+     match (haha) the paper *)
+  fun compile [] = Impossible.impossible "no frontiers to compile in MC"
+    | compile (frontiers as (first::_)) = 
+        case anyApplication first 
+          of SOME (CHILD (reg, i), _, _) =>
+            LET_CHILD ((reg, i), fn t => compile (map (REGISTER t forPath CHILD (reg, i)) frontiers))
+          | SOME (pi as REGISTER reg, _, _) => 
+                 let val cs = nub (List.mapPartial (constructorAppliedAt pi) frontiers)
+                     fun subtreeAt con = compile (List.mapPartial (refineFrontier reg con) frontiers)
+                     val edges = map (fn con => E (con, subtreeAt con)) cs
+                     val defaults = List.filter (unconstraintedAt pi) frontiers
+                     val defaultTree = if null defaults then NONE else SOME (compile defaults)
+                  in TEST (reg, edges, defaultTree)
+                  end
+          | NONE => 
+            let val F (rule, pairs) = first 
+            in  registerize pairs (fn env => MATCH (rule, env))
+            end
+
+
+  val _ = compile : 'a frontier list -> 'a tree 
+
+  fun decisionTree (reg, choices) =
+    let fun frontier (P.WILDCARD, e) = F (e, []) (* norman's wildcard elim *)
+          | frontier (pattern, e)    = F (e, [(REGISTER reg, pattern)])
+    in compile (List.map frontier choices)
+    end 
+
+(* at match node:
+let val F (rule, pairs) = first
+in registerize pairs (fn env => MATCH (rule, env))
+end *)
 
 end
 

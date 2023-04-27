@@ -189,3 +189,6 @@ nr: "You can comfort yourself in the fact that as long as you're in dark mode
 "The cheapest, fastest, and most reliable parts of any computer system 
 are the ones that aren't there."
 
+"When I teach 105, I feel like I'm at the helm of a large teaching machine"
+
+"I hate ubuntu with the heat of a thousand suns"

@@ -110,6 +110,7 @@ struct
 
   fun ES_of ES   = eschemexOfFile 
     | ES_of _    = raise Backward
+
   fun CL_of CL     = CL_of FO   (* really *)
     | CL_of HO     = HO_of HO     >>> ! (map ClosureConvert.close)
     | CL_of HOX    = HO_of HOX    >>> ! (map ClosureConvert.close)
@@ -130,6 +131,7 @@ struct
   fun KN_of KN = KN_of_file
     | KN_of FO = KN_reg_of FO >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
     | KN_of HO = CL_of HO >>> ! (List.map KNormalize.def) >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
+    | KN_of ES = CL_of ES >>> ! (List.map KNormalize.def) >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
     | KN_of inLang = raise NoTranslationTo inLang
 
   fun AN_of AN = AN_of_file

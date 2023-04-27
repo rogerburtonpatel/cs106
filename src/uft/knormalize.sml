@@ -176,9 +176,27 @@ struct
                 end
           | C.CONSTRUCTED _ => Impossible.exercise "K-normalize data construction"
           | C.CASE (e, choices) => bindWithTranslateExp A rho e 
-   (* (... normalize e into a register, using the following continuation ...)  *)
                 (fn t =>
-                  let fun treeGen r etree = Impossible.exercise "treeGen"
+                  let fun treeGen rset etree = 
+                    (case etree
+                      of MC.LET_CHILD ((r, slotnum), k) => 
+                            bindAnyReg rset (K.VMOP 
+                                              (P.getblockslot, [r, slotnum]))
+                                    (fn x => treeGen (rset -- x) (k x))
+                       | MC.MATCH (ex, env) => exp (rho <+> env) rset ex
+                       | MC.TEST (r, edges, maybetree) => 
+                          let val treeOfEdges = 
+                            map (fn (MC.E (lcon, subtree)) => 
+                                (lcon, treeGen rset subtree)) 
+                                edges
+                              val treeOrNoMatch = 
+                                case maybetree 
+                                  of SOME tree' => treeGen rset tree'
+                                  |  NONE       => K.VMOPLIT (P.error, [], 
+                                                    K.STRING "no matching case")
+                          in 
+                          K.SWITCH_VCON (r, treeOfEdges, treeOrNoMatch)
+                          end)
                       val _ = treeGen : regset -> C.exp MC.tree -> reg K.exp
                       val A' = (A -- t)
                   in  treeGen A' (vizTree (MC.decisionTree (t, choices)))
