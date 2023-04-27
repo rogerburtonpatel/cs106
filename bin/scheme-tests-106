@@ -17,6 +17,11 @@ SVMDIR=$BASEDIR/src/svm
 UFTDIR=$BASEDIR/src/uft
 TESTDIR=$BASEDIR/tests/scheme-tests-106
 
+if [[ "$BASEDIR/bin/uft" -nt "$BASEDIR/build/predef-ho.vo" ]]; then
+  echo 'UFT is newer than compiled predefined functions. running `make predef` in vscheme dir.'
+  cd "$BASEDIR/src/vscheme"
+  make predef
+fi
 
 shopt -s nullglob
 

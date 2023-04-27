@@ -402,7 +402,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
             }
             case Goto: {
                 int32_t offset = iXYZ(curr_instr);
-                if (gc_needed && offset < 0) {
+                if (offset < 0 && gc_needed) {
                     GC();
                 }
                 pc += 1 + offset; 

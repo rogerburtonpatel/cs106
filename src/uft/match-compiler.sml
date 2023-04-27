@@ -215,16 +215,23 @@ struct
     | compile (frontiers as (first::_)) = 
         case anyApplication first 
           of SOME (CHILD (reg, i), _, _) =>
-            LET_CHILD ((reg, i), fn t => compile (map (REGISTER t forPath CHILD (reg, i)) frontiers))
+            LET_CHILD ((reg, i), fn t => 
+                    compile (map (REGISTER t forPath CHILD (reg, i)) frontiers))
           | SOME (pi as REGISTER reg, _, _) => 
-                 let val cs = nub (List.mapPartial (constructorAppliedAt pi) frontiers)
-                     fun subtreeAt con = compile (List.mapPartial (refineFrontier reg con) frontiers)
+                 let val cs = nub (List.mapPartial (constructorAppliedAt pi) 
+                                                   frontiers)
+                     fun subtreeAt con = compile (List.mapPartial 
+                                                      (refineFrontier reg con) 
+                                                      frontiers)
                      val edges = map (fn con => E (con, subtreeAt con)) cs
                      val defaults = List.filter (unconstraintedAt pi) frontiers
-                     val defaultTree = if null defaults then NONE else SOME (compile defaults)
+                     val defaultTree = if null defaults then 
+                                          NONE 
+                                       else 
+                                          SOME (compile defaults)
                   in TEST (reg, edges, defaultTree)
                   end
-          | NONE => 
+          | NONE => (* match node! *)
             let val F (rule, pairs) = first 
             in  registerize pairs (fn env => MATCH (rule, env))
             end
@@ -237,11 +244,6 @@ struct
           | frontier (pattern, e)    = F (e, [(REGISTER reg, pattern)])
     in compile (List.map frontier choices)
     end 
-
-(* at match node:
-let val F (rule, pairs) = first
-in registerize pairs (fn env => MATCH (rule, env))
-end *)
 
 end
 

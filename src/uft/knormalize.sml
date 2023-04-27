@@ -110,6 +110,8 @@ struct
       List.foldr (fn (_, (A, regs)) => (A -- (smallest A), (smallest A)::regs)) 
                  (regset, []) es
   
+  val inLocalVar : regset -> (reg -> exp) -> exp =
+    fn rs => fn k => let val t = smallest rs in K.SET (t, k t) end
   
   fun map' f' [] k = k []
   | map' f' (x :: xs) k =
@@ -158,9 +160,12 @@ struct
                                       body)
              end
           | C.CLOSURE (lambda, []) => K.FUNCODE (funcode lambda rho A)
-          | C.CLOSURE (lambda, captured) => 
-              nbRegs bindAnyReg A captured 
-                    (fn regs => K.CLOSURE ((funcode lambda rho A), regs))
+          | C.CLOSURE (lambda, captured) =>
+                  inLocalVar A (fn t =>
+                    nbRegs bindAnyReg (A -- t) captured (fn regs => 
+                          K.CLOSURE (funcode lambda rho (A -- t), regs)))
+                                                    (* todo check this A -- t, and also if funcode needs these args in general
+                                                       or can capture them *)
           | C.CAPTURED i => K.CAPTURED i
           | C.LETREC (bindings, body) => 
             let val (A', rs)     = allocAndRemoveRegs A bindings 
@@ -178,7 +183,8 @@ struct
           | C.CONSTRUCTED ("#f", []) => K.LITERAL (K.BOOL false)
           | C.CONSTRUCTED ("cons", [x, y]) => 
             (* could have es instead of [x, y] but this is more explicit *)
-            nbRegs bindAnyReg A [x, y] (curry K.VMOP P.cons)
+            inLocalVar A (fn t => nbRegs bindAnyReg (A -- t) [x, y] 
+                                         (curry K.VMOP P.cons))
           | C.CONSTRUCTED ("'()", []) => K.LITERAL K.EMPTYLIST
           | C.CONSTRUCTED (con, es) => 
             bindAnyReg A (K.LITERAL (K.STRING con)) 

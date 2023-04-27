@@ -11,6 +11,12 @@ QUIET=false
 FILETYPE=".scm"
 translations=("ho-ho" "ho-cl" "ho-kn")
 
+if [[ "$DIR106/bin/uft" -nt "$DIR106/build/predef-ho.vo" ]]; then
+  echo 'UFT is newer than compiled predefined functions. running `make predef` in vscheme dir.'
+  cd "$DIR106/src/vscheme"
+  make predef
+fi
+
 usage ()
 {
         echo "Usage: $0 scheme-file.[scm|ho] [-q]"
