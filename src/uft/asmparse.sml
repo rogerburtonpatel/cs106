@@ -498,8 +498,8 @@ struct
 
 
             | ("halt", []) => "halt"
-            | _ => 
-              "an unknown register-based assembly-code instruction") 
+            | (name, _) => 
+              "an unknown register-based assembly-code instruction " ^ name) 
         | (O.REGSLIT regAndLit) =>
           (case regAndLit 
           of ("loadliteral", [x], l) =>
@@ -522,8 +522,9 @@ struct
               spaceSep ["printl", unparse_lit name]
           | ("printlnl", [], name) =>
               spaceSep ["printlnl", unparse_lit name]
-
-          | _ => "an unknown register-literal based assembly-code instruction")
+          | (name, _, _) => 
+                "an unknown register-literal based assembly-code instruction " 
+                                                                         ^ name)
         | O.REGINT regsAndInt => 
           (case regsAndInt
             of ("mkclosure", x, y, slotnum) => 
@@ -532,7 +533,16 @@ struct
               spaceSep [reg x, ":=", reg y, "<", int slotnum, ">"]
           | ("setclslot", x, y, slotnum) => 
               spaceSep [reg x, "<", int slotnum, ">", ":=", reg y]
-          | _ => "an unknown registers-and-int-based assembly-code instruction")
+          | ("mkblock", x, y, slotnum) => 
+              spaceSep [reg x, ":=", "mkblock", reg y, int slotnum]
+          | ("setblockslot", x, y, slotnum) => 
+              spaceSep ["block", reg x, "<", int slotnum, ">", ":=", reg y]
+          | ("getblockslot", x, y, slotnum) =>
+              spaceSep [reg x, ":=", "block", reg y, "<", int slotnum, ">"]
+
+          | (name, _, _, _) => 
+              "an unknown registers-and-int-based assembly-code instruction " 
+                                                                         ^ name)
         | _ => "an unknown assembly-code instruction")
     | unparse1 (A.DEFLABEL s) =
         s ^ ":"
@@ -549,6 +559,12 @@ struct
 
     | unparse ((A.OBJECT_CODE (O.LOADFUNC (r, k, body)))::instrs) = 
                 unparse (A.LOADFUNC (r, k, List.map A.OBJECT_CODE body)::instrs)
+    | unparse (A.GOTO_VCON (r, choices) :: instructions) =
+      let fun choice (v, arity, lbl) =
+         spaceSep ["  case", unparse_lit v, "(" ^ int arity ^ "):", "goto", lbl]
+      in spaceSep ["switch", reg r, "{"] :: map choice choices @ "}" ::
+          unparse instructions
+      end
     | unparse []           = []
     | unparse (i::instrs)  = unparse1 i :: unparse instrs
 

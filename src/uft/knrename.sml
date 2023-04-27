@@ -20,6 +20,7 @@ struct
 
   fun curry  f x y   = f (x, y)
   fun curry3 f x y z = f (x, y, z)
+  fun curry4 f x y z w = f (x, y, z, w)
   fun pair x y = (x, y)
 
   (* AsmLex.registerNum takes a string starting with "r" followed by a number n
@@ -37,8 +38,10 @@ struct
      of K.LITERAL l => succeed (K.LITERAL l)
       | K.NAME n => K.NAME <$> f n
       | K.VMOP (p, ns) => curry K.VMOP <$> (succeed p) <*> errorList (map f ns)
-      | K.VMOPLIT (p, ns, l) => curry3 K.VMOPLIT <$> (succeed p) <*> 
-                                            errorList (map f ns) <*> (succeed l)
+      | K.VMOPLIT (p, ns, l) => curry3 K.VMOPLIT <$> succeed p <*> 
+                                            errorList (map f ns) <*> succeed l
+      (* | K.VMOPINT (p, n, n', i) => curry4 K.VMOPINT <$> succeed p <*> 
+                                        f n <*> f n' <*> succeed i                                *)
       | K.FUNCALL (n, ns) => curry K.FUNCALL <$> f n <*> errorList (map f ns)
       | K.IFX (n, e1, e2) => curry3 K.IFX <$> f n <*> mapx f e1 <*> mapx f e2
       | K.LETX (n, e1, e2) => curry3 K.LETX <$> f n <*> mapx f e1 <*> mapx f e2

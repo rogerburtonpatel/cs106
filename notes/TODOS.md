@@ -192,3 +192,10 @@ are the ones that aren't there."
 "When I teach 105, I feel like I'm at the helm of a large teaching machine"
 
 "I hate ubuntu with the heat of a thousand suns"
+
+Kresten: "I could rewrite the whole thing in C++"
+
+nr: "You could also hit yourself in the head with a brick, probably much to the 
+same effect"
+
+"APIs tend to have a lot more complexity and variety than languages."

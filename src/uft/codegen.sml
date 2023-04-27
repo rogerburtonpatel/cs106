@@ -20,6 +20,9 @@ struct
   type reg = ObjectCode.reg
   type instruction = AssemblyCode.instr
 
+  fun fst (x, y) = x
+  fun snd (x, y) = y
+
   (********* Join lists, John Hughes (1986) style *********)
 
   type 'a hughes_list = 'a list -> 'a list
@@ -70,10 +73,36 @@ struct
         else 
         Impossible.impossible ("non-consecutive " ^
         "registers in call to dest " ^ Int.toString dest)
+                    (* todo ask: why couldn't I use MatchCompiler.labeled_constructor here? *)
+  val conLiteral : (string * int) -> A.literal =
+    fn lcon => case lcon of ("#t", 0)  => ObjectCode.BOOL true
+                          | ("#f", 0)  => ObjectCode.BOOL false
+                          | ("'()", 0) => ObjectCode.EMPTYLIST
+                          | (ds, 0)  => if CharVector.all Char.isDigit ds 
+                                          then ObjectCode.INT 
+                                              (Option.getOpt (Int.fromString ds,
+                                                              ~9999))
+                                                      (* if you see this, bad *)
+                                          else ObjectCode.STRING ds
+                          | (name, _) =>  ObjectCode.STRING name
 
-    
+  fun switchVcon gen finish (r, choices, fallthru) = 
+    let
+        fun mkBranchAndCase (lcon as (_, arity), e) = 
+        (* we need to generate these together since they use the same label *)
+                         let val lab = A.newlabel() 
+                         in (S (A.deflabel lab) o gen e o finish, 
+                                    (conLiteral lcon, arity, lab)) (* a pair *)
+                         end
+        val (branches, cases) = ListPair.unzip (map mkBranchAndCase choices)
+        val gotovcon = A.gotoVcon r cases
+    in S gotovcon o hconcat branches o gen fallthru
+    end
 
-
+  val _ = switchVcon :  (reg KNormalForm.exp -> instruction hughes_list) 
+           -> instruction hughes_list 
+           -> reg * ((string * int) * reg KNormalForm.exp) list * reg KNormalForm.exp 
+           -> instruction hughes_list
   (* for a bit of clarity *)
   val r0 = 0
 
@@ -84,6 +113,7 @@ fun mapi f xs =  (* missing from mosml *)
         | go k (x::xs) = f (k, x) :: go (k + 1) xs
   in  go 0 xs
   end
+
 
 
 
@@ -107,13 +137,15 @@ fun letrec gen (bindings, body) =
 
   in  hconcat (map alloc bindings) o hconcat (map init bindings) o gen body
   end
-(* TODO ADD GLOBALS IF NEEDED? ask *)
   and toRegK' (dest : reg) (ex : reg KNormalForm.exp) : instruction hughes_list =
         (case ex
           of K.LITERAL l => S (A.loadlit dest l)
            | K.NAME r    => S (A.copyreg dest r)
            | K.VMOP (p as P.SETS_REGISTER _, rs) => 
-                  instrOrErrorIfArityMismatch p rs 0 (S (A.setreg dest p rs))
+                  (case (P.name p, rs)
+                    of ("getblockslot", [r, i]) => S (A.getblockslot dest r i)
+                     | _ =>
+                  instrOrErrorIfArityMismatch p rs 0 (S (A.setreg dest p rs)))
            | K.VMOP (p as P.HAS_EFFECT _, _) => 
                L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
                   "register-setting context on register r" ^ Int.toString dest))
@@ -122,6 +154,12 @@ fun letrec gen (bindings, body) =
            | K.VMOPLIT (p as P.HAS_EFFECT _, _, _) => 
                L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
                   "register-setting context on register r" ^ Int.toString dest))
+           (* | K.VMOPINT (p as P.SETS_REGISTER _, r1, r2, i) => 
+             instrOrErrorIfArityMismatch p [r1, r2] 1 (S (A.setregLit dest p rs l))
+           | K.VMOPINT (p as P.HAS_EFFECT _, _, _) => 
+               L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
+                  "register-setting context on register r" ^ Int.toString dest)) *)
+          
            | K.FUNCALL (r, rs) => translateCall dest r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 (toRegK' dest)
             (* Floatables *)
@@ -134,8 +172,18 @@ fun letrec gen (bindings, body) =
            | K.CAPTURED i => S (A.captured dest i)
            | K.CLOSURE (lambda, captured) => putClIntoReg dest lambda captured
            | K.LETREC lr => letrec (toRegK' dest) lr
-           | K.BLOCK _ => Impossible.exercise "codegen K.BLOCK"
-           | K.SWITCH_VCON _ => Impossible.exercise "codegen K.SWITCH_VCON")
+           | K.BLOCK rs => S (A.mkblock dest (hd rs) (List.length rs))
+                           o L (mapi 
+                                  (fn (slotnum, blkreg) =>
+                                    A.setblockslot dest slotnum blkreg) 
+                                    (* todo ask *)
+                               (tl rs))
+           | K.SWITCH_VCON sv => 
+              let val exitLabel = A.newlabel ()
+              in switchVcon (toRegK' dest) (S (A.goto exitLabel)) sv
+                 o S (A.deflabel exitLabel)
+                                    (* todo ask *)
+              end)
   and forEffectK' (ex: reg KNormalForm.exp) : instruction hughes_list  =
     (case ex
       of K.LITERAL _ => empty
@@ -164,8 +212,13 @@ fun letrec gen (bindings, body) =
         | K.CAPTURED i => empty
         | K.CLOSURE cl => empty
         | K.LETREC lr => letrec forEffectK' lr
-        | K.BLOCK _ => Impossible.exercise "codegen K.BLOCK"
-        | K.SWITCH_VCON _ => Impossible.exercise "codegen K.SWITCH_VCON")
+        | K.BLOCK _ => empty
+        | K.SWITCH_VCON sv => 
+        let val exitLabel = A.newlabel ()
+              in switchVcon forEffectK' (S (A.goto exitLabel)) sv 
+                 o S (A.deflabel exitLabel)
+                                    (* todo ask *)
+              end)
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         (* toRegK' 255 e o S (A.return 255) *)
         (case e
@@ -186,9 +239,10 @@ fun letrec gen (bindings, body) =
            | K.CAPTURED i => S (A.captured r0 i) o S (A.return r0)
            | K.CLOSURE (lambda, captured) => (putClIntoReg r0 lambda captured) o S (A.return r0)
            | K.LETREC lr => letrec toReturnK' lr
-           | K.BLOCK _ => Impossible.exercise "codegen K.BLOCK"
-           | K.SWITCH_VCON _ => Impossible.exercise "codegen K.SWITCH_VCON")
-           (* todo pass to toreg *)
+           | block as K.BLOCK _ => toRegK' r0 block 
+           | K.SWITCH_VCON sv => 
+              switchVcon toReturnK' empty sv)
+                                    (* todo ask *)
   and funcode r (rs, e) = S (A.loadfunc r (List.length rs) (toReturnK' e []))
   and putClIntoReg r lambda captured = (funcode r lambda) 
                                   o S (A.mkclosure r r (List.length captured))

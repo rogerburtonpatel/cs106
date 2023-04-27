@@ -15,6 +15,7 @@ structure KNormalForm = struct
     | NAME of 'a
     | VMOP of vmop * 'a list
     | VMOPLIT  of vmop * 'a list * literal
+    (* | VMOPINT  of vmop * 'a * 'a * int *)
     | FUNCALL  of 'a * 'a list 
     | IFX      of 'a * 'a exp * 'a exp 
     | LETX     of 'a * 'a exp * 'a exp

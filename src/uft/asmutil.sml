@@ -117,6 +117,7 @@ struct
 
   fun setreg    dest operator args   = i O.REGS    (asValue operator, dest::args)
   fun setregLit dest operator args v = i O.REGSLIT (asValue operator, dest::args, v)
+  (* fun setregInt dest operator r1 r2 v = i O.REGINT  (asValue operator, , v) *)
   fun effect         operator args   = i O.REGS    (asEffect operator, args)
   fun effectLit      operator args v = i O.REGSLIT (asEffect operator, args, v)
 
