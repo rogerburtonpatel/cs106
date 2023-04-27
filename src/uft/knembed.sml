@@ -79,9 +79,15 @@ struct
               S.LETX (S.LETREC, map (fn (name, ((bindings, body), captured)) => 
                                     (name, exp body)) 
                                     bindings, exp body)
-                                    
-    | exp (K.BLOCK _) = Impossible.exercise "embed K.BLOCK"
-    | exp (K.SWITCH_VCON _) = Impossible.exercise "embed K.SWITCH_VCON"
+    | exp (K.BLOCK xs) = S.APPLY (S.VAR "block", map S.VAR xs)
+    | exp (K.SWITCH_VCON (x, choices, e)) =
+    let val lastQa = [(S.LITERAL (S.BOOLV true), exp e)]
+        fun isCon (vcon, arity) =
+              S.APPLY (S.VAR "matches-vcon-arity?",
+                       [S.VAR x, S.LITERAL (S.SYM vcon), (S.LITERAL o S.INT) arity])
+        fun qa (c, e) = (isCon c, exp e)
+    in  S.COND (map qa choices @ lastQa)
+    end
 
   
   val _ = exp : VScheme.name KNormalForm.exp -> VScheme.exp 

@@ -174,7 +174,17 @@ struct
                 in map' closure cls 
                    (fn cs => K.LETREC (ListPair.zip (rs, cs), exp rho' A' body))
                 end
-          | C.CONSTRUCTED _ => Impossible.exercise "K-normalize data construction"
+          | C.CONSTRUCTED ("#t", []) => K.LITERAL (K.BOOL true)
+          | C.CONSTRUCTED ("#f", []) => K.LITERAL (K.BOOL false)
+          | C.CONSTRUCTED ("cons", [x, y]) => 
+            (* could have es instead of [x, y] but this is more explicit *)
+            nbRegs bindAnyReg A [x, y] (curry K.VMOP P.cons)
+          | C.CONSTRUCTED ("'()", []) => K.LITERAL K.EMPTYLIST
+          | C.CONSTRUCTED (con, es) => 
+            bindAnyReg A (K.LITERAL (K.STRING con)) 
+                       (fn reg => nbRegs bindAnyReg (A -- reg) es 
+                                         (fn regs => K.BLOCK (reg::regs)))
+                                         (* todo ask *)
           | C.CASE (e, choices) => bindWithTranslateExp A rho e 
                 (fn t =>
                   let fun treeGen rset etree = 

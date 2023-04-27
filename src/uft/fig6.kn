@@ -1,0 +1,35 @@
+(let ([r0 (lambda (r1) 
+             (cond   
+                [(matches-vcon-arity? r1 'C1 2) 
+                      (let ([r2 (getblockslot r1 r1)]) 
+                        (cond   
+                           [(matches-vcon-arity? r2 'C2 0) 
+                                 (let ([r3 (getblockslot r1 r2)]) 
+                                   (cond   
+                                      [(matches-vcon-arity? r3 'C3 0) 
+                                            'one] 
+                                      [(matches-vcon-arity? r3 'C4 0) 
+                                            'two] 
+                                      [(matches-vcon-arity? r3 'C5 0) 
+                                            'three] 
+                                      [#t 'four]))] 
+                           [#t 
+                                 (let ([r3 (getblockslot r1 r2)]) 
+                                   (cond   
+                                      [(matches-vcon-arity? r3 'C4 0) 
+                                            'two] 
+                                      [(matches-vcon-arity? r3 'C5 0) 
+                                            'three] 
+                                      [#t 'four]))]))] 
+                [#t 'four]))]) 
+  (set figure-6 r0))
+(begin 
+   (let ([r0 (let* ([r0 figure-6]
+                    [r1 (let* ([r1 'C1]
+                               [r2 3]
+                               [r3 (let ([r3 'C4]) (block r3))]) 
+                          (block r1 r2 r3))]) 
+               (r0 r1))]) 
+     (check r0 '(figure-6 ('C1 3 'C4)))) 
+   (let ([r0 'two]) 
+     (expect r0 ''two)))
