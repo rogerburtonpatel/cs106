@@ -16,6 +16,8 @@ struct
   structure K = KNormalForm
   structure AN = ANormalForm
   structure P = Primitive
+  structure O = ObjectCode
+  structure ASM = AssemblyCode
 
   type reg = ObjectCode.reg
   type instruction = AssemblyCode.instr
@@ -96,7 +98,7 @@ struct
                          end
         val (branches, cases) = ListPair.unzip (map mkBranchAndCase choices)
         val gotovcon = A.gotoVcon r cases
-    in S gotovcon o hconcat branches o gen fallthru
+    in S gotovcon o gen fallthru o hconcat branches 
     end
 
   val _ = switchVcon :  (reg KNormalForm.exp -> instruction hughes_list) 
@@ -318,7 +320,20 @@ fun letrec gen (bindings, body) =
            | AN.VMOP _ => (toRegA' r0 e) o (S (A.return r0))
            | AN.VMOPLIT _ => (toRegA' r0 e) o (S (A.return r0)))
 
-
+  fun rewriteGotoVcon instructions =
+    let fun expand (ASM.GOTO_VCON (r, choices)) =
+              let val goto = ASM.OBJECT_CODE (O.GOTO_VCON (r, length choices))
+                  fun choice (con, arity, l) =
+                      [ ASM.OBJECT_CODE (O.REGSLIT ("if-vcon-match", [arity], con))
+                      , ASM.GOTO_LABEL l
+                      ]
+              in  goto :: ListUtil.concatMap choice choices
+              end
+          | expand (ASM.LOADFUNC (r, i, instrs)) = 
+                   [ASM.LOADFUNC (r, i, rewriteGotoVcon instrs)]
+          | expand i = [i]
+    in  ListUtil.concatMap expand instructions
+    end
 
   val _ = forEffectK' :        reg KNormalForm.exp -> instruction hughes_list
   val _ = toRegK'     : reg -> reg KNormalForm.exp -> instruction hughes_list
@@ -326,7 +341,9 @@ fun letrec gen (bindings, body) =
   val _ = forEffectA' :        reg ANormalForm.exp -> instruction hughes_list
   val _ = toRegA'     : reg -> reg ANormalForm.exp -> instruction hughes_list
 
-  fun forEffectK e  = forEffectK'  e []
+  fun forEffectK e  = let val instrs = forEffectK' e []
+                      in rewriteGotoVcon instrs
+                      end
   fun toRegK dest e = toRegK' dest e []
 
   fun forEffectA e  = forEffectA'  e []

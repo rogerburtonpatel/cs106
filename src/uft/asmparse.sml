@@ -559,7 +559,7 @@ struct
 
     | unparse ((A.OBJECT_CODE (O.LOADFUNC (r, k, body)))::instrs) = 
                 unparse (A.LOADFUNC (r, k, List.map A.OBJECT_CODE body)::instrs)
-    | unparse (A.GOTO_VCON (r, choices) :: instructions) =
+    | unparse (A.GOTO_VCON (r, choices) :: instructions) = 
       let fun choice (v, arity, lbl) =
          spaceSep ["  case", unparse_lit v, "(" ^ int arity ^ "):", "goto", lbl]
       in spaceSep ["switch", reg r, "{"] :: map choice choices @ "}" ::
