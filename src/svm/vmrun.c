@@ -670,6 +670,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                         arity = 0;
                         break;
                 }
+
                 if (CANDUMP && dump_case) {
                     fprint(stderr, "in GotoVcon- from scrutinee %v, we have "
                                    "computed constructor %v with arity %d\n"
@@ -679,6 +680,9 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 /* find corresponding ifVconMatch */
                 pc++; /* enter jump table */
                 for (int i = 0; i < numslots; i++) {
+                    /* we do this because UX and friends are based off of 
+                       variable curr_instr-- I might change this to just be
+                       *pc to have a single point of truth. */
                     curr_instr = *pc;
                     assert(opcode(curr_instr) == IfVconMatch); /* extra care */
                     Value maybematch = vm->literals[uYZ(curr_instr)];
@@ -689,14 +693,14 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 }
                     if (UX == arity && eqvalue(maybematch, constructor)) 
                     {
-                        /* +2: 1 to actually arrive at the goto, 
+                        /* +2: 1 to actually arrive at the goto from the 'if', 
                             1 for the usual pre-offset increment. */
                         pc += 2 + iXYZ(*(pc + 1)); 
                         break;
                     }
-                    pc += 2;
+                    pc += 2; /* on to the next ifVconMatch/Goto pair */
                 }
-                continue;
+                continue; /* just leave off here; don't re-increment pc. */
             }
 
             /* R0- MANUAL GARBAGE COLLECTION */
