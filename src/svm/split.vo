@@ -1,0 +1,73 @@
+.load module 52
+.load 0 function 3 20
+goto-vcon 1 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 7
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+loadliteral 4 string 4 80 65 73 82
+mkblock 0 4 3
+setblockslot 0 2 0
+setblockslot 0 3 1
+getblockslot 4 1 1
+getblockslot 5 1 2
+getglobal 6 string 5 115 112 108 105 116
+copy 7 5
+copy 8 3
+cons 9 4 2
+copy 9 9
+tailcall 6 9
+setglobal 0 string 5 115 112 108 105 116
+getglobal 0 string 5 115 112 108 105 116
+loadliteral 1 1
+loadliteral 2 2
+loadliteral 3 emptylist
+cons 2 2 3
+cons 1 1 2
+loadliteral 2 emptylist
+loadliteral 3 emptylist
+call 0 0 3
+check 0 string 22 40 115 112 108 105 116 32 39 40 49 32 50 41 32 39 40 41 32 39 40 41 41
+loadliteral 0 string 4 80 65 73 82
+loadliteral 1 1
+loadliteral 2 emptylist
+cons 1 1 2
+loadliteral 2 2
+loadliteral 3 emptylist
+cons 2 2 3
+mkblock 0 0 3
+setblockslot 0 1 0
+setblockslot 0 2 1
+expect 0 string 17 40 39 80 65 73 82 32 39 40 49 41 32 39 40 50 41 41
+getglobal 0 string 5 115 112 108 105 116
+loadliteral 1 1
+loadliteral 2 2
+loadliteral 3 3
+loadliteral 4 4
+loadliteral 5 emptylist
+cons 4 4 5
+cons 3 3 4
+cons 2 2 3
+cons 1 1 2
+loadliteral 2 emptylist
+loadliteral 3 emptylist
+call 0 0 3
+check 0 string 26 40 115 112 108 105 116 32 39 40 49 32 50 32 51 32 52 41 32 39 40 41 32 39 40 41 41
+loadliteral 0 string 4 80 65 73 82
+loadliteral 1 3
+loadliteral 2 1
+loadliteral 3 emptylist
+cons 2 2 3
+cons 1 1 2
+loadliteral 2 4
+loadliteral 3 2
+loadliteral 4 emptylist
+cons 3 3 4
+cons 2 2 3
+mkblock 0 0 3
+setblockslot 0 1 0
+setblockslot 0 2 1
+expect 0 string 21 40 39 80 65 73 82 32 39 40 51 32 49 41 32 39 40 52 32 50 41 41

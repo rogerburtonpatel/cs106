@@ -2,50 +2,74 @@ CS 106 Homework Submission
 
 What person or group is submitting this homework?
 
-  - 
+  - Roger
 
 What work are you proud of?
 
-  - 
+  - Finishing in spite of illness! And this whole module was a blast. I'm 
+    genuinely proud of just getting it to work. 
 
 What code would you like help improving?  Are there bugs you'd like
 help finding during code review?
 
-  - 
+  - Currently, we have : 
+  uft es-kn split.es | vscheme
+  Run-time error: no-matching-case
+  Run-time error: no-matching-case
+
+  I haven't had time to fix this; I focused on getting fig6-extended.scm 
+  go work smoothly with uft es-vo -> svm. nomatch.scm and nested.scm also 
+  work great. There are definitely going to be a few things to work out- 
+  but for now, I'm very glad with where I am. I don't know where the problem
+  code is, so I can't really ask for real help yet. 
+
+  I'd like to review match-compiler.sml:243 and the wilcard elimination when 
+  considering the no-wildcard invariant: how can we deal with wildcards
+  in nested patterns? Like (C1 (C2 _))
 
 What code, if any, would you especially like the course staff to
 review?  Why?
 
-  -
+  - Same as above! Thanks so much. Also a very small, strange ML thing 
+    at codegen.sml:78-79-- I wanted to use MatchCompiler.labeled_constructor
+    for my type annotation at codegen.sml:79, but the compiler didn't 
+    recognize the structure (or DECISION_TREE for that matter). Is this 
+    a cm/mlb issue? 
 
 In this course, all code may be shared freely.  Aside from code that
 is distributed with the assignment, does your submission contain any
 other code that you got from someone else?  If so, what code is it
 (file names and line numbers please) and who supplied it?
 
-  - 
+  - I used the structure of norman's compile in match-compiler.sml:214-237,
+    along with much of the logic of his algorithm. I also used norman's 
+    registerize in match-compiler.sml:179-182. Thank you very, very much for 
+    this additional infrastructure. 
 
 In response to last week's code review, have you made any material
 changes?  What were they?  By file name and line number, where are
 they found in the code?  If you remember, who helped you during code
 review?
 
-  - 
+  - vmheap.c:654-655 - I re-added memset! Thank you norman. 
+    Also inspired by Matt, I documented my Stack invariants in vmstack.h:6-8.
+    Big thanks to him too!
 
 
 We have a plenary code review tomorrow.  Are you willing to present
 (as a group, if applicable)?
 
-  - 
+  - If I were at this point on tuesday, yes!
 
 Supposing you are not selected to present at tomorrow's plenary code
 review, what code would you like to see presented?  What would you
 learn the most from?
 
-  - 
+  - I learned a lot from what you presented. I think that was what was 
+    most needed; after match compilation everything more or less made sense. 
 
 Again supposing you are not selected to present, are you willing to
 serve on the review panel? (Or if there are more than one of you, who
 is willing to serve?)
 
-  - 
+  - but of course

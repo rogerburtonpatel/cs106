@@ -68,6 +68,7 @@ Instruction parseR1U8(VMState vm, Opcode opcode, Tokens operands, unsigned *maxr
   return eR1U8(opcode, regX, k);
 }
 
+
 Instruction parseR2U8(VMState vm, Opcode opcode, Tokens operands, unsigned *maxreg) {
   (void)vm;
   uint8_t regX = tokens_get_byte(&operands, NULL);
@@ -110,6 +111,17 @@ Instruction parseR1LIT(VMState vm, Opcode opcode, Tokens operands, unsigned *max
     assert(operands == NULL);
     SEE(reg);
     return eR1U16(opcode, reg, litslot);
+}
+
+Instruction parseU8LIT(VMState vm, Opcode opcode, Tokens operands, unsigned *maxreg) {
+    (void)maxreg;
+    initnames(); // before comparing names, you must call this function
+    uint8_t u8 = tokens_get_byte(&operands, NULL);
+    Value litv = get_literal(&operands, NULL);
+    uint32_t litslot = literal_slot(vm, litv);
+    assert(litslot == (uint16_t) litslot);
+    assert(operands == NULL);
+    return eR1U16(opcode, u8, litslot);
 }
 
 /* Encode load literal instruction but with no register involved */

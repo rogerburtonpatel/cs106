@@ -4,7 +4,11 @@ TESTING- dress to impress
 1. vs, kn, fo idempotent testing
 2. vscheme differential testing DONE
 
+
+
 setjmp comparison
+
+fix 2 consecutive check errors saying nested check-error not allowed
 
 point 99?
 

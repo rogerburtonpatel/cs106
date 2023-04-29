@@ -522,6 +522,9 @@ struct
               spaceSep ["printl", unparse_lit name]
           | ("printlnl", [], name) =>
               spaceSep ["printlnl", unparse_lit name]
+          (* | ("goto-vcon") *)
+          | ("if-vcon-match", [x], l) =>
+              spaceSep ["if vcon ==", unparse_lit l, "/", int x]
           | (name, _, _) => 
                 "an unknown register-literal based assembly-code instruction " 
                                                                          ^ name)
@@ -550,7 +553,6 @@ struct
       spaceSep ["goto", s]
     | unparse1 (A.IF_GOTO_LABEL (x, s)) =
       spaceSep ["if", reg x, "goto", s]
-    | unparse1 (A.GOTO_VCON _) = Impossible.exercise "A_GOTO_VCON_ASMPARSE"
     | unparse1 _ = "an unknown assembly-code instruction"
 
   fun unparse ((A.LOADFUNC (r, k, body))::instrs) = 

@@ -48,6 +48,7 @@
 #define VMLOAD() \
     (fun = vm->fun, \
      pc  = vm->fun->instructions + vm->counter, \
+     cons_symbol = vm->literals[vm->cons_sym_slot], \
      registers = vm->registers + vm->R_window_start)
 
 #define GC() (VMSAVE(), gc(vm), VMLOAD())
@@ -61,11 +62,15 @@ extern int setjmp_proxy(jmp_buf t); /* see what a difference this makes! */
 void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     const char *dump_decode = svmdebug_value("decode");
     const char *dump_call =  svmdebug_value("call");
+    const char *dump_case = svmdebug_value("case");
     (void)dump_call; /* not used for now */
     Instruction *pc;
     /* Invariant: registers always = vm->registers + vm->R_window_start */
     Value *registers;
     Value v;
+
+    Value constructor;
+    uint8_t arity; /* for goto-vcon */
     /* Invariant: vm->fun and fun are always the currently running function
        before gargage collection, vm->fun */
     vm->fun = fun;
@@ -73,6 +78,10 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     if (fun->size < 1) {
         return;
     }
+
+    Value cons_symbol = vm->literals[vm->cons_sym_slot]; 
+    // ^ restore me after GC 
+    // (this is for pattern matching so we know what 'cons' is)
 
     switch (status) {
         case INITIAL_CALL:;
@@ -88,11 +97,12 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
         case ERROR_CALL:;
             if (error_mode() == TESTING) {
                 pass_test();
-            Activation a = vm->Stack[--vm->stackpointer];
-            vm->R_window_start = a.R_window_start;
-            registers = vm->registers + a.R_window_start;
-            pc = &(a.fun->instructions[0]) + a.counter + 1;
-            break;
+                exit_check_error();
+                Activation a = vm->Stack[--vm->stackpointer];
+                vm->R_window_start = a.R_window_start;
+                registers = vm->registers + a.R_window_start;
+                pc = &(a.fun->instructions[0]) + a.counter + 1;
+                break;
             } else {
                 fprintf(stderr, "Stack trace: some day!\n");
                 /* we're done */
@@ -611,6 +621,84 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 registers[UX] = cl-> captured[UZ];
                 break;
             }
+
+            case MkBlock: {
+                size_t nslots = UZ;
+                VMNEW(struct VMBlock *, b, 
+                      vmsize_block(nslots));
+                b->nslots = nslots;
+                b->slots[0] = registers[UY];
+                registers[UX] = mkBlockValue(b);
+                break;
+            }
+            case SetBlockSlot: {
+                struct VMBlock *b = AS_BLOCK(vm, registers[UX]);
+                (void)GCVALIDATE(b);
+                assert(UZ < b->nslots);
+                b->slots[UZ] = registers[UY];
+                break;
+            }
+            case GetBlockSlot: {
+                struct VMBlock *block = registers[UY].block;
+                if (registers[UY].tag == ConsCell) {
+                    switch (UZ) {
+                    case 0: registers[UX] = cons_symbol; break;
+                    case 1: case 2: registers[UX] = block->slots[UZ - 1]; break;
+                    default: 
+                         runerror(vm, "A cons cell doesn't have a slot %d", UZ);
+                    }
+                } else {
+                    assert(registers[UY].tag == Block && UZ < block->nslots);
+                    registers[UX] = block->slots[UZ];
+                }
+                break;
+            }
+
+            case GotoVcon: {
+                constructor = registers[UX];
+                uint8_t numslots = UY;
+                switch (constructor.tag) {
+                    case Block: 
+                        arity = constructor.block->nslots - 1;
+                        constructor = constructor.block->slots[0]; 
+                        break;
+                    case ConsCell:
+                        arity = 2;
+                        constructor = cons_symbol;
+                        break;
+                    default:
+                        arity = 0;
+                        break;
+                }
+                if (CANDUMP && dump_case) {
+                    fprint(stderr, "in GotoVcon- from scrutinee %v, we have "
+                                   "computed constructor %v with arity %d\n"
+                                   , registers[UX], constructor, arity);
+                }
+
+                /* find corresponding ifVconMatch */
+                pc++; /* enter jump table */
+                for (int i = 0; i < numslots; i++) {
+                    curr_instr = *pc;
+                    assert(opcode(curr_instr) == IfVconMatch); /* extra care */
+                    Value maybematch = vm->literals[uYZ(curr_instr)];
+                    if (CANDUMP && dump_case) {
+                    fprint(stderr, "in GotoVcon- matching scrutinee %v against "
+                                   "ifVconMatch value %v with arity %d\n",
+                                    constructor, maybematch, UX);
+                }
+                    if (UX == arity && eqvalue(maybematch, constructor)) 
+                    {
+                        /* +2: 1 to actually arrive at the goto, 
+                            1 for the usual pre-offset increment. */
+                        pc += 2 + iXYZ(*(pc + 1)); 
+                        break;
+                    }
+                    pc += 2;
+                }
+                continue;
+            }
+
             /* R0- MANUAL GARBAGE COLLECTION */
             case Gc: 
                 GC();

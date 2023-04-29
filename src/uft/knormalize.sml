@@ -209,7 +209,7 @@ struct
                                 case maybetree 
                                   of SOME tree' => treeGen rset tree'
                                   |  NONE       => K.VMOPLIT (P.error, [], 
-                                                    K.STRING "no matching case")
+                                                    K.STRING "no-matching-case")
                           in 
                           K.SWITCH_VCON (r, treeOfEdges, treeOrNoMatch)
                           end)

@@ -651,12 +651,8 @@ static void scan_vmstate(struct VMState *vm) {
        ; v++) {
         scan_value(v);
        }
-  for (Value *v = stale_start
-       ; v < registers + NUM_REGISTERS
-       ; v++) {
-        *v = nilValue;
-       }
-
+  memset(stale_start, 0, (char *)(registers + NUM_REGISTERS) - 
+                         (char *)stale_start);
   // root: any value that may be awaiting the `expect` primitive
   scan_value(&(vm->awaiting_expect));
   // roots: all literal slots that are in use

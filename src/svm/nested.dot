@@ -1,0 +1,78 @@
+digraph {
+  N0 [label="TEST $r1"]
+  N1 [label="let $r100 = $r1[1]"]
+  N2 [label="TEST $r100"]
+  N3 [label="let $r101 = $r100[1]"]
+  N4 [label="let $r102 = $r1[2]"]
+  N5 [label="MATCH 'success with { p |--> $r101, rs |--> $r102 }"]
+  N4 -> N5 
+  N3 -> N4 
+  N2 -> N3 [label="P.HAS_EFFECT/1"]
+  N6 [label="MATCH 'fail with {  }"]
+  N2 -> N6 [label="otherwise"]
+  N1 -> N2 
+  N0 -> N1 [label="K.VMOP/2"]
+  N7 [label="MATCH 'fail with {  }"]
+  N0 -> N7 [label="otherwise"]
+}
+digraph {
+  N8 [label="TEST $r1"]
+  N9 [label="let $r100 = $r1[3]"]
+  N10 [label="TEST $r100"]
+  N11 [label="let $r101 = $r1[1]"]
+  N12 [label="let $r102 = $r1[2]"]
+  N13 [label="let $r103 = $r100[1]"]
+  N14 [label="MATCH 'success with { n |--> $r101, e |--> $r102, n' |--> $r103 }"]
+  N13 -> N14 
+  N12 -> N13 
+  N11 -> N12 
+  N10 -> N11 [label="K.NAME/1"]
+  N15 [label="MATCH 'fail with {  }"]
+  N10 -> N15 [label="otherwise"]
+  N9 -> N10 
+  N8 -> N9 [label="K.LETX/3"]
+  N16 [label="MATCH 'fail with {  }"]
+  N8 -> N16 [label="otherwise"]
+}
+digraph {
+  N17 [label="TEST $r1"]
+  N18 [label="let $r100 = $r1[1]"]
+  N19 [label="let $r101 = $r1[2]"]
+  N20 [label="MATCH (case prim [(P.HAS_EFFECT p) 's ... with { prim |--> $r100, rs |--> $r101 }"]
+  N19 -> N20 
+  N18 -> N19 
+  N17 -> N18 [label="K.VMOP/2"]
+  N21 [label="MATCH 'fail with {  }"]
+  N17 -> N21 [label="otherwise"]
+}
+digraph {
+  N22 [label="TEST $r2"]
+  N23 [label="let $r100 = $r2[1]"]
+  N24 [label="MATCH 'success with { p |--> $r100 }"]
+  N23 -> N24 
+  N22 -> N23 [label="P.HAS_EFFECT/1"]
+  N25 [label="MATCH 'fail with {  }"]
+  N22 -> N25 [label="otherwise"]
+}
+digraph {
+  N26 [label="TEST $r1"]
+  N27 [label="let $r100 = $r1[1]"]
+  N28 [label="let $r101 = $r1[2]"]
+  N29 [label="let $r102 = $r1[3]"]
+  N30 [label="MATCH (case name [(K.NAME n') 'succes ... with { n |--> $r100, e |--> $r101, name |--> $r102 }"]
+  N29 -> N30 
+  N28 -> N29 
+  N27 -> N28 
+  N26 -> N27 [label="K.LETX/3"]
+  N31 [label="MATCH 'fail with {  }"]
+  N26 -> N31 [label="otherwise"]
+}
+digraph {
+  N32 [label="TEST $r4"]
+  N33 [label="let $r100 = $r4[1]"]
+  N34 [label="MATCH 'success with { n' |--> $r100 }"]
+  N33 -> N34 
+  N32 -> N33 [label="K.NAME/1"]
+  N35 [label="MATCH 'fail with {  }"]
+  N32 -> N35 [label="otherwise"]
+}

@@ -49,6 +49,8 @@ VMState newstate(void) {
     }
 
     vms->awaiting_expect = nilValue;
+    vms->cons_sym_slot = 
+                        literal_slot(vms, mkStringValue(Vmstring_newc("cons")));
         
     return vms;
 }

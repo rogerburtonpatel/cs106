@@ -32,7 +32,7 @@ void enter_check_error(void); // start running within the dynamic extent
                               // of an active check-error test
 void exit_check_error(void); // leave the dynamic extent 
                              // of an active check-error test
-ErrorMode error_mode(void);                             
    // It is a checked run-time error to call exit without a matching enter.
+ErrorMode error_mode(void);                
 
 #endif

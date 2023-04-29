@@ -72,6 +72,13 @@ instruction_info instructions[] = {
   {"mkclosure", MkClosure, parseR2U8, "rX := mkclosure rY Z"},
   {"setclslot", SetClSlot, parseR2U8, "rX <Z> := rY (setclslot)"},
   {"getclslot", GetClSlot, parseR2U8, "rX := rY <Z> (getclslot)"},
+
+  { "mkblock", MkBlock, parseR2U8, "rX := block[rY,Z]" },
+  { "getblockslot", GetBlockSlot, parseR2U8, "rX := block rY.Z" },
+  { "setblockslot", SetBlockSlot, parseR2U8, "block rX.Z := rY" },
+  { "goto-vcon", GotoVcon, parseR1U8, "goto-vcon rX [Y slots]" },
+  { "if-vcon-match", IfVconMatch, parseU8LIT, "if vcon == LIT/X then" },
+
   {"boolOf", BoolOf, parseR2, "rX := boolOf rY" },
   {"=", RegCopy, parseR2, "rX := rY"},
   {"swap", Swap, parseR2, "rX, rY := rY, rX"},

@@ -20,6 +20,7 @@ typedef enum opcode {
                       LoadLiteral, // R1LIT
                       GetGlobal, SetGlobal, // R1GLO
                       Add, Sub, Div, IDiv, Mult, Mod, Lt, Gt, Le, Ge, Eq, // R3
+                      MkBlock, GetBlockSlot, SetBlockSlot, // R2U8
                       GotoVcon, // R1U8
                       IfVconMatch, // U8LIT, not meant to be evaluated
                       Cons, // R3

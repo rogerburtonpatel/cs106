@@ -1,0 +1,89 @@
+.load module 51
+.load 0 function 1 37
+goto-vcon 1 1
+if-vcon-match 2 string 2 67 49
+goto 2
+loadliteral 0 string 4 102 111 117 114
+return 0
+getblockslot 2 1 1
+goto-vcon 2 1
+if-vcon-match 0 string 2 67 50
+goto 12
+getblockslot 3 1 2
+goto-vcon 3 2
+if-vcon-match 0 string 2 67 52
+goto 4
+if-vcon-match 0 string 2 67 53
+goto 4
+loadliteral 0 string 4 102 111 117 114
+return 0
+loadliteral 0 string 3 116 119 111
+return 0
+loadliteral 0 string 5 116 104 114 101 101
+return 0
+getblockslot 3 1 2
+goto-vcon 3 3
+if-vcon-match 0 string 2 67 51
+goto 6
+if-vcon-match 0 string 2 67 52
+goto 6
+if-vcon-match 0 string 2 67 53
+goto 6
+loadliteral 0 string 4 102 111 117 114
+return 0
+loadliteral 0 string 3 111 110 101
+return 0
+loadliteral 0 string 3 116 119 111
+return 0
+loadliteral 0 string 5 116 104 114 101 101
+return 0
+setglobal 0 string 8 102 105 103 117 114 101 45 54
+getglobal 0 string 8 102 105 103 117 114 101 45 54
+loadliteral 1 string 2 67 49
+loadliteral 2 string 2 67 50
+mkblock 2 2 1
+loadliteral 3 string 2 67 51
+mkblock 3 3 1
+mkblock 1 1 3
+setblockslot 1 2 0
+setblockslot 1 3 1
+call 0 0 1
+check 0 string 24 40 102 105 103 117 114 101 45 54 32 40 39 67 49 32 39 67 50 32 39 67 51 41 41
+loadliteral 0 string 3 111 110 101
+expect 0 string 4 39 111 110 101
+getglobal 0 string 8 102 105 103 117 114 101 45 54
+loadliteral 1 string 2 67 49
+loadliteral 2 3
+loadliteral 3 string 2 67 52
+mkblock 3 3 1
+mkblock 1 1 3
+setblockslot 1 2 0
+setblockslot 1 3 1
+call 0 0 1
+check 0 string 22 40 102 105 103 117 114 101 45 54 32 40 39 67 49 32 51 32 39 67 52 41 41
+loadliteral 0 string 3 116 119 111
+expect 0 string 4 39 116 119 111
+getglobal 0 string 8 102 105 103 117 114 101 45 54
+loadliteral 1 string 2 67 49
+loadliteral 2 3
+loadliteral 3 string 2 67 53
+mkblock 3 3 1
+mkblock 1 1 3
+setblockslot 1 2 0
+setblockslot 1 3 1
+call 0 0 1
+check 0 string 22 40 102 105 103 117 114 101 45 54 32 40 39 67 49 32 51 32 39 67 53 41 41
+loadliteral 0 string 5 116 104 114 101 101
+expect 0 string 6 39 116 104 114 101 101
+getglobal 0 string 8 102 105 103 117 114 101 45 54
+loadliteral 1 string 2 67 49
+loadliteral 2 3
+loadliteral 3 string 2 67 54
+mkblock 3 3 1
+mkblock 1 1 3
+setblockslot 1 2 0
+setblockslot 1 3 1
+call 0 0 1
+check 0 string 22 40 102 105 103 117 114 101 45 54 32 40 39 67 49 32 51 32 39 67 54 41 41
+loadliteral 0 string 4 102 111 117 114
+expect 0 string 5 39 102 111 117 114

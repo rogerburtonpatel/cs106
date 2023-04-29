@@ -116,10 +116,10 @@ $(BIN)/svm-dis: $(OBJ) $(BUILD)/svm-dis.o
 
 
 $(BUILD)/%.o: %.c
-	gcc $(CFLAGS) -MMD -MF $(BUILD)/$*.d -o $@ -c -Wall -std=c11 $<
+	gcc $(CFLAGS) -MMD -MF $(BUILD)/$*.d -o $@ -c $<
 
 $(BUILD)/vmrun.o: vmrun.c
-	gcc $(CFLAGS) -MMD -MF $(BUILD)/vmrun.d -o $@ -c -Wall -Werror -std=c11 -O2 $<
+	gcc $(CFLAGS) -MMD -MF $(BUILD)/vmrun.d -o $@ -c $<
 
 
 -include $(DEPS)

@@ -53,6 +53,7 @@ struct VMState {
    // store is the vmheap
 
    Value awaiting_expect;  // value passed to the pending `check`, if any
+   uint16_t cons_sym_slot; // for access to legacy lists- pattern matching
 
 };
 

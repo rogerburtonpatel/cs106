@@ -148,14 +148,19 @@ fun letrec gen (bindings, body) =
                     of ("getblockslot", [r, i]) => S (A.getblockslot dest r i)
                      | _ =>
                   instrOrErrorIfArityMismatch p rs 0 (S (A.setreg dest p rs)))
-           | K.VMOP (p as P.HAS_EFFECT _, _) => 
-               L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
-                  "register-setting context on register r" ^ Int.toString dest))
+           | K.VMOP (p as P.HAS_EFFECT _, rs) => 
+              L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
+                  "register-setting context on register r" ^ 
+                                                         Int.toString dest))
            | K.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
              instrOrErrorIfArityMismatch p rs 1 (S (A.setregLit dest p rs l))
-           | K.VMOPLIT (p as P.HAS_EFFECT _, _, _) => 
+           | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
+               (case (P.name p, l) of ("error", O.STRING msg) => 
+                L (A.mkerror msg)
+              | _ =>
                L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
-                  "register-setting context on register r" ^ Int.toString dest))
+                  "register-setting context on register r" ^ 
+                                                         Int.toString dest)))
            (* | K.VMOPINT (p as P.SETS_REGISTER _, r1, r2, i) => 
              instrOrErrorIfArityMismatch p [r1, r2] 1 (S (A.setregLit dest p rs l))
            | K.VMOPINT (p as P.HAS_EFFECT _, _, _) => 
@@ -177,7 +182,7 @@ fun letrec gen (bindings, body) =
            | K.BLOCK rs => S (A.mkblock dest (hd rs) (List.length rs))
                            o L (mapi 
                                   (fn (slotnum, blkreg) =>
-                                    A.setblockslot dest slotnum blkreg) 
+                                    A.setblockslot dest (slotnum + 1) blkreg) 
                                     (* todo ask *)
                                (tl rs))
            | K.SWITCH_VCON sv => 
@@ -320,20 +325,7 @@ fun letrec gen (bindings, body) =
            | AN.VMOP _ => (toRegA' r0 e) o (S (A.return r0))
            | AN.VMOPLIT _ => (toRegA' r0 e) o (S (A.return r0)))
 
-  fun rewriteGotoVcon instructions =
-    let fun expand (ASM.GOTO_VCON (r, choices)) =
-              let val goto = ASM.OBJECT_CODE (O.GOTO_VCON (r, length choices))
-                  fun choice (con, arity, l) =
-                      [ ASM.OBJECT_CODE (O.REGSLIT ("if-vcon-match", [arity], con))
-                      , ASM.GOTO_LABEL l
-                      ]
-              in  goto :: ListUtil.concatMap choice choices
-              end
-          | expand (ASM.LOADFUNC (r, i, instrs)) = 
-                   [ASM.LOADFUNC (r, i, rewriteGotoVcon instrs)]
-          | expand i = [i]
-    in  ListUtil.concatMap expand instructions
-    end
+
 
   val _ = forEffectK' :        reg KNormalForm.exp -> instruction hughes_list
   val _ = toRegK'     : reg -> reg KNormalForm.exp -> instruction hughes_list
@@ -341,9 +333,7 @@ fun letrec gen (bindings, body) =
   val _ = forEffectA' :        reg ANormalForm.exp -> instruction hughes_list
   val _ = toRegA'     : reg -> reg ANormalForm.exp -> instruction hughes_list
 
-  fun forEffectK e  = let val instrs = forEffectK' e []
-                      in rewriteGotoVcon instrs
-                      end
+  fun forEffectK e  = forEffectK' e []
   fun toRegK dest e = toRegK' dest e []
 
   fun forEffectA e  = forEffectA'  e []

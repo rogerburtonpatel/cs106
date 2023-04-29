@@ -89,6 +89,21 @@ struct
 
   (* val _ = mkGoto : (ObjectCode.instr list -> ObjectCode.instr) * ObjectCode.instr list error *)
 
+  fun rewriteGotoVcon instructions =
+    let fun expand (A.GOTO_VCON (r, choices)) =
+              let val goto = A.OBJECT_CODE (O.GOTO_VCON (r, length choices))
+                  fun choice (con, arity, l) =
+                      [ A.OBJECT_CODE (O.REGSLIT ("if-vcon-match", [arity], con))
+                      , A.GOTO_LABEL l
+                      ]
+              in  goto :: ListUtil.concatMap choice choices
+              end
+          | expand (A.LOADFUNC (r, i, instrs)) = 
+                   [A.LOADFUNC (r, i, rewriteGotoVcon instrs)]
+          | expand i = [i]
+    in  ListUtil.concatMap expand instructions
+    end
+
     fun labelElim instrs envir = 
         let fun g (n, asminstr, objinstrs) =
               (case asminstr
@@ -108,7 +123,7 @@ struct
               )
       in fold g (succeed []) instrs
       end
-      and translate instrs = (labelEnv >=> labelElim instrs) instrs
+      and translate instrs = (labelEnv >=> labelElim (rewriteGotoVcon instrs)) instrs
 
     val _ = labelElim :
       AssemblyCode.instr list -> int Env.env ->
