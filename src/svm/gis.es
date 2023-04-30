@@ -14,14 +14,14 @@
 (define point-distance-squared (x y p)
   (+ (square (- x (2Dpoint-x p)))
      (square (- y (2Dpoint-y p)))))
-; (check-expect (point-distance-squared 7 1 (make-2Dpoint 3 4 'test))
-;               25)
+(check-expect (point-distance-squared 7 1 (make-2Dpoint 3 4 'test))
+              25)
 
-; (check-principal-type* point-distance-squared (forall ['a] (int int (2Dpoint 'a) -> int)))
+(check-principal-type* point-distance-squared (forall ['a] (int int (2Dpoint 'a) -> int)))
 
-; (check-type point-distance-squared (forall ['a] (int int (2Dpoint 'a) -> int)))
-; (check-type argmin (forall ['a] (('a -> int) (list 'a) -> 'a)))
-; (check-expect (argmin square '(5000 -4000 3000 -2000)) -2000)
+(check-type point-distance-squared (forall ['a] (int int (2Dpoint 'a) -> int)))
+(check-type argmin (forall ['a] (('a -> int) (list 'a) -> 'a)))
+(check-expect (argmin square '(5000 -4000 3000 -2000)) -2000)
 (define argmin (f xs)
   (letrec ([find (lambda (best-x smallest-result xs)
                    (case xs
@@ -35,8 +35,8 @@
       ['() (error 'argmin-of-empty-list)]
       [(cons y ys) (find y (f y) ys)])))
 
-; (check-type slow-nearest-point
-;             (forall ['a] (int int (list (2Dpoint 'a)) -> (2Dpoint 'a))))
+(check-type slow-nearest-point
+            (forall ['a] (int int (list (2Dpoint 'a)) -> (2Dpoint 'a))))
 (define slow-nearest-point (x y pts)
   (argmin (lambda (pt) (+ (square (- (2Dpoint-x pt) x))
                           (square (- (2Dpoint-y pt) y))))
@@ -47,7 +47,7 @@
       p1
       p2))
 
-; (check-principal-type* closer (forall ['a] (int int (2Dpoint 'a) (2Dpoint 'a) -> (2Dpoint 'a))))
+(check-principal-type* closer (forall ['a] (int int (2Dpoint 'a) (2Dpoint 'a) -> (2Dpoint 'a))))
 
 (define nearest-point (x y tree)
   (letrec (
@@ -72,21 +72,21 @@
                (near-or-far x y right left  (square (- x x-boundary)))
                (near-or-far x y left  right (square (- x x-boundary))))])))
 
-; (check-principal-type* nearest-point (forall ['a] (int int (2Dtree 'a) -> (2Dpoint 'a))))
+(check-principal-type* nearest-point (forall ['a] (int int (2Dtree 'a) -> (2Dpoint 'a))))
 
-; (check-type mergesort
-;    (forall ['a] (('a 'a -> order) -> ((list 'a) -> (list 'a)))))
+(check-type mergesort
+   (forall ['a] (('a 'a -> order) -> ((list 'a) -> (list 'a)))))
 
-; (check-expect (Int.compare 3 7) LESS)
-; (check-expect (Int.compare 7 3) GREATER)
-; (check-expect (Int.compare 7 7) EQUAL)
+(check-expect (Int.compare 3 7) LESS)
+(check-expect (Int.compare 7 3) GREATER)
+(check-expect (Int.compare 7 7) EQUAL)
 
-; (check-expect ((mergesort Int.compare) '()) '())
-; (check-expect ((mergesort Int.compare) '(1)) '(1))
-; (check-expect ((mergesort Int.compare) '(2 1)) '(1 2))
+(check-expect ((mergesort Int.compare) '()) '())
+(check-expect ((mergesort Int.compare) '(1)) '(1))
+(check-expect ((mergesort Int.compare) '(2 1)) '(1 2))
 
-; (check-expect ((mergesort Int.compare) '(9 7 4 1 5 8 6 3 2))
-;               '(1 2 3 4 5 6 7 8 9))
+(check-expect ((mergesort Int.compare) '(9 7 4 1 5 8 6 3 2))
+              '(1 2 3 4 5 6 7 8 9))
 
 
 (define mergesort (compare)
@@ -120,11 +120,11 @@
 (define sort-on (project)
   (mergesort (lambda (x1 x2) (Int.compare (project x1) (project x2)))))
 
-; (check-principal-type* mergesort (forall ['a] (('a 'a -> order) -> ((list 'a) -> (list 'a)))))
-; (check-principal-type* sort-on (forall ['a] (('a -> int) -> ((list 'a) -> (list 'a)))))
+(check-principal-type* mergesort (forall ['a] (('a 'a -> order) -> ((list 'a) -> (list 'a)))))
+(check-principal-type* sort-on (forall ['a] (('a -> int) -> ((list 'a) -> (list 'a)))))
 
-; (check-expect (halves '(1 2 3 4))   (pair '(1 2) '(3 4)))
-; (check-expect (halves '(1 2 3 4 5)) (pair '(1 2) '(3 4 5)))
+(check-expect (halves '(1 2 3 4))   (pair '(1 2) '(3 4)))
+(check-expect (halves '(1 2 3 4 5)) (pair '(1 2) '(3 4 5)))
 
 (define halves (xs)
   (letrec ([scan (lambda (left^ right ys)
@@ -153,10 +153,10 @@
 (val vert-funs  (make-coord-funs 2Dpoint-x (lambda (x y z) (VERT x y z))))
 (val horiz-funs (make-coord-funs 2Dpoint-y (lambda (x y z) (HORIZ x y z))))
 
-; (check-principal-type* halves (forall ['a] ((list 'a) -> (pair (list 'a) (list 'a)))))
+(check-principal-type* halves (forall ['a] ((list 'a) -> (pair (list 'a) (list 'a)))))
 
-; (check-principal-type* vert-funs (forall ['a] (coord-funs 'a)))
-; (check-principal-type* horiz-funs (forall ['a] (coord-funs 'a)))
+(check-principal-type* vert-funs (forall ['a] (coord-funs 'a)))
+(check-principal-type* horiz-funs (forall ['a] (coord-funs 'a)))
 
 (val all-coordinates (list2 vert-funs horiz-funs))
 (define 2Dtree (points)
@@ -185,65 +185,66 @@
                                                                            ])]))])
       (build points all-coordinates)))
 
-; (check-principal-type* 2Dtree (forall ['a] ((list (2Dpoint 'a)) -> (2Dtree 'a))))
+(check-principal-type* 2Dtree (forall ['a] ((list (2Dpoint 'a)) -> (2Dtree 'a))))
 
 (val test-points
    (list3 (make-2Dpoint 10 12 'A)
           (make-2Dpoint  5  6 'B)
           (make-2Dpoint 33 99 'C)))
 (val test-tree (2Dtree test-points))
+(check-principal-type* (nearest-point  11  11 test-tree) 2Dpoint)
 (check-expect (2Dpoint-value (nearest-point  11  11 test-tree)) 'A)
-; (check-expect (2Dpoint-value (nearest-point 100 100 test-tree)) 'C)
+(check-expect (2Dpoint-value (nearest-point 100 100 test-tree)) 'C)
 
-; (record deg ([microdegrees : int]))
+(record deg ([microdegrees : int]))
 
-; (define deg-diff (d1 d2)
-;   (make-deg (- (deg-microdegrees d1) (deg-microdegrees d2))))
+(define deg-diff (d1 d2)
+  (make-deg (- (deg-microdegrees d1) (deg-microdegrees d2))))
 
-; (check-principal-type* deg-diff (deg deg -> deg))
+(check-principal-type* deg-diff (deg deg -> deg))
 
-; (record poi ([name : sym] [lat : deg] [lon : deg]))
+(record poi ([name : sym] [lat : deg] [lon : deg]))
 
-; (define easy-poi (name lat-n lat-frac lon-n lon-frac)
-;   (let ([degrees (lambda (whole frac) (make-deg (+ (* 1000000 whole) frac)))])
-;     (make-poi name (degrees lat-n lat-frac) (degrees lon-n lon-frac))))
+(define easy-poi (name lat-n lat-frac lon-n lon-frac)
+  (let ([degrees (lambda (whole frac) (make-deg (+ (* 1000000 whole) frac)))])
+    (make-poi name (degrees lat-n lat-frac) (degrees lon-n lon-frac))))
 
-; (check-principal-type* easy-poi (sym int int int int -> poi))
+(check-principal-type* easy-poi (sym int int int int -> poi))
 
-; (val boston (easy-poi 'City-of-Boston 42 332221 -71 -016432))
-; (val meters-in-degree-lat 111080)
-; (val meters-in-degree-lon  82418)
+(val boston (easy-poi 'City-of-Boston 42 332221 -71 -016432))
+(val meters-in-degree-lat 111080)
+(val meters-in-degree-lon  82418)
 
-; (val distance-unit-in-meters 30)
+(val distance-unit-in-meters 30)
 
-; (define /-round (dividend divisor)
-;   (/ (+ dividend (/ divisor 2)) divisor))
+(define /-round (dividend divisor)
+  (/ (+ dividend (/ divisor 2)) divisor))
 
-; (define distance-of-microdegrees (meters-in-degree microdegrees)
-;   (let ([meters (* (/-round meters-in-degree 1000) (/-round microdegrees 1000))])
-;     (/-round meters distance-unit-in-meters)))
+(define distance-of-microdegrees (meters-in-degree microdegrees)
+  (let ([meters (* (/-round meters-in-degree 1000) (/-round microdegrees 1000))])
+    (/-round meters distance-unit-in-meters)))
 
-; (define distance-of-degrees-lat (d)
-;   (distance-of-microdegrees meters-in-degree-lat (deg-microdegrees d)))
-; (define distance-of-degrees-lon (d)
-;   (distance-of-microdegrees meters-in-degree-lon (deg-microdegrees d)))
+(define distance-of-degrees-lat (d)
+  (distance-of-microdegrees meters-in-degree-lat (deg-microdegrees d)))
+(define distance-of-degrees-lon (d)
+  (distance-of-microdegrees meters-in-degree-lon (deg-microdegrees d)))
 
-; (define 2Dpoint-of-poi (p)
-;   (let* ([delta-north (deg-diff (poi-lat p) (poi-lat boston))]
-;          [delta-east  (deg-diff (poi-lon p) (poi-lon boston))])
-;     (make-2Dpoint (distance-of-degrees-lon delta-east)
-;                   (distance-of-degrees-lat delta-north)
-;                   p)))
+(define 2Dpoint-of-poi (p)
+  (let* ([delta-north (deg-diff (poi-lat p) (poi-lat boston))]
+         [delta-east  (deg-diff (poi-lon p) (poi-lon boston))])
+    (make-2Dpoint (distance-of-degrees-lon delta-east)
+                  (distance-of-degrees-lat delta-north)
+                  p)))
 
-; (check-principal-type* 2Dpoint-of-poi (poi -> (2Dpoint poi)))
+(check-principal-type* 2Dpoint-of-poi (poi -> (2Dpoint poi)))
 
-; (define nearest-to-poi (poi tree)
-;   (case (2Dpoint-of-poi poi)
-;     [(make-2Dpoint x y _) (nearest-point x y tree)]))
+(define nearest-to-poi (poi tree)
+  (case (2Dpoint-of-poi poi)
+    [(make-2Dpoint x y _) (nearest-point x y tree)]))
 
-; (val pinnacle-rock    (easy-poi 'Pinnacle-Rock    42 439467 -71 -078238))
-; (val gillette-stadium (easy-poi 'Gillette-Stadium 42 090900 -71 -264300))
-; (val tufts            (easy-poi 'Tufts-University 42 408222 -71 -116402))
-; (val mt-washington    (easy-poi 'Mount-Washington 44 270500 -71 -303200))
-; (val the-breakers     (easy-poi 'The-Breakers     41 469722 -71 -298611))
-; (val mark-twain-house (easy-poi 'Mark-Twain-House 41 767139 -72 -700500))
+(val pinnacle-rock    (easy-poi 'Pinnacle-Rock    42 439467 -71 -078238))
+(val gillette-stadium (easy-poi 'Gillette-Stadium 42 090900 -71 -264300))
+(val tufts            (easy-poi 'Tufts-University 42 408222 -71 -116402))
+(val mt-washington    (easy-poi 'Mount-Washington 44 270500 -71 -303200))
+(val the-breakers     (easy-poi 'The-Breakers     41 469722 -71 -298611))
+(val mark-twain-house (easy-poi 'Mark-Twain-House 41 767139 -72 -700500))

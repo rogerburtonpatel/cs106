@@ -171,9 +171,7 @@ struct
             let val (A', rs)     = allocAndRemoveRegs A bindings 
                 val (names, cls) = ListPair.unzip bindings 
                 val rho'         = ListPair.foldrEq Env.bind rho (names, rs)
-                fun closure ((xs, e'), []) k = 
-                    K.FUNCODE (funcode (xs, e') rho' A')
-                  | closure ((xs, e'), es) k = 
+                fun closure ((xs, e'), es) k = 
                     nbRegsWith (exp rho') bindAnyReg A' es 
                                (fn ts => k (funcode (xs, e') rho' A', ts))
                 in map' closure cls 
@@ -209,7 +207,7 @@ struct
                                 case maybetree 
                                   of SOME tree' => treeGen rset tree'
                                   |  NONE       => K.VMOPLIT (P.error, [], 
-                                                    K.STRING "no-matching-case")
+                                                   K.STRING "no-matching-case")
                           in 
                           K.SWITCH_VCON (r, treeOfEdges, treeOrNoMatch)
                           end)
