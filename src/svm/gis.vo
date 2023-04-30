@@ -1,0 +1,731 @@
+.load module 104
+.load 0 function 1 7
+goto-vcon 1 1
+if-vcon-match 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+goto 2
+loadliteral 0 false
+return 0
+loadliteral 0 true
+return 0
+setglobal 0 string 8 50 68 112 111 105 110 116 63
+.load 0 function 1 11
+goto-vcon 1 1
+if-vcon-match 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+goto 4
+loadliteral 2 string 49 118 97 108 117 101 32 112 97 115 115 101 100 32 116 111 32 50 68 112 111 105 110 116 45 120 32 105 115 32 110 111 116 32 97 32 50 68 112 111 105 110 116 32 114 101 99 111 114 100
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+getblockslot 4 1 3
+return 2
+setglobal 0 string 9 50 68 112 111 105 110 116 45 120
+.load 0 function 1 11
+goto-vcon 1 1
+if-vcon-match 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+goto 4
+loadliteral 2 string 49 118 97 108 117 101 32 112 97 115 115 101 100 32 116 111 32 50 68 112 111 105 110 116 45 121 32 105 115 32 110 111 116 32 97 32 50 68 112 111 105 110 116 32 114 101 99 111 114 100
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+getblockslot 4 1 3
+return 3
+setglobal 0 string 9 50 68 112 111 105 110 116 45 121
+.load 0 function 1 11
+goto-vcon 1 1
+if-vcon-match 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+goto 4
+loadliteral 2 string 53 118 97 108 117 101 32 112 97 115 115 101 100 32 116 111 32 50 68 112 111 105 110 116 45 118 97 108 117 101 32 105 115 32 110 111 116 32 97 32 50 68 112 111 105 110 116 32 114 101 99 111 114 100
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+getblockslot 4 1 3
+return 4
+setglobal 0 string 13 50 68 112 111 105 110 116 45 118 97 108 117 101
+.load 0 function 1 10
+goto-vcon 1 1
+if-vcon-match 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+goto 3
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+getblockslot 4 1 3
+return 2
+setglobal 0 string 9 50 68 112 111 105 110 116 45 120
+.load 0 function 1 10
+goto-vcon 1 1
+if-vcon-match 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+goto 3
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+getblockslot 4 1 3
+return 3
+setglobal 0 string 9 50 68 112 111 105 110 116 45 121
+.load 0 function 1 10
+goto-vcon 1 1
+if-vcon-match 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+goto 3
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+getblockslot 4 1 3
+return 4
+setglobal 0 string 13 50 68 112 111 105 110 116 45 118 97 108 117 101
+.load 0 function 1 2
+* 0 1 1
+return 0
+setglobal 0 string 6 115 113 117 97 114 101
+.load 0 function 3 14
+getglobal 4 string 6 115 113 117 97 114 101
+getglobal 5 string 9 50 68 112 111 105 110 116 45 120
+copy 6 3
+call 5 5 6
+- 5 1 5
+call 4 4 5
+getglobal 5 string 6 115 113 117 97 114 101
+getglobal 6 string 9 50 68 112 111 105 110 116 45 121
+copy 7 3
+call 6 6 7
+- 6 2 6
+call 5 5 6
++ 0 4 5
+return 0
+setglobal 0 string 22 112 111 105 110 116 45 100 105 115 116 97 110 99 101 45 115 113 117 97 114 101 100
+.load 0 function 2 25
+.load 3 function 3 28
+goto-vcon 3 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 4
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+return 1
+getblockslot 4 3 1
+getblockslot 5 3 2
+getclslot 6 0 1
+copy 7 4
+call 6 6 7
+< 7 6 2
+if 7
+goto 6
+getclslot 7 0 0
+copy 8 1
+copy 9 2
+copy 10 5
+tailcall 7 10
+goto 5
+getclslot 7 0 0
+copy 8 4
+copy 9 6
+copy 10 5
+tailcall 7 10
+mkclosure 3 3 2
+setclslot 3 3 0
+setclslot 3 1 1
+goto-vcon 2 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 7
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+loadliteral 4 string 20 97 114 103 109 105 110 45 111 102 45 101 109 112 116 121 45 108 105 115 116
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+getblockslot 4 2 1
+getblockslot 5 2 2
+copy 6 3
+copy 7 4
+copy 8 1
+copy 9 4
+call 8 8 9
+copy 9 5
+tailcall 6 9
+setglobal 0 string 6 97 114 103 109 105 110
+.load 0 function 3 8
+getglobal 4 string 6 97 114 103 109 105 110
+.load 5 function 1 16
+getglobal 6 string 6 115 113 117 97 114 101
+getglobal 7 string 9 50 68 112 111 105 110 116 45 120
+copy 8 1
+call 7 7 8
+getclslot 8 0 1
+- 7 7 8
+call 6 6 7
+getglobal 7 string 6 115 113 117 97 114 101
+getglobal 8 string 9 50 68 112 111 105 110 116 45 121
+copy 9 1
+call 8 8 9
+getclslot 9 0 0
+- 8 8 9
+call 7 7 8
++ 0 6 7
+return 0
+mkclosure 5 5 2
+setclslot 5 2 0
+setclslot 5 1 1
+copy 5 5
+copy 6 3
+tailcall 4 6
+setglobal 0 string 18 115 108 111 119 45 110 101 97 114 101 115 116 45 112 111 105 110 116
+.load 0 function 4 16
+getglobal 5 string 22 112 111 105 110 116 45 100 105 115 116 97 110 99 101 45 115 113 117 97 114 101 100
+copy 6 1
+copy 7 2
+copy 8 3
+call 5 5 8
+getglobal 6 string 22 112 111 105 110 116 45 100 105 115 116 97 110 99 101 45 115 113 117 97 114 101 100
+copy 7 1
+copy 8 2
+copy 9 4
+call 6 6 9
+< 5 5 6
+if 5
+goto 2
+return 4
+goto 1
+return 3
+setglobal 0 string 6 99 108 111 115 101 114
+.load 0 function 3 2
+.load 0 function 5 25
+getglobal 6 string 13 110 101 97 114 101 115 116 45 112 111 105 110 116
+copy 7 1
+copy 8 2
+copy 9 3
+call 6 6 9
+getglobal 7 string 22 112 111 105 110 116 45 100 105 115 116 97 110 99 101 45 115 113 117 97 114 101 100
+copy 8 1
+copy 9 2
+copy 10 6
+call 7 7 10
+<= 8 7 5
+if 8
+goto 11
+getglobal 8 string 6 99 108 111 115 101 114
+copy 9 1
+copy 10 2
+copy 11 6
+getglobal 12 string 13 110 101 97 114 101 115 116 45 112 111 105 110 116
+copy 13 1
+copy 14 2
+copy 15 4
+call 12 12 15
+tailcall 8 12
+goto 1
+return 6
+return 0
+setglobal 0 string 13 110 101 97 114 101 115 116 45 112 111 105 110 116
+.load 0 function 1 13
+.load 4 function 2 41
+goto-vcon 1 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 4
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+return 2
+getblockslot 5 1 1
+getblockslot 6 1 2
+goto-vcon 2 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 4
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+return 1
+getblockslot 7 2 1
+getblockslot 8 2 2
+getclslot 9 0 0
+copy 10 5
+copy 11 7
+call 9 9 11
+goto-vcon 9 1
+if-vcon-match 0 string 4 76 69 83 83
+goto 6
+getclslot 11 0 1
+copy 12 8
+copy 13 1
+call 11 11 13
+cons 10 7 11
+return 10
+getclslot 11 0 1
+copy 12 6
+copy 13 2
+call 11 11 13
+cons 10 5 11
+return 10
+mkclosure 4 4 2
+.load 3 function 3 20
+goto-vcon 1 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 7
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getglobal 5 string 4 112 97 105 114
+copy 6 2
+copy 7 3
+tailcall 5 7
+getblockslot 5 1 1
+getblockslot 6 1 2
+getclslot 7 0 0
+copy 8 6
+copy 9 3
+cons 10 5 2
+copy 10 10
+tailcall 7 10
+mkclosure 3 3 1
+.load 2 function 1 55
+goto-vcon 1 2
+if-vcon-match 0 emptylist
+goto 23
+if-vcon-match 2 string 4 99 111 110 115
+goto 23
+getclslot 5 0 0
+copy 6 1
+loadliteral 7 emptylist
+loadliteral 8 emptylist
+call 5 5 8
+goto-vcon 5 1
+if-vcon-match 2 string 4 80 65 73 82
+goto 3
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getblockslot 6 5 1
+getblockslot 7 5 2
+getclslot 8 0 2
+getclslot 9 0 1
+copy 10 6
+call 9 9 10
+getclslot 10 0 1
+copy 11 7
+call 10 10 11
+tailcall 8 10
+loadliteral 0 emptylist
+return 0
+getblockslot 5 1 2
+goto-vcon 5 1
+if-vcon-match 0 emptylist
+goto 21
+getclslot 6 0 0
+copy 7 1
+loadliteral 8 emptylist
+loadliteral 9 emptylist
+call 6 6 9
+goto-vcon 6 1
+if-vcon-match 2 string 4 80 65 73 82
+goto 3
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getblockslot 7 6 1
+getblockslot 8 6 2
+getclslot 9 0 2
+getclslot 10 0 1
+copy 11 7
+call 10 10 11
+getclslot 11 0 1
+copy 12 8
+call 11 11 12
+tailcall 9 11
+getblockslot 6 1 1
+return 1
+mkclosure 2 2 3
+setclslot 4 1 0
+setclslot 4 4 1
+setclslot 3 3 0
+setclslot 2 3 0
+setclslot 2 2 1
+setclslot 2 4 2
+return 2
+setglobal 0 string 9 109 101 114 103 101 115 111 114 116
+.load 0 function 1 6
+getglobal 2 string 9 109 101 114 103 101 115 111 114 116
+.load 3 function 2 8
+getglobal 4 string 11 73 110 116 46 99 111 109 112 97 114 101
+getclslot 5 0 0
+copy 6 1
+call 5 5 6
+getclslot 6 0 0
+copy 7 2
+call 6 6 7
+tailcall 4 6
+mkclosure 3 3 1
+setclslot 3 1 0
+copy 3 3
+tailcall 2 3
+setglobal 0 string 7 115 111 114 116 45 111 110
+.load 0 function 1 8
+.load 2 function 3 40
+goto-vcon 3 1
+if-vcon-match 2 string 4 99 111 110 115
+goto 6
+getglobal 4 string 4 112 97 105 114
+getglobal 5 string 7 114 101 118 101 114 115 101
+copy 6 1
+call 5 5 6
+copy 6 2
+tailcall 4 6
+getblockslot 4 3 2
+goto-vcon 4 1
+if-vcon-match 2 string 4 99 111 110 115
+goto 6
+getglobal 5 string 4 112 97 105 114
+getglobal 6 string 7 114 101 118 101 114 115 101
+copy 7 1
+call 6 6 7
+copy 7 2
+tailcall 5 7
+getblockslot 5 4 2
+goto-vcon 2 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 7
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+loadliteral 6 string 18 116 104 105 115 45 99 97 110 110 111 116 45 104 97 112 112 101 110
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+getblockslot 6 2 1
+getblockslot 7 2 2
+getclslot 8 0 0
+cons 9 6 1
+copy 9 9
+copy 10 7
+copy 11 5
+tailcall 8 11
+mkclosure 2 2 1
+setclslot 2 2 0
+copy 3 2
+loadliteral 4 emptylist
+copy 5 1
+copy 6 1
+tailcall 3 6
+setglobal 0 string 6 104 97 108 118 101 115
+.load 0 function 1 2
+car 0 1
+return 0
+setglobal 0 string 5 102 105 114 115 116
+.load 0 function 1 21
+goto-vcon 1 2
+if-vcon-match 2 string 4 99 111 110 115
+goto 5
+if-vcon-match 0 emptylist
+goto 12
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getblockslot 2 1 2
+goto-vcon 2 1
+if-vcon-match 0 emptylist
+goto 3
+getglobal 3 string 4 108 97 115 116
+copy 4 2
+tailcall 3 4
+getblockslot 3 1 1
+return 3
+loadliteral 2 string 18 108 97 115 116 45 111 102 45 101 109 112 116 121 45 108 105 115 116
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+setglobal 0 string 4 108 97 115 116
+.load 0 function 1 7
+goto-vcon 1 1
+if-vcon-match 2 string 15 109 97 107 101 45 99 111 111 114 100 45 102 117 110 115
+goto 2
+loadliteral 0 false
+return 0
+loadliteral 0 true
+return 0
+setglobal 0 string 11 99 111 111 114 100 45 102 117 110 115 63
+.load 0 function 1 10
+goto-vcon 1 1
+if-vcon-match 2 string 15 109 97 107 101 45 99 111 111 114 100 45 102 117 110 115
+goto 4
+loadliteral 2 string 61 118 97 108 117 101 32 112 97 115 115 101 100 32 116 111 32 99 111 111 114 100 45 102 117 110 115 45 112 114 111 106 101 99 116 32 105 115 32 110 111 116 32 97 32 99 111 111 114 100 45 102 117 110 115 32 114 101 99 111 114 100
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+return 2
+setglobal 0 string 18 99 111 111 114 100 45 102 117 110 115 45 112 114 111 106 101 99 116
+.load 0 function 1 10
+goto-vcon 1 1
+if-vcon-match 2 string 15 109 97 107 101 45 99 111 111 114 100 45 102 117 110 115
+goto 4
+loadliteral 2 string 62 118 97 108 117 101 32 112 97 115 115 101 100 32 116 111 32 99 111 111 114 100 45 102 117 110 115 45 109 107 45 115 112 108 105 116 32 105 115 32 110 111 116 32 97 32 99 111 111 114 100 45 102 117 110 115 32 114 101 99 111 114 100
+loadliteral 0 string 73 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 48
+error 0
+return 0
+getblockslot 2 1 1
+getblockslot 3 1 2
+return 3
+setglobal 0 string 19 99 111 111 114 100 45 102 117 110 115 45 109 107 45 115 112 108 105 116
+loadliteral 0 string 15 109 97 107 101 45 99 111 111 114 100 45 102 117 110 115
+getglobal 1 string 9 50 68 112 111 105 110 116 45 120
+.load 2 function 3 6
+loadliteral 4 string 4 86 69 82 84
+mkblock 0 4 4
+setblockslot 0 1 1
+setblockslot 0 2 2
+setblockslot 0 3 3
+return 0
+mkblock 0 0 3
+setblockslot 0 1 1
+setblockslot 0 2 2
+setglobal 0 string 9 118 101 114 116 45 102 117 110 115
+loadliteral 0 string 15 109 97 107 101 45 99 111 111 114 100 45 102 117 110 115
+getglobal 1 string 9 50 68 112 111 105 110 116 45 121
+.load 2 function 3 6
+loadliteral 4 string 5 72 79 82 73 90
+mkblock 0 4 4
+setblockslot 0 1 1
+setblockslot 0 2 2
+setblockslot 0 3 3
+return 0
+mkblock 0 0 3
+setblockslot 0 1 1
+setblockslot 0 2 2
+setglobal 0 string 10 104 111 114 105 122 45 102 117 110 115
+getglobal 0 string 5 108 105 115 116 50
+getglobal 1 string 9 118 101 114 116 45 102 117 110 115
+getglobal 2 string 10 104 111 114 105 122 45 102 117 110 115
+call 0 0 2
+setglobal 0 string 15 97 108 108 45 99 111 111 114 100 105 110 97 116 101 115
+.load 0 function 1 7
+.load 2 function 2 152
+goto-vcon 2 2
+if-vcon-match 0 emptylist
+goto 5
+if-vcon-match 2 string 4 99 111 110 115
+goto 7
+loadliteral 0 string 16 110 111 45 109 97 116 99 104 105 110 103 45 99 97 115 101
+error 0
+return 0
+getclslot 3 0 0
+copy 4 1
+getglobal 5 string 15 97 108 108 45 99 111 111 114 100 105 110 97 116 101 115
+tailcall 3 5
+getblockslot 3 2 1
+getblockslot 4 2 2
+goto-vcon 1 1
+if-vcon-match 2 string 4 99 111 110 115
+goto 63
+getglobal 5 string 18 99 111 111 114 100 45 102 117 110 115 45 112 114 111 106 101 99 116
+copy 6 3
+call 5 5 6
+getglobal 6 string 19 99 111 111 114 100 45 102 117 110 115 45 109 107 45 115 112 108 105 116
+copy 7 3
+call 6 6 7
+getglobal 7 string 7 115 111 114 116 45 111 110
+copy 8 5
+call 7 7 8
+copy 8 7
+copy 9 1
+call 8 8 9
+getglobal 9 string 6 104 97 108 118 101 115
+copy 10 8
+call 9 9 10
+getglobal 10 string 3 102 115 116
+copy 11 9
+call 10 10 11
+getglobal 11 string 3 115 110 100
+copy 12 9
+call 11 11 12
+null? 12 10
+if 12
+goto 3
+loadliteral 12 string 4 85 78 73 84
+mkblock 12 12 1
+goto 3
+loadliteral 12 string 16 101 109 112 116 121 45 115 109 97 108 108 45 116 114 101 101
+loadliteral 0 string 74 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 49 50
+error 0
+null? 13 11
+if 13
+goto 3
+loadliteral 13 string 4 85 78 73 84
+mkblock 13 13 1
+goto 3
+loadliteral 13 string 16 101 109 112 116 121 45 108 97 114 103 101 45 116 114 101 101
+loadliteral 0 string 74 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 49 51
+error 0
+.load 14 function 2 4
++ 14 1 2
+loadliteral 15 2
+/ 0 14 15
+return 0
+copy 15 14
+copy 16 5
+getglobal 17 string 4 108 97 115 116
+copy 18 10
+call 17 17 18
+call 16 16 17
+copy 17 5
+getglobal 18 string 5 102 105 114 115 116
+copy 19 11
+call 18 18 19
+call 17 17 18
+call 15 15 17
+copy 16 6
+copy 17 15
+getclslot 18 0 0
+copy 19 10
+copy 20 4
+call 18 18 20
+getclslot 19 0 0
+copy 20 11
+copy 21 4
+call 19 19 21
+tailcall 16 19
+getblockslot 5 1 2
+goto-vcon 5 1
+if-vcon-match 0 emptylist
+goto 63
+getglobal 6 string 18 99 111 111 114 100 45 102 117 110 115 45 112 114 111 106 101 99 116
+copy 7 3
+call 6 6 7
+getglobal 7 string 19 99 111 111 114 100 45 102 117 110 115 45 109 107 45 115 112 108 105 116
+copy 8 3
+call 7 7 8
+getglobal 8 string 7 115 111 114 116 45 111 110
+copy 9 6
+call 8 8 9
+copy 9 8
+copy 10 1
+call 9 9 10
+getglobal 10 string 6 104 97 108 118 101 115
+copy 11 9
+call 10 10 11
+getglobal 11 string 3 102 115 116
+copy 12 10
+call 11 11 12
+getglobal 12 string 3 115 110 100
+copy 13 10
+call 12 12 13
+null? 13 11
+if 13
+goto 3
+loadliteral 13 string 4 85 78 73 84
+mkblock 13 13 1
+goto 3
+loadliteral 13 string 16 101 109 112 116 121 45 115 109 97 108 108 45 116 114 101 101
+loadliteral 0 string 74 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 49 51
+error 0
+null? 14 12
+if 14
+goto 3
+loadliteral 14 string 4 85 78 73 84
+mkblock 14 14 1
+goto 3
+loadliteral 14 string 16 101 109 112 116 121 45 108 97 114 103 101 45 116 114 101 101
+loadliteral 0 string 74 101 102 102 101 99 116 102 117 108 32 112 114 105 109 105 116 105 118 101 32 101 114 114 111 114 32 117 115 101 100 32 105 110 32 114 101 103 105 115 116 101 114 45 115 101 116 116 105 110 103 32 99 111 110 116 101 120 116 32 111 110 32 114 101 103 105 115 116 101 114 32 114 49 52
+error 0
+.load 15 function 2 4
++ 15 1 2
+loadliteral 16 2
+/ 0 15 16
+return 0
+copy 16 15
+copy 17 6
+getglobal 18 string 4 108 97 115 116
+copy 19 11
+call 18 18 19
+call 17 17 18
+copy 18 6
+getglobal 19 string 5 102 105 114 115 116
+copy 20 12
+call 19 19 20
+call 18 18 19
+call 16 16 18
+copy 17 7
+copy 18 16
+getclslot 19 0 0
+copy 20 11
+copy 21 4
+call 19 19 21
+getclslot 20 0 0
+copy 21 12
+copy 22 4
+call 20 20 22
+tailcall 17 20
+getblockslot 6 1 1
+loadliteral 7 string 5 80 79 73 78 84
+mkblock 0 7 2
+setblockslot 0 6 1
+return 0
+mkclosure 2 2 1
+setclslot 2 2 0
+copy 3 2
+copy 4 1
+getglobal 5 string 15 97 108 108 45 99 111 111 114 100 105 110 97 116 101 115
+tailcall 3 5
+setglobal 0 string 6 50 68 116 114 101 101
+getglobal 0 string 5 108 105 115 116 51
+loadliteral 1 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+loadliteral 2 10
+loadliteral 3 12
+loadliteral 4 string 1 65
+mkblock 1 1 4
+setblockslot 1 2 1
+setblockslot 1 3 2
+setblockslot 1 4 3
+loadliteral 2 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+loadliteral 3 5
+loadliteral 4 6
+loadliteral 5 string 1 66
+mkblock 2 2 4
+setblockslot 2 3 1
+setblockslot 2 4 2
+setblockslot 2 5 3
+loadliteral 3 string 12 109 97 107 101 45 50 68 112 111 105 110 116
+loadliteral 4 33
+loadliteral 5 99
+loadliteral 6 string 1 67
+mkblock 3 3 4
+setblockslot 3 4 1
+setblockslot 3 5 2
+setblockslot 3 6 3
+call 0 0 3
+setglobal 0 string 11 116 101 115 116 45 112 111 105 110 116 115
+getglobal 0 string 6 50 68 116 114 101 101
+getglobal 1 string 11 116 101 115 116 45 112 111 105 110 116 115
+call 0 0 1
+setglobal 0 string 9 116 101 115 116 45 116 114 101 101
+getglobal 0 string 13 50 68 112 111 105 110 116 45 118 97 108 117 101
+getglobal 1 string 13 110 101 97 114 101 115 116 45 112 111 105 110 116
+loadliteral 2 11
+loadliteral 3 11
+getglobal 4 string 9 116 101 115 116 45 116 114 101 101
+call 1 1 4
+call 0 0 1
+check 0 string 47 40 50 68 112 111 105 110 116 45 118 97 108 117 101 32 40 110 101 97 114 101 115 116 45 112 111 105 110 116 32 49 49 32 49 49 32 116 101 115 116 45 116 114 101 101 41 41
+loadliteral 0 string 1 65
+expect 0 string 2 39 65

@@ -648,7 +648,11 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                          runerror(vm, "A cons cell doesn't have a slot %d", UZ);
                     }
                 } else {
-                    assert(registers[UY].tag == Block && UZ < block->nslots);
+                    block = AS_BLOCK(vm, registers[UY]);
+                    if (UZ >= block->nslots) {
+                        runerror(vm, "Attempted to access slot %d on a block "
+                                     "with %d slots", UZ, block->nslots);
+                    }
                     registers[UX] = block->slots[UZ];
                 }
                 break;

@@ -145,7 +145,10 @@ struct
         if pi' <> REGISTER r then 
            COMPATIBLE [constraint] 
         else if vcon = vcon' andalso arity = List.length pats then 
+          (* let fun wildcardElim (i, P.WILDCARD) = (MATCH ) *)
+          (* in  *)
            COMPATIBLE (ListUtil.mapi (fn (i, p) => (CHILD (r, i + 1), p)) pats)
+          (* end *)
         else 
            INCOMPATIBLE
        | NONE => COMPATIBLE [constraint])
@@ -162,12 +165,27 @@ struct
 (* frontier is the part of the scruity you haven't matched yet *)
 (* it was right! *)
   fun refineFrontier r labeled_con (F (rule, constraints)) = 
-    let val all_constraints = 
+    let 
+        val all_constraints = 
+        (* val refinedWithWildcardElim = List.filter (fn (_, p) => case p of P.WILDCARD => false | _ => true) constraints *)
      compatibilityConcat (List.map (refineConstraint r labeled_con) constraints)
     in case all_constraints
          of COMPATIBLE cs => SOME (F (rule, cs))
           | INCOMPATIBLE => NONE
     end
+
+  (* fun optionString s NONE = "NONE"
+  | optionString s (SOME x) = "SOME (" ^ s x ^ ")"
+
+  fun conString (vcon, arity) = vcon ^ "/" ^ Int.toString arity
+
+  val refineFrontier = fn r => fn con => fn frontier =>
+    let val () = app eprint ["Refining ", frontierString frontier, " at register ", 
+                              regString r, " with constructor ", conString con, "\n" ]
+        val result = refineFrontier r con frontier
+        val () = app eprint ["result is ", optionString frontierString result, "\n"]
+        in  result
+        end *)
 
   val _ = refineFrontier :
         register -> labeled_constructor -> 'a frontier -> 'a frontier option
@@ -176,7 +194,9 @@ struct
   fun asReg (REGISTER r) k = k r
     | asReg (CHILD c)    k = LET_CHILD (c, k)
 
+  (* here's where we do wildcard elim. *)
   fun registerize [] k = k Env.empty
+    | registerize ((pi, P.WILDCARD)::pairs) k = registerize pairs k
     | registerize ((pi, P.VAR x)::pairs) k = 
        asReg pi (fn t => registerize pairs (fn env => k (Env.bind (x, t, env))))
     | registerize ((_, pat)::_) _ = Impossible.impossible ("non-VAR `" ^

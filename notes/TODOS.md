@@ -9,6 +9,7 @@ TESTING- dress to impress
 setjmp comparison
 
 fix 2 consecutive check errors saying nested check-error not allowed
+let us read case from vs on disk
 
 point 99?
 

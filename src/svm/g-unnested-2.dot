@@ -1,0 +1,9 @@
+digraph {
+  N6 [label="TEST $r4"]
+  N7 [label="let $r100 = $r4[1]"]
+  N8 [label="MATCH 'success with { n' |--> $r100 }"]
+  N7 -> N8 
+  N6 -> N7 [label="K.NAME/1"]
+  N9 [label="MATCH 'fail with {  }"]
+  N6 -> N9 [label="otherwise"]
+}

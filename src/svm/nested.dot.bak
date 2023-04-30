@@ -1,4 +1,3 @@
-
 digraph {
   N0 [label="TEST $r1"]
   N1 [label="let $r100 = $r1[1]"]
@@ -12,7 +11,6 @@ digraph {
   N5 [label="MATCH 'fail with {  }"]
   N0 -> N5 [label="otherwise"]
 }
-
 digraph {
   N6 [label="TEST $r4"]
   N7 [label="let $r100 = $r4[1]"]

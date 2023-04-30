@@ -1,4 +1,3 @@
-
 digraph {
   N0 [label="TEST $r1"]
   N1 [label="let $r100 = $r1[1]"]
@@ -11,14 +10,4 @@ digraph {
   N0 -> N1 [label="K.LETX/3"]
   N5 [label="MATCH 'fail with {  }"]
   N0 -> N5 [label="otherwise"]
-}
-
-digraph {
-  N6 [label="TEST $r4"]
-  N7 [label="let $r100 = $r4[1]"]
-  N8 [label="MATCH 'success with { n' |--> $r100 }"]
-  N7 -> N8 
-  N6 -> N7 [label="K.NAME/1"]
-  N9 [label="MATCH 'fail with {  }"]
-  N6 -> N9 [label="otherwise"]
 }

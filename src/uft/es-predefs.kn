@@ -1,0 +1,499 @@
+(let ([r0 (lambda (r1) 
+             (cond   
+                [(matches-vcon-arity? r1 'cons 2) 
+                      (let* ([r2 (getblockslot r1 r1)]
+                             [r3 (getblockslot r1 r2)]) 
+                        #f)] 
+                [(matches-vcon-arity? r1 ''() 0) #t] 
+                [#t (error 'no-matching-case)]))]) 
+  (set null? r0))
+'type definition ignored
+'type definition ignored
+(let ([r0 (lambda (r1 r2) (let ([r3 'PAIR]) (block r3 r1 r2)))]) 
+  (set pair r0))
+(let ([r0 (lambda (r1) 
+             (cond   
+                [(matches-vcon-arity? r1 'PAIR 2) (getblockslot r1 r1)] 
+                [#t (error 'no-matching-case)]))]) 
+  (set fst r0))
+(let ([r0 (lambda (r1) 
+             (cond   
+                [(matches-vcon-arity? r1 'PAIR 2) (getblockslot r1 r2)] 
+                [#t (error 'no-matching-case)]))]) 
+  (set snd r0))
+(let ([r0 (lambda (r1 r2) 
+             (let ([r3 (< r1 r2)]) 
+               (if r3 
+                  (let ([r3 'LESS]) 
+                    (block r3)) 
+                  (let ([r3 (< r2 r1)]) 
+                    (if r3 
+                       (let ([r3 'GREATER]) 
+                         (block r3)) 
+                       (let ([r3 'EQUAL]) 
+                         (block r3)))))))]) 
+  (set Int.compare r0))
+'type definition ignored
+(let ([r0 (lambda (r1) 
+             (cond   
+                [(matches-vcon-arity? r1 ''() 0) #t] 
+                [(matches-vcon-arity? r1 'cons 2) #f] 
+                [#t (error 'no-matching-case)]))]) 
+  (set null? r0))
+(let ([r0 (lambda (r1) 
+             (cond   
+                [(matches-vcon-arity? r1 ''() 0) 
+                      (let ([r2 'car-of-empty-list]) 
+                        (error r2))] 
+                [(matches-vcon-arity? r1 'cons 2) (getblockslot r1 r1)] 
+                [#t (error 'no-matching-case)]))]) 
+  (set car r0))
+(let ([r0 (lambda (r1) 
+             (cond   
+                [(matches-vcon-arity? r1 ''() 0) 
+                      (let ([r2 'cdr-of-empty-list]) 
+                        (error r2))] 
+                [(matches-vcon-arity? r1 'cons 2) (getblockslot r1 r2)] 
+                [#t (error 'no-matching-case)]))]) 
+  (set cdr r0))
+'type definition ignored
+'type definition ignored
+'type definition ignored
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r1 ''() 0) r2] 
+                [(matches-vcon-arity? r1 'cons 2) 
+                      (let* ([r3 (getblockslot r1 r1)]
+                             [r4 (getblockslot r1 r2)]) 
+                        (set r5 
+                           (let ([r6 (let* ([r6 append]
+                                            [r7 r4]
+                                            [r8 r2]) 
+                                       (r6 r7 r8))]) 
+                             (cons r3 r6))))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set append r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r1 ''() 0) r2] 
+                [(matches-vcon-arity? r1 'cons 2) 
+                      (let* ([r3 (getblockslot r1 r1)]
+                             [r4 (getblockslot r1 r2)]
+                             [r5 revapp]
+                             [r6 r4]
+                             [r7 (set r7 (cons r3 r2))]) 
+                        (r5 r6 r7))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set revapp r0))
+(let ([r0 (lambda (r1) (set r2 (let ([r3 '()]) (cons r1 r3))))]) 
+  (set list1 r0))
+(let ([r0 (lambda (r1 r2 r3) 
+             (cond   
+                [(matches-vcon-arity? r3 ''() 0) 
+                      (let* ([r4 list1]
+                             [r5 (let* ([r5 pair]
+                                        [r6 r1]
+                                        [r7 r2]) 
+                                   (r5 r6 r7))]) 
+                        (r4 r5))] 
+                [(matches-vcon-arity? r3 'cons 2) 
+                      (let* ([r4 (getblockslot r3 r1)]
+                             [r5 (getblockslot r3 r2)]
+                             [r6 (let ([r6 (let* ([r6 fst]
+                                                  [r7 r4]) 
+                                             (r6 r7))]) 
+                                   (= r1 r6))]) 
+                        (if r6 
+                           (set r6 
+                              (let ([r7 (let* ([r7 pair]
+                                               [r8 r1]
+                                               [r9 r2]) 
+                                          (r7 r8 r9))]) 
+                                (cons r7 r5))) 
+                           (set r6 
+                              (let ([r7 (let* ([r7 bind]
+                                               [r8 r1]
+                                               [r9 r2]
+                                               [r10 r5]) 
+                                          (r7 r8 r9 r10))]) 
+                                (cons r4 r7)))))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set bind r0))
+'type definition ignored
+'type definition ignored
+'type definition ignored
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) 
+                      (let ([r3 'NONE]) 
+                        (block r3))] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let ([r3 (getblockslot r2 r1)]) 
+                        (cond   
+                           [(matches-vcon-arity? r3 'PAIR 2) 
+                                 (let* ([r4 (getblockslot r3 r1)]
+                                        [r5 (getblockslot r3 r2)]
+                                        [r6 (getblockslot r2 r2)]
+                                        [r7 (= r1 r4)]) 
+                                   (if r7 
+                                      (let ([r7 'SOME]) 
+                                        (block r7 r5)) 
+                                      (let* ([r7 find]
+                                             [r8 r1]
+                                             [r9 r6]) 
+                                        (r7 r8 r9))))] 
+                           [#t (error 'no-matching-case)]))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set find r0))
+'type definition ignored
+(let ([r0 (lambda (r1 r2) 
+             (let ([r3 (let* ([r3 find]
+                              [r4 r1]
+                              [r5 r2]) 
+                         (r3 r4 r5))]) 
+               (cond   
+                  [(matches-vcon-arity? r3 'SOME 1) #t] 
+                  [(matches-vcon-arity? r3 'NONE 0) #f] 
+                  [#t (error 'no-matching-case)])))]) 
+  (set bound? r0))
+'type definition ignored
+(let ([r0 (lambda (r1 r2) (if r1 r2 r1))]) (set and r0))
+(let ([r0 (lambda (r1 r2) (if r1 r1 r2))]) (set or r0))
+(let ([r0 (lambda (r1) (if r1 #f #t))]) (set not r0))
+(let ([r0 (lambda (r1 r2) 
+             (set r3 
+                (mkclosure 
+                   (lambda ($closure r1) 
+                      (let* ([r4 (CAPTURED-IN 1 $closure)]
+                             [r5 (let* ([r5 (CAPTURED-IN 0 $closure)]
+                                        [r6 r1]) 
+                                   (r5 r6))]) 
+                        (r4 r5))) 
+                   (cons r2 (cons r1 '())))))]) 
+  (set o r0))
+(let ([r0 (lambda (r1) 
+             (set r2 
+                (mkclosure 
+                   (lambda ($closure r1) 
+                      (set r3 
+                         (let ([r4 (CAPTURED-IN 0 $closure)]) 
+                           (mkclosure 
+                              (lambda ($closure r1) 
+                                 (let* ([r4 (CAPTURED-IN 1 $closure)]
+                                        [r5 (CAPTURED-IN 0 $closure)]
+                                        [r6 r1]) 
+                                   (r4 r5 r6))) 
+                              (cons r1 (cons r4 '())))))) 
+                   (cons r1 '()))))]) 
+  (set curry r0))
+(let ([r0 (lambda (r1) 
+             (set r2 
+                (mkclosure 
+                   (lambda ($closure r1 r2) 
+                      (let* ([r3 (let* ([r3 (CAPTURED-IN 0 $closure)]
+                                        [r4 r1]) 
+                                   (r3 r4))]
+                             [r4 r2]) 
+                        (r3 r4))) 
+                   (cons r1 '()))))]) 
+  (set uncurry r0))
+(let ([r0 (lambda (r1) (let ([r2 (car r1)]) (car r2)))]) (set caar r0))
+(let ([r0 (lambda (r1) (let ([r2 (cdr r1)]) (car r2)))]) (set cadr r0))
+(let ([r0 (lambda (r1) (let ([r2 (car r1)]) (cdr r2)))]) (set cdar r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) '()] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let* ([r3 (getblockslot r2 r1)]
+                             [r4 (getblockslot r2 r2)]
+                             [r5 (let* ([r5 r1]
+                                        [r6 r3]) 
+                                   (r5 r6))]) 
+                        (if r5 
+                           (set r5 
+                              (let ([r6 (let* ([r6 filter]
+                                               [r7 r1]
+                                               [r8 r4]) 
+                                          (r6 r7 r8))]) 
+                                (cons r3 r6))) 
+                           (let* ([r5 filter]
+                                  [r6 r1]
+                                  [r7 r4]) 
+                             (r5 r6 r7))))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set filter r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) '()] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let* ([r3 (getblockslot r2 r1)]
+                             [r4 (getblockslot r2 r2)]) 
+                        (set r5 
+                           (let* ([r6 (let* ([r6 r1]
+                                             [r7 r3]) 
+                                        (r6 r7))]
+                                  [r7 (let* ([r7 map]
+                                             [r8 r1]
+                                             [r9 r4]) 
+                                        (r7 r8 r9))]) 
+                             (cons r6 r7))))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set map r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) 
+                      (let ([r3 'UNIT]) 
+                        (block r3))] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let* ([r3 (getblockslot r2 r1)]
+                             [r4 (getblockslot r2 r2)]) 
+                        (begin 
+                           (let* ([r5 r1]
+                                  [r6 r3]) 
+                             (r5 r6)) 
+                           (let* ([r5 app]
+                                  [r6 r1]
+                                  [r7 r4]) 
+                             (r5 r6 r7))))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set app r0))
+(let ([r0 (lambda (r1) 
+             (let* ([r2 revapp]
+                    [r3 r1]
+                    [r4 '()]) 
+               (r2 r3 r4)))]) 
+  (set reverse r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) #f] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let* ([r3 (getblockslot r2 r1)]
+                             [r4 (getblockslot r2 r2)]
+                             [r5 (let* ([r5 r1]
+                                        [r6 r3]) 
+                                   (r5 r6))]) 
+                        (if r5 
+                           #t 
+                           (let* ([r5 exists?]
+                                  [r6 r1]
+                                  [r7 r4]) 
+                             (r5 r6 r7))))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set exists? r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) #t] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let* ([r3 (getblockslot r2 r1)]
+                             [r4 (getblockslot r2 r2)]
+                             [r5 (let* ([r5 r1]
+                                        [r6 r3]) 
+                                   (r5 r6))]) 
+                        (if r5 
+                           (let* ([r5 all?]
+                                  [r6 r1]
+                                  [r7 r4]) 
+                             (r5 r6 r7)) 
+                           #f))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set all? r0))
+(let ([r0 (lambda (r1 r2 r3) 
+             (cond   
+                [(matches-vcon-arity? r3 ''() 0) r2] 
+                [(matches-vcon-arity? r3 'cons 2) 
+                      (let* ([r4 (getblockslot r3 r1)]
+                             [r5 (getblockslot r3 r2)]
+                             [r6 r1]
+                             [r7 r4]
+                             [r8 (let* ([r8 foldr]
+                                        [r9 r1]
+                                        [r10 r2]
+                                        [r11 r5]) 
+                                   (r8 r9 r10 r11))]) 
+                        (r6 r7 r8))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set foldr r0))
+(let ([r0 (lambda (r1 r2 r3) 
+             (cond   
+                [(matches-vcon-arity? r3 ''() 0) r2] 
+                [(matches-vcon-arity? r3 'cons 2) 
+                      (let* ([r4 (getblockslot r3 r1)]
+                             [r5 (getblockslot r3 r2)]
+                             [r6 foldl]
+                             [r7 r1]
+                             [r8 (let* ([r8 r1]
+                                        [r9 r4]
+                                        [r10 r2]) 
+                                   (r8 r9 r10))]
+                             [r9 r5]) 
+                        (r6 r7 r8 r9))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set foldl r0))
+(let ([r0 (lambda (r1 r2) (let ([r3 (> r1 r2)]) (not r3)))]) 
+  (set <= r0))
+(let ([r0 (lambda (r1 r2) (let ([r3 (< r1 r2)]) (not r3)))]) 
+  (set >= r0))
+(let ([r0 (lambda (r1 r2) (let ([r3 (= r1 r2)]) (not r3)))]) 
+  (set != r0))
+(let ([r0 (lambda (r1 r2) (let ([r3 (> r1 r2)]) (if r3 r1 r2)))]) 
+  (set max r0))
+(let ([r0 (lambda (r1 r2) (let ([r3 (< r1 r2)]) (if r3 r1 r2)))]) 
+  (set min r0))
+(let ([r0 (lambda (r1) (let ([r2 0]) (- r2 r1)))]) (set negated r0))
+(let ([r0 (lambda (r1 r2) 
+             (let ([r3 (let ([r3 (/ r1 r2)]) (* r2 r3))]) 
+               (- r1 r3)))]) 
+  (set mod r0))
+(let ([r0 (lambda (r1 r2) 
+             (let ([r3 (let ([r3 0]) (= r2 r3))]) 
+               (if r3 
+                  r1 
+                  (let* ([r3 gcd]
+                         [r4 r2]
+                         [r5 (mod r1 r2)]) 
+                    (r3 r4 r5)))))]) 
+  (set gcd r0))
+(let ([r0 (lambda (r1 r2) 
+             (let ([r3 (let ([r3 (let* ([r3 gcd]
+                                        [r4 r1]
+                                        [r5 r2]) 
+                                   (r3 r4 r5))]) 
+                         (/ r2 r3))]) 
+               (* r1 r3)))]) 
+  (set lcm r0))
+(let ([r0 (lambda (r1) 
+             (let* ([r2 foldr]
+                    [r3 min]
+                    [r4 (car r1)]
+                    [r5 (cdr r1)]) 
+               (r2 r3 r4 r5)))]) 
+  (set min* r0))
+(let ([r0 (lambda (r1) 
+             (let* ([r2 foldr]
+                    [r3 max]
+                    [r4 (car r1)]
+                    [r5 (cdr r1)]) 
+               (r2 r3 r4 r5)))]) 
+  (set max* r0))
+(let ([r0 (lambda (r1) 
+             (let* ([r2 foldr]
+                    [r3 gcd]
+                    [r4 (car r1)]
+                    [r5 (cdr r1)]) 
+               (r2 r3 r4 r5)))]) 
+  (set gcd* r0))
+(let ([r0 (lambda (r1) 
+             (let* ([r2 foldr]
+                    [r3 lcm]
+                    [r4 (car r1)]
+                    [r5 (cdr r1)]) 
+               (r2 r3 r4 r5)))]) 
+  (set lcm* r0))
+(let ([r0 (lambda (r1) (set r2 (let ([r3 '()]) (cons r1 r3))))]) 
+  (set list1 r0))
+(let ([r0 (lambda (r1 r2) 
+             (set r3 
+                (let ([r4 (let* ([r4 list1]
+                                 [r5 r2]) 
+                            (r4 r5))]) 
+                  (cons r1 r4))))]) 
+  (set list2 r0))
+(let ([r0 (lambda (r1 r2 r3) 
+             (set r4 
+                (let ([r5 (let* ([r5 list2]
+                                 [r6 r2]
+                                 [r7 r3]) 
+                            (r5 r6 r7))]) 
+                  (cons r1 r5))))]) 
+  (set list3 r0))
+(let ([r0 (lambda (r1 r2 r3 r4) 
+             (set r5 
+                (let ([r6 (let* ([r6 list3]
+                                 [r7 r2]
+                                 [r8 r3]
+                                 [r9 r4]) 
+                            (r6 r7 r8 r9))]) 
+                  (cons r1 r6))))]) 
+  (set list4 r0))
+(let ([r0 (lambda (r1 r2 r3 r4 r5) 
+             (set r6 
+                (let ([r7 (let* ([r7 list4]
+                                 [r8 r2]
+                                 [r9 r3]
+                                 [r10 r4]
+                                 [r11 r5]) 
+                            (r7 r8 r9 r10 r11))]) 
+                  (cons r1 r7))))]) 
+  (set list5 r0))
+(let ([r0 (lambda (r1 r2 r3 r4 r5 r6) 
+             (set r7 
+                (let ([r8 (let* ([r8 list5]
+                                 [r9 r2]
+                                 [r10 r3]
+                                 [r11 r4]
+                                 [r12 r5]
+                                 [r13 r6]) 
+                            (r8 r9 r10 r11 r12 r13))]) 
+                  (cons r1 r8))))]) 
+  (set list6 r0))
+(let ([r0 (lambda (r1 r2 r3 r4 r5 r6 r7) 
+             (set r8 
+                (let ([r9 (let* ([r9 list6]
+                                 [r10 r2]
+                                 [r11 r3]
+                                 [r12 r4]
+                                 [r13 r5]
+                                 [r14 r6]
+                                 [r15 r7]) 
+                            (r9 r10 r11 r12 r13 r14 r15))]) 
+                  (cons r1 r9))))]) 
+  (set list7 r0))
+(let ([r0 (lambda (r1 r2 r3 r4 r5 r6 r7 r8) 
+             (set r9 
+                (let ([r10 (let* ([r10 list7]
+                                  [r11 r2]
+                                  [r12 r3]
+                                  [r13 r4]
+                                  [r14 r5]
+                                  [r15 r6]
+                                  [r16 r7]
+                                  [r17 r8]) 
+                             (r10 r11 r12 r13 r14 r15 r16 r17))]) 
+                  (cons r1 r10))))]) 
+  (set list8 r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) '()] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let* ([r3 (getblockslot r2 r1)]
+                             [r4 (getblockslot r2 r2)]
+                             [r5 (let* ([r5 r1]
+                                        [r6 r3]) 
+                                   (r5 r6))]) 
+                        (if r5 
+                           (set r5 
+                              (let ([r6 (let* ([r6 takewhile]
+                                               [r7 r1]
+                                               [r8 r4]) 
+                                          (r6 r7 r8))]) 
+                                (cons r3 r6))) 
+                           '()))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set takewhile r0))
+(let ([r0 (lambda (r1 r2) 
+             (cond   
+                [(matches-vcon-arity? r2 ''() 0) '()] 
+                [(matches-vcon-arity? r2 'cons 2) 
+                      (let* ([r3 (getblockslot r2 r1)]
+                             [r4 (getblockslot r2 r2)]
+                             [r5 (let* ([r5 r1]
+                                        [r6 r3]) 
+                                   (r5 r6))]) 
+                        (if r5 
+                           (let* ([r5 dropwhile]
+                                  [r6 r1]
+                                  [r7 r4]) 
+                             (r5 r6 r7)) 
+                           r2))] 
+                [#t (error 'no-matching-case)]))]) 
+  (set dropwhile r0))

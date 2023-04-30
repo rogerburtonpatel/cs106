@@ -246,7 +246,7 @@ fun letrec gen (bindings, body) =
            | K.CAPTURED i => S (A.captured r0 i) o S (A.return r0)
            | K.CLOSURE (lambda, captured) => (putClIntoReg r0 lambda captured) o S (A.return r0)
            | K.LETREC lr => letrec toReturnK' lr
-           | block as K.BLOCK _ => toRegK' r0 block 
+           | block as K.BLOCK _ => toRegK' r0 block o S (A.return r0)
            | K.SWITCH_VCON sv => 
               switchVcon toReturnK' empty sv)
                                     (* todo ask *)
