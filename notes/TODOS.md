@@ -8,8 +8,7 @@ setjmp comparison
 
 ask for help on asmparse.sml:343. tried many things. 
 
-fix 2 consecutive check errors saying nested check-error not allowed
-let us read case from vs on disk
+document check-error
 
 point 99?
 
