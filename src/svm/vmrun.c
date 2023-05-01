@@ -178,7 +178,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 uint8_t r0 = UX;
                 if (registers[r0].tag != VMFunction) {
                     const char *funname = 
-                                        lastglobalset(vm, r0, vm->Stack[0].fun, pc);
+                                        lastglobalset(vm, r0, fun, pc);
                     not_a_function_error(vm, funname, "check-error", r0);
                 }
                 add_test();
@@ -469,7 +469,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                         break;
                     default:;
                         func = NULL; /* stops the compiler from complaining */
-                        const char *funname = lastglobalset(vm, r0, vm->Stack[0].fun, pc);
+                        const char *funname = lastglobalset(vm, r0, fun, pc);
                         not_a_function_error(vm, funname, "call", r0);
                         break;
                 }

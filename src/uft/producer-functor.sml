@@ -13,6 +13,7 @@ struct
   fun snd (x, y) = y
   fun id x = x
   fun pair x y = (x, y)
+  fun triple x y z = (x, y, z)
   fun curry3 f x y z = f (x, y, z)
   fun eq x y = x = y
 

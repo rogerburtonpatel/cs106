@@ -59,6 +59,7 @@ signature PRODUCER = sig
   val fst  : 'a * 'b -> 'a
   val snd  : 'a * 'b -> 'b
   val pair : 'a -> 'b -> 'a * 'b
+  val triple : 'a -> 'b -> 'c -> 'a * 'b * 'c
   val eq   : ''a -> ''a -> bool
 
   val curry  : ('a * 'b      -> 'c) -> ('a -> 'b -> 'c)

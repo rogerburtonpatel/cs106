@@ -4,9 +4,9 @@ TESTING- dress to impress
 1. vs, kn, fo idempotent testing
 2. vscheme differential testing DONE
 
-
-
 setjmp comparison
+
+ask for help on asmparse.sml:343. tried many things. 
 
 fix 2 consecutive check errors saying nested check-error not allowed
 let us read case from vs on disk
@@ -204,3 +204,5 @@ nr: "You could also hit yourself in the head with a brick, probably much to the
 same effect"
 
 "APIs tend to have a lot more complexity and variety than languages."
+
+"Always a good source of ideas, the shower..."

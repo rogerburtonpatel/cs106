@@ -171,7 +171,8 @@ struct
             let val (A', rs)     = allocAndRemoveRegs A bindings 
                 val (names, cls) = ListPair.unzip bindings 
                 val rho'         = ListPair.foldrEq Env.bind rho (names, rs)
-                fun closure ((xs, e'), es) k = 
+                fun closure ((xs, e'), []) k = k (funcode (xs, e') rho' A', [])
+                  | closure ((xs, e'), es) k = 
                     nbRegsWith (exp rho') bindAnyReg A' es 
                                (fn ts => k (funcode (xs, e') rho' A', ts))
                 in map' closure cls 

@@ -144,9 +144,12 @@ struct
 
 (* follow-ups: switch arguments, and labeler needing a string *)
 
+  fun bracketed lb p rb = (the lb >> p) <~> the rb
   fun labeler operator label = A.DEFLABEL label
   fun gotoer operator label  = A.GOTO_LABEL label
   fun ifgotoer operator r1 label  = A.IF_GOTO_LABEL (r1, label)
+  fun gotoVconer operator r1 choices = A.GOTO_VCON (r1, choices)
+  (* fun choicer operator = many1 ((many eol >> the "case" >> literal) <*> bracketed "(" int ")" <~> the "goto" <*> name) *)
 
   fun eR0 operator          = regs operator []
   fun eR1 operator r1       = regs operator [r1]
@@ -155,7 +158,7 @@ struct
 
   fun eRMany operator r1 rs = regs operator ([r1] @ rs)
 
-  (*Dirty trick : parsing call with accounting for the missing argument *)
+  (* Dirty trick : parsing call with accounting for the missing argument *)
   fun eR1to2 operator r1    = regs operator [r1, r1]
   fun eR2to3 operator r1 r2 = regs operator [r1, r2, r2]
 
@@ -233,13 +236,13 @@ struct
   fun parseOps psr []      = P.pzero
     | parseOps psr (x::xs) = psr x <|> parseOps psr xs
 
-  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", "="]
+  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", ">=", "<=", 
+                "="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
                 "null?", "nil?", "car", "cdr", "hash", "neg", "not"]
   val oneops = ["print", "println", "printu", "error",
                 "inc", "dec"]
 
-  fun bracketed lb p rb = (the lb >> p) <~> the rb
 
 
   (* val parseBinops = parseOps binopParser *)
@@ -305,7 +308,7 @@ struct
     (* rX := call rY    *)
     (* todo resuse bracketed producer here *)
     <|> eR3 "call" <$> reg <~> the ":= call" <*> reg 
-            <~> the "(" <~> reg <~> the ", ... ," <*> reg <~> the ")"
+            <*> bracketed "(" (reg >> the ", ... ," >> reg) ")"
     <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
             <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")"             
     <|> eR3 "call" <$> reg <~> the ":= call" <*> reg <~> the "(" <*> reg <~> the ")" 
@@ -330,6 +333,18 @@ struct
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
             <~> the "(" <~> the ")" 
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
+
+    (* switch statements *)
+     (* let fun choice (v, arity, lbl) =
+         spaceSep ["  case", unparse_lit v, "(" ^ int arity ^ "):", "goto", lbl]
+      in spaceSep ["switch", reg r, "{"] :: map choice choices @ "}" ::
+          unparse instructions *)
+          (* todo ask for help *)
+    <|> gotoVconer "switch" <$> reg <~> the "{" <~> many1 eol <*>
+                        (many1 (P.triple <$> (the "case" >> literal) 
+                        <*> bracketed "(" int ")" <~> the ":" <~> the "goto" 
+                        <*> name <~> many1 eol)) 
+                       <~> the "}" <~> many1 eol
 
     (* debuggers *)
 
@@ -445,6 +460,10 @@ struct
               spaceSep [reg x, ":=", reg y, ">", reg z]
             | ("<", [x, y, z]) => 
               spaceSep [reg x, ":=", reg y, "<", reg z]
+            | ("<=", [x, y, z]) => 
+              spaceSep [reg x, ":=", reg y, "<=", reg z]
+            | (">=", [x, y, z]) => 
+              spaceSep [reg x, ":=", reg y, ">=", reg z]
             | ("symbol?", [x, y]) => 
               spaceSep [reg x, ":=", "symbol?", reg y]
             | ("cons", [x, y]) => 
