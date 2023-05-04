@@ -70,15 +70,6 @@ $(SML_LIB)/basis/basis.mlb
   knembed.sml       
   knproject.sml
 
-  
-
-
-  anf.sml      
-
-  anembed.sml      
-  anproject.sml
-  anrename.sml
-
 
 
 
@@ -108,6 +99,12 @@ $(SML_LIB)/basis/basis.mlb
   foclutil.sml           
   mutability.sml        
 
+  anf.sml      
+  anormalize.sml
+
+  anembed.sml      
+  (* anproject.sml *)
+  (* anrename.sml *)
 
   
   uft.sml

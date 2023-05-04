@@ -130,7 +130,7 @@ struct
                                                               \to A-Normal Form"
     | def (X.DEFINE (f, (xs, e))) = 
     (* TODO change this r100 nonsense *)
-      exp e >>= (fn e' => succeed (A.LETX ("$r100", e', 
+      exp e >>= (fn e' => succeed (A.LETX ("$r0", e', 
                                 A.VMOPLIT (P.setglobal, ["$r100"], A.STRING f))))
 
 end

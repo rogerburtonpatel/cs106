@@ -69,8 +69,8 @@ struct
   val FO_of_file: instream -> FirstOrderScheme.def list error =
     schemexOfFile >=> Error.mapList FOUtil.project
 
-  val AN_of_file: instream -> string ANormalForm.exp list error =
-    schemexOfFile >=> Error.mapList ANProject.def
+  (* val AN_of_file: instream -> string ANormalForm.exp list error =
+    schemexOfFile >=> Error.mapList ANProject.def *)
 
   (**** Support for materialization ****)
   
@@ -95,11 +95,16 @@ struct
     = List.map Codegen.forEffectK (* AssemblyCode.instr list list*)
     >>> List.concat              (* AssemblyCode.instr list *)
 
-  val VS_of_AN : ObjectCode.reg ANormalForm.exp list ->
+  (* val VS_of_AN : ObjectCode.reg ANormalForm.exp list ->
                AssemblyCode.instr list
     = List.map Codegen.forEffectA (* AssemblyCode.instr list list*)
-    >>> List.concat              (* AssemblyCode.instr list *)
+    >>> List.concat              AssemblyCode.instr list *)
 
+  val namesOfRegs = Error.mapList (KNRename.mapx KNRename.nameOfReg)
+
+  val anUpAndDown = (List.map ANormalize.def) 
+                      >>> (List.map ANEmbed.def) 
+                      >>> namesOfRegs
 
   fun HO_of HO   = schemexOfFile >=> Error.mapList Mutability.detect
     | HO_of HOX  = Impossible.unimp "imperative features (HOX to HO)"
@@ -123,22 +128,23 @@ struct
     | KN_reg_of inLang = CL_of inLang
                      >>> ! (List.map KNormalize.def)
 
-  fun AN_reg_of AN = AN_of_file 
-                     >=> Error.mapList (ANRename.mapx ANRename.regOfName)
-    | AN_reg_of inLang = raise NoTranslationTo AN
+  fun AN_reg_of inLang = CL_of inLang >>> ! (List.map ANormalize.def)
 
 
   fun KN_of KN = KN_of_file
     | KN_of FO = KN_reg_of FO >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
-    | KN_of HO = CL_of HO >>> ! (List.map KNormalize.def) >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
-    | KN_of ES = CL_of ES >>> ! (List.map KNormalize.def) >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
+    | KN_of CL = CL_of CL >>> ! (List.map KNormalize.def) >=> namesOfRegs
+    | KN_of HO = CL_of HO >>> ! (List.map KNormalize.def) >=> namesOfRegs
+    | KN_of ES = CL_of ES >>> ! (List.map KNormalize.def) >=> namesOfRegs
     | KN_of inLang = raise NoTranslationTo inLang
 
-  fun AN_of AN = AN_of_file
-    | AN_of inLang = raise NoTranslationTo AN
+fun AN_of CL = CL_of CL >=> anUpAndDown
+  | AN_of HO = CL_of HO >=> anUpAndDown
+  | AN_of ES = CL_of ES >=> anUpAndDown
+  | AN_of inLang = raise NoTranslationTo AN
 
   fun VS_of VS   = VS_of_file
-    | VS_of AN = AN_reg_of AN >>> ! VS_of_AN
+    (* | VS_of AN = AN_reg_of AN >>> ! VS_of_AN *)
     | VS_of inLang = KN_reg_of inLang >>> ! VS_of_KN
                                   (* unwrap KN_reg_of inLang result 
                                   (error type), apply VS_of_KN to internals,
@@ -167,7 +173,7 @@ struct
 
   fun emitKN outfile = app (emitScheme outfile o KNEmbed.def)
   
-  fun emitAN outfile = app (emitScheme outfile o ANEmbed.def)
+  (* fun emitAN outfile = app (emitScheme outfile o KNEmbed.def o ANEmbed.def) *)
 
   (**** The Universal Forward Translator ****)
 
@@ -177,8 +183,8 @@ struct
     (case outLang
        of VO => VO_of      inLang >>> ! (emitVO outfile)
         | VS => VS_of      inLang >>> ! (emitVS outfile)
-        | AN => AN_of      inLang >>> ! (emitAN outfile)
         | KN => KN_of      inLang >>> ! (emitKN outfile)
+        | AN => AN_of      inLang >>> ! (emitKN outfile)
         | FO => FO_of      inLang >>> ! (emitFO outfile)
         | CL => CL_of      inLang >>> ! (emitCL outfile)
         | HO => HO_of      inLang >>> ! (emitHO outfile)

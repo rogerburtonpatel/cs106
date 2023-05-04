@@ -14,7 +14,7 @@ structure ANormalForm = struct
     = IFX     of 'a * 'a exp * 'a exp 
     | LETX    of 'a * 'a simple_exp * 'a exp
     | BEGIN   of 'a exp * 'a exp 
-    | WHILEX  of 'a * 'a simple_exp * 'a exp 
+    | WHILEX  of 'a * 'a exp * 'a exp 
     | SET     of 'a * 'a exp
     | LETREC of ('a * 'a closure) list * 'a exp
     | SIMPLE  of 'a simple_exp
@@ -24,7 +24,7 @@ structure ANormalForm = struct
   | VMOP of vmop * 'a list
   | VMOPLIT of vmop * 'a list * literal
   | FUNCALL of 'a * 'a list 
-  | FUNCODE of 'a funcode
+  | FUNCODE of 'a list * 'a exp
   | CAPTURED of int
   | CLOSURE  of 'a closure
   | BLOCK of 'a list

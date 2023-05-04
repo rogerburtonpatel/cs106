@@ -87,14 +87,6 @@ group is
   knembed.sml       (* embedding and projection; completed by students *)
   knproject.sml
 
-  (******* A-NORMAL FORM ********)
-
-
-  anf.sml      
-
-  anembed.sml      
-  anproject.sml
-  anrename.sml
 
 
 
@@ -117,6 +109,15 @@ group is
   knormalize.sml    (* K-normalizer *)
      (* translates foscheme in module 9, then clscheme in module 10 *)
 
+  (******* A-NORMAL FORM ********)
+
+
+  anf.sml      
+  anormalize.sml
+
+  anembed.sml      
+  (* anproject.sml *)
+  (* anrename.sml *)
 
 
   (********* CLOSURE CONVERSION: Module 10 *****)

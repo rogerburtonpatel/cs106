@@ -8,13 +8,11 @@ sig
   type reg = ObjectCode.reg
   type instruction = AssemblyCode.instr
   val forEffectK : reg KNormalForm.exp -> instruction list
-  val forEffectA : reg ANormalForm.exp -> instruction list
 end
   =
 struct
   structure A = AsmGen
   structure K = KNormalForm
-  structure AN = ANormalForm
   structure P = Primitive
   structure O = ObjectCode
   structure ASM = AssemblyCode
@@ -257,86 +255,12 @@ fun letrec gen (bindings, body) =
 
 
 
-(* NOTE: I'm not maintaining these any more. I'm spending that time working on 
-   actual A-Normal form in my other branch. If I choose to come back to have
-   both paths for conversion, I might use a functor instead, as you suggested. 
-                                  |
-                                  V
-*)
-
-  
-  fun toRegA' (dest : reg) (ex : reg ANormalForm.exp) : instruction hughes_list =
-        (case ex
-          of AN.LITERAL l => S (A.loadlit dest l)
-           | AN.NAME r    => S (A.copyreg dest r)
-           | AN.VMOP (p as P.SETS_REGISTER _, rs) => S (A.setreg dest p rs)
-           | AN.VMOP (P.HAS_EFFECT _, _) => forEffectA' ex
-           | AN.VMOPLIT (p as P.SETS_REGISTER _, rs, l) => 
-                                                    S (A.setregLit dest p rs l) 
-           | AN.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => forEffectA' ex
-           | AN.FUNCALL (r, rs) => translateCall dest r rs
-           | AN.IFX (r, e1, e2) => translateifA r e1 e2 (toRegA' dest)
-
-            (* Floatables *)
-           | AN.LETX (r, e, e') => (toRegA' r e) o (toRegA' dest e')
-           | AN.BEGIN (e1, e2)  => (forEffectA' e1) o (toRegA' dest e2)
-           | AN.SET (r, e)      => (toRegA' r e) o S (A.copyreg dest r)
-           | AN.WHILEX _        => (forEffectA' ex)
-                                    o S (A.loadlit dest (AN.BOOL false))
-           | AN.FUNCODE (rs, e) =>
-                       S (A.loadfunc dest (List.length rs) (toReturnA' e [])))
-  and forEffectA' (ex: reg ANormalForm.exp) : instruction hughes_list  =
-(case ex
-          of AN.LITERAL _ => empty
-           | AN.NAME _    => empty
-           | AN.VMOP (p as P.SETS_REGISTER _, _) => empty 
-           | AN.VMOP (p as P.HAS_EFFECT _, ns) => S (A.effect p ns)
-           | AN.VMOPLIT (p as P.SETS_REGISTER _, _, _) => empty
-           | AN.VMOPLIT (p as P.HAS_EFFECT _, ns, l) => S (A.effectLit p ns l)
-
-           | AN.FUNCALL (r, rs) => translateCall r0 r rs
-           | AN.IFX (r, e1, e2) => translateifA r e1 e2 forEffectA'
-           | AN.LETX  (r, e, e')  => (toRegA' r e) o (forEffectA' e')
-           | AN.BEGIN (e1, e2)    => (forEffectA' e1) o (forEffectA' e2)
-           | AN.SET   (r, e)      => toRegA' r e
-           | AN.WHILEX (r, e, e') => 
-             let val lab  = A.newlabel ()
-                 val lab' = A.newlabel ()
-             in S (A.goto lab) o S (A.deflabel lab') o (forEffectA' e')
-                o S (A.deflabel lab) o (toRegA' r e) o S (A.ifgoto r lab')          
-            end
-           | AN.FUNCODE (rs, e) => 
-              let val r = 255
-              in toRegA' r ex
-              end)
-  and toReturnA' (e:  reg ANormalForm.exp) : instruction hughes_list  =
-        (case e
-          of AN.FUNCODE (reglist, ex) => (toRegA' r0 e) o (S (A.return r0))
-           | AN.NAME n => S (A.return n)
-           | AN.IFX (r, e1, e2) => translateifA r e1 e2 toReturnA'
-           | AN.LETX (r, e1, e') => toRegA' r e1 o toReturnA' e'
-           | AN.BEGIN (e1, e2) => forEffectA' e1 o toReturnA' e2
-           | AN.SET (r, ex) => toRegA' r ex o S (A.return r)
-           | AN.WHILEX (r, ex, ex') => toRegA' r0 e o S (A.return r0)
-           | AN.FUNCALL (reg, reglist) => 
-                                  S (A.tailcall reg (List.last (reg::reglist))) 
-          (* 'wildcard' *)
-           | AN.LITERAL _ => (toRegA' r0 e) o (S (A.return r0))
-           | AN.VMOP _ => (toRegA' r0 e) o (S (A.return r0))
-           | AN.VMOPLIT _ => (toRegA' r0 e) o (S (A.return r0)))
-
-
-
   val _ = forEffectK' :        reg KNormalForm.exp -> instruction hughes_list
   val _ = toRegK'     : reg -> reg KNormalForm.exp -> instruction hughes_list
 
-  val _ = forEffectA' :        reg ANormalForm.exp -> instruction hughes_list
-  val _ = toRegA'     : reg -> reg ANormalForm.exp -> instruction hughes_list
 
   fun forEffectK e  = forEffectK' e []
   fun toRegK dest e = toRegK' dest e []
 
-  fun forEffectA e  = forEffectA'  e []
-  fun toRegA dest e = toRegA' dest e []
 
 end

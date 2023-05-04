@@ -1,16 +1,17 @@
-(* KNormalizer from Closed Scheme to KNormal-form Scheme. 
+(* ANormalizer from Closed Scheme to ANormal-form Scheme. 
     This is where register allocation happens! *)
 
-structure KNormalize :> sig
+
+structure ANormalize :> sig
   type reg = int  (* register *)
   type regset     (* set of registers *)
   val regname : reg -> string
-  val exp : reg Env.env -> regset -> ClosedScheme.exp -> reg KNormalForm.exp
-  val def :                          ClosedScheme.def -> reg KNormalForm.exp
+  val exp : reg Env.env -> regset -> ClosedScheme.exp -> reg ANormalForm.exp
+  val def :                          ClosedScheme.def -> reg ANormalForm.exp
 end 
   =
 struct 
-  structure K  = KNormalForm
+  structure A  = ANormalForm
   structure C  = ClosedScheme
   structure E  = Env
   structure P  = Primitive
@@ -28,6 +29,8 @@ struct
 
   fun fst (x, y) = x
   fun member x = List.exists (fn y => x = y)
+
+
 
   fun eprint s = TextIO.output (TextIO.stdErr, s)
 
@@ -50,22 +53,24 @@ struct
   fun uncurry f (x, y) = f x y
   fun curry f x y = f (x, y)
 
-  (************ K-normalization ************)
+  (************ A-normalization ************)
 
-  type exp = reg K.exp
+  type exp = reg A.exp
   type policy = regset -> exp -> (reg -> exp) -> exp
     (* puts the expression in an register, continues *)
 
+  fun normalizeLet t (A.SIMPLE e) k = A.LETX (t, e, k t)
+    | normalizeLet _ _ _ = Impossible.exercise "anormalize let! you wrote it! :)"
 
-  fun bindAnyReg rset (K.NAME y) k = k y
+  fun bindAnyReg rset (A.SIMPLE (A.NAME y)) k = k y
     | bindAnyReg rset e          k = 
       let val t = smallest rset
-      in  K.LETX (t, e, k t)
+      in  normalizeLet t e k
       end
 
   fun bindSmallest rset e k = 
       let val t = smallest rset
-      in  K.LETX (t, e, k t)
+      in  normalizeLet t e k
       end
 
   val _ = bindAnyReg   : regset -> exp -> (reg -> exp) -> exp
@@ -89,7 +94,7 @@ struct
     = nbRegsWith
 
   (* Note: only works on strings! *)
-  fun vmopStringK p s = fn reg => K.VMOPLIT (p, [reg], K.STRING s)
+  fun vmopStr p s = fn reg => A.VMOPLIT (p, [reg], A.STRING s)
 
   (* DEUBGGING *)
   fun IntListToString [] = ""
@@ -102,58 +107,51 @@ struct
                  (regset, []) es
   
   val inLocalVar : regset -> (reg -> exp) -> exp =
-    fn rs => fn k => let val t = smallest rs in K.SET (t, k t) end
+    fn rs => fn k => let val t = smallest rs in A.SET (t, k t) end
+
   
   fun map' f' [] k = k []
   | map' f' (x :: xs) k =
       f' x (fn y => map' f' xs (fn ys => k (y :: ys)))
   
+  fun simp con e = A.SIMPLE (con e)
+
   (* WEIGHTLIFTERS *)
 
-  fun exp rho A ex =
+  fun exp rho A ex = 
     let val exp : reg Env.env -> regset -> ClosedScheme.exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho) 
         (*  ^ normalize and bind in _this_ environment *)
     in  (case ex
-          of C.PRIMCALL (p, es) =>
-          (case (P.name p, es) 
-            of (">", [e, C.LITERAL (C.INT 0)]) => 
-            nbRegs bindAnyReg A [e] (curry K.VMOP P.gt0)
-            | ("+", es as [e,  C.LITERAL (C.INT n)]) => 
-              if n < 128 andalso n >= ~128 then 
-                nbRegs bindAnyReg A [e] (fn y =>
-                                              K.VMOP (P.plusimm, y @ [n + 128]))
-              else 
-                nbRegs bindAnyReg A es (curry K.VMOP p)
-            | ("-", [e,  C.LITERAL (C.INT n)]) => 
-              exp rho A (C.PRIMCALL (P.plus, [e, C.LITERAL (C.INT (~n))]))
-            | _ => nbRegs bindAnyReg A es (curry K.VMOP p))
-           | C.LITERAL v => K.LITERAL v
+          of C.PRIMCALL (p, es) => nbRegs bindAnyReg A es (simp (curry A.VMOP p))
+           | C.LITERAL v => simp A.LITERAL v
            | C.LOCAL n => 
              let val r = Env.find (n, rho)
-             in K.NAME r
+             in simp A.NAME r
              end
            | C.SETLOCAL (n, e) => 
              let val r = Env.find (n, rho)
-             in K.SET (r, exp rho A e)
+             in A.SET (r, exp rho A e)
              end
-           | C.GLOBAL n => KNormalUtil.getglobal n
+           | C.GLOBAL n => ANormalUtil.getglobal n
            (* Note that in prettyprinting this you won't see the 'begin' *)
            | C.SETGLOBAL (n, e) => 
             bindWithTranslateExp A rho e 
-                (fn reg => K.BEGIN (KNormalUtil.setglobal (n, reg), K.NAME reg))
+                (fn reg => A.BEGIN (ANormalUtil.setglobal (n, reg), simp A.NAME reg))
            | C.BEGIN es  => translateBegin rho A es
            | C.IFX (e, e1, e2) => 
               bindWithTranslateExp A rho e 
-                             (fn reg => K.IFX (reg, exp rho A e1, exp rho A e2))
+                             (fn reg => A.IFX (reg, exp rho A e1, exp rho A e2))
            | C.WHILEX (e, e') => 
-            let val t = smallest A
-            in K.WHILEX (t, exp rho A e, exp rho A e')
-            end
+              Impossible.impossible ("You can't A-Normalize a 'while' " ^
+                            "expression. You'll have to go through KN instead.")
+            (* let val t = smallest A
+            in A.WHILEX (t, exp rho A e, exp rho A e')
+            end *)
            | C.FUNCALL (e, es) => 
             bindSmallest A (exp rho A e) 
                          (fn reg => nbRegs bindSmallest (A -- reg) es 
-                                           (fn regs => K.FUNCALL (reg, regs)))
+                                  (fn regs => simp A.FUNCALL (reg, regs)))
            | C.LET (bindings, body) => 
              let val (names, rightSides) = ListPair.unzip bindings
                  val bindNamestoRegs     = ListPair.foldr Env.bind rho
@@ -162,14 +160,14 @@ struct
                                       (List.foldl (flip (op --)) A regs)
                                       body)
              end
-          | C.CLOSURE (lambda, []) => K.FUNCODE (funcode lambda rho A)
+          | C.CLOSURE (lam, []) => simp A.FUNCODE (funcode lam rho A)
           | C.CLOSURE (lambda, captured) =>
                   inLocalVar A (fn t =>
                     nbRegs bindAnyReg (A -- t) captured (fn regs => 
-                          K.CLOSURE (funcode lambda rho (A -- t), regs)))
+                          simp A.CLOSURE (funcode lambda rho (A -- t), regs)))
                                                     (* todo check this A -- t, and also if funcode needs these args in general
                                                        or can capture them *)
-          | C.CAPTURED i => K.CAPTURED i
+          | C.CAPTURED i => simp A.CAPTURED i
           | C.LETREC (bindings, body) => 
             let val (A', rs)     = allocAndRemoveRegs A bindings 
                 val (names, cls) = ListPair.unzip bindings 
@@ -179,26 +177,25 @@ struct
                     nbRegsWith (exp rho') bindAnyReg A' es 
                                (fn ts => k (funcode (xs, e') rho' A', ts))
                 in map' closure cls 
-                   (fn cs => K.LETREC (ListPair.zip (rs, cs), exp rho' A' body))
+                   (fn cs => A.LETREC (ListPair.zip (rs, cs), exp rho' A' body))
                 end
-          | C.CONSTRUCTED ("#t", []) => K.LITERAL (K.BOOL true)
-          | C.CONSTRUCTED ("#f", []) => K.LITERAL (K.BOOL false)
+          | C.CONSTRUCTED ("#t", []) => simp A.LITERAL (A.BOOL true)
+          | C.CONSTRUCTED ("#f", []) => simp A.LITERAL (A.BOOL false)
           | C.CONSTRUCTED ("cons", [x, y]) => 
             (* could have es instead of [x, y] but this is more explicit *)
             inLocalVar A (fn t => nbRegs bindAnyReg (A -- t) [x, y] 
-                                         (curry K.VMOP P.cons))
-          | C.CONSTRUCTED ("'()", []) => K.LITERAL K.EMPTYLIST
+                                         (simp (curry A.VMOP P.cons)))
+          | C.CONSTRUCTED ("'()", []) => simp A.LITERAL A.EMPTYLIST
           | C.CONSTRUCTED (con, es) => 
-            bindAnyReg A (K.LITERAL (K.STRING con)) 
+            bindAnyReg A (simp A.LITERAL (A.STRING con)) 
                        (fn reg => nbRegs bindAnyReg (A -- reg) es 
-                                         (fn regs => K.BLOCK (reg::regs)))
-                                         (* todo ask *)
+                                         (fn regs => simp A.BLOCK (reg::regs)))
           | C.CASE (e, choices) => bindWithTranslateExp A rho e 
                 (fn t =>
                   let fun treeGen rset etree = 
                     (case etree
                       of MC.LET_CHILD ((r, slotnum), k) => 
-                            bindAnyReg rset (K.VMOP 
+                            bindAnyReg rset (simp A.VMOP 
                                               (P.getblockslot, [r, slotnum]))
                                     (fn x => treeGen (rset -- x) (k x))
                        | MC.MATCH (ex, env) => exp (rho <+> env) rset ex
@@ -210,12 +207,12 @@ struct
                               val treeOrNoMatch = 
                                 case maybetree 
                                   of SOME tree' => treeGen rset tree'
-                                  |  NONE       => K.VMOPLIT (P.error, [], 
-                                                   K.STRING "no-matching-case")
+                                  |  NONE       => simp A.VMOPLIT (P.error, [], 
+                                                    A.STRING "no-matching-case")
                           in 
-                          K.SWITCH_VCON (r, treeOfEdges, treeOrNoMatch)
+                          simp A.SWITCH_VCON (r, treeOfEdges, treeOrNoMatch)
                           end)
-                      val _ = treeGen : regset -> C.exp MC.tree -> reg K.exp
+                      val _ = treeGen : regset -> C.exp MC.tree -> reg A.exp
                       val A' = (A -- t)
                   in  treeGen A' (vizTree (MC.decisionTree (t, choices)))
                   end)
@@ -224,9 +221,9 @@ struct
 
 
   and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
-  and translateBegin rho A []        =  K.LITERAL (K.BOOL false)
+  and translateBegin rho A []        =  A.SIMPLE (A.LITERAL (A.BOOL false))
     | translateBegin rho A [e]       = exp rho A e
-    | translateBegin rho A (e::es)   = K.BEGIN (exp rho A e, 
+    | translateBegin rho A (e::es)   = A.BEGIN (exp rho A e, 
                                                 translateBegin rho A es)
 
   and funcode (ns, e) rho A = 
@@ -238,7 +235,7 @@ struct
     in (argregs, exp boundEnv availRegs e)
     end
 
-  val funcode : C.funcode -> reg Env.env -> regset -> reg K.funcode = funcode
+  (* val funcode : C.funcode -> reg Env.env -> regset -> reg A.funcode = funcode *)
 
   fun def ex = 
     let val A   = RS 0
@@ -247,17 +244,17 @@ struct
     (case ex
       of C.EXP e => exp rho A e
        | C.CHECK_EXPECT (s1, e1, s2, e2) =>
-          K.BEGIN (bindWithTranslateExp A rho e1 (vmopStringK P.check s1), 
-                      bindWithTranslateExp A rho e2 (vmopStringK P.expect s2))
+          A.BEGIN (bindWithTranslateExp A rho e1 (simp (vmopStr P.check s1)), 
+                   bindWithTranslateExp A rho e2 (simp (vmopStr P.expect s2)))
        | C.CHECK_ASSERT (s, e) =>
-          bindWithTranslateExp A rho e (vmopStringK P.check_assert s)
+          bindWithTranslateExp A rho e (simp (vmopStr P.check_assert s))
        | C.CHECK_ERROR (s, e) => 
-        bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
+        bindAnyReg A (simp A.FUNCODE ([], exp rho A e)) 
                           (fn reg => 
-                            K.VMOPLIT (P.check_error, [reg], K.STRING s))
+                            simp A.VMOPLIT (P.check_error, [reg], A.STRING s))
        | C.VAL valdef => exp rho A (C.SETGLOBAL valdef)
-       | C.DEFINE (n, lambda) => K.LETX (0, K.FUNCODE (funcode lambda rho A), 
-                                            KNormalUtil.setglobal (n, 0)))
+       | C.DEFINE (n, lambda) => A.LETX (0, A.FUNCODE (funcode lambda rho A), 
+                                            ANormalUtil.setglobal (n, 0)))
     end
 end
 (* TODO: fix this output from qsort: 
