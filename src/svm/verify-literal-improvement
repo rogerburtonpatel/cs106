@@ -1,0 +1,39 @@
+#! /bin/bash
+
+
+# this pathing could be safer. 
+make 
+cd ../uft
+make
+cd ../svm
+
+echo "Here's the knf, with improvements:"
+
+echo "coundown.scm:"
+uft ho-kn countdown.scm
+echo; echo "div2.scm:"
+uft ho-kn div2.scm
+
+echo; echo 
+
+echo "Here's where we see new use of +imm and gt0:"
+echo "countdown.scm:"
+uft ho-kn countdown.scm | grep -En "\+imm|gt0"
+echo; echo "div2.scm:"
+uft ho-kn div2.scm | grep -En "\+imm|gt0"
+
+echo; echo 
+
+echo "Here's the assembly code:"
+echo "countdown.scm:"
+uft ho-vs countdown.scm
+echo; echo "div2.scm:"
+uft ho-vs div2.scm
+
+echo; echo "And proof it all works:"
+echo "countdown.scm:"
+uft ho-vo countdown.scm | svm
+echo; echo "div2.scm:"
+uft ho-vo div2.scm | svm predef-ho.vo -
+
+echo; echo "Thanks for playing!"

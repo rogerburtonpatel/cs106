@@ -477,14 +477,7 @@ struct
             | ("nil?", [x, y]) => 
               spaceSep [reg x, ":=", "nil?", reg y]
             | ("swap", [x, y]) =>
-              spaceSep [reg x, ",", reg y, ":=", reg y, ",", reg x] 
-            | ("+imm", [x, y, z]) =>
-                let val n = z - 128 (* we want this later *)
-                in  if n < 0 then
-                        spaceSep [reg x, ":=", reg y, "-",  int (~n)]
-                    else
-                        spaceSep [reg x, ":=", reg y, "+",  int n]
-                end           
+              spaceSep [reg x, ",", reg y, ":=", reg y, ",", reg x]      
             | ("gt0", [x, y]) =>
               spaceSep [reg x, ":=", reg y, ">", "0"]
             | ("boolOf", [x, y]) =>
@@ -563,7 +556,13 @@ struct
               spaceSep ["block", reg x, "<", int slotnum, ">", ":=", reg y]
           | ("getblockslot", x, y, slotnum) =>
               spaceSep [reg x, ":=", "block", reg y, "<", int slotnum, ">"]
-
+          | ("+imm", x, y, i) =>
+                let val n = i - 128 (* we want this later *)
+                in  if n < 0 then
+                        spaceSep [reg x, ":=", reg y, "-",  int (~n)]
+                    else
+                        spaceSep [reg x, ":=", reg y, "+",  int n]
+                end      
           | (name, _, _, _) => 
               "an unknown registers-and-int-based assembly-code instruction " 
                                                                          ^ name)

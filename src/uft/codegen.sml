@@ -159,11 +159,14 @@ fun letrec gen (bindings, body) =
                L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
                   "register-setting context on register r" ^ 
                                                          Int.toString dest)))
-           (* | K.VMOPINT (p as P.SETS_REGISTER _, r1, r2, i) => 
-             instrOrErrorIfArityMismatch p [r1, r2] 1 (S (A.setregLit dest p rs l))
+           | K.VMOPINT (p as P.SETS_REGISTER _, r, i) => 
+            let val int_i = Word8.toInt i
+             in instrOrErrorIfArityMismatch p [r, int_i] 0 
+                                                (S (A.setregInt dest p r int_i))
+             end
            | K.VMOPINT (p as P.HAS_EFFECT _, _, _) => 
                L (A.mkerror ("effectful primitive " ^ P.name p ^ " used in " ^
-                  "register-setting context on register r" ^ Int.toString dest)) *)
+                  "register-setting context on register r" ^ Int.toString dest))
           
            | K.FUNCALL (r, rs) => translateCall dest r rs
            | K.IFX (r, e1, e2) => translateifK r e1 e2 (toRegK' dest)
@@ -201,6 +204,15 @@ fun letrec gen (bindings, body) =
                       instrOrErrorIfArityMismatch p rs 1 empty
         | K.VMOPLIT (p as P.HAS_EFFECT _, rs, l) => 
                 instrOrErrorIfArityMismatch p rs 1 (S (A.effectLit p rs l))
+        | K.VMOPINT (p as P.SETS_REGISTER _, r, i) => 
+            let val int_i = Word8.toInt i
+             in instrOrErrorIfArityMismatch p [r, int_i] 0 empty
+             end
+        | K.VMOPINT (p as P.HAS_EFFECT _, r, i) => 
+           let val int_i = Word8.toInt i
+           in instrOrErrorIfArityMismatch p [r, int_i] 0 
+                                                     (S (A.effectInt p r int_i))
+           end
         | K.FUNCALL (r, rs) => translateCall r r rs
         | K.IFX (r, e1, e2) => translateifK r e1 e2 forEffectK'
 
@@ -241,6 +253,7 @@ fun letrec gen (bindings, body) =
            | K.LITERAL _ => toRegK' r0 e o (S (A.return r0))
            | K.VMOP _ => toRegK' r0 e o (S (A.return r0))
            | K.VMOPLIT _ => toRegK' r0 e o (S (A.return r0))
+           | K.VMOPINT _ => toRegK' r0 e o (S (A.return r0))
            | K.CAPTURED i => S (A.captured r0 i) o S (A.return r0)
            | K.CLOSURE (lambda, captured) => (putClIntoReg r0 lambda captured) o S (A.return r0)
            | K.LETREC lr => letrec toReturnK' lr

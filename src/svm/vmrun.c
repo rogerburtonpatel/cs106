@@ -111,9 +111,10 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
         default:
             assert(0);
     }
-
+    // size_t total_instructions = 0;
     while (1) {
         Instruction curr_instr = *pc;
+        // total_instructions++;
 
           if (CANDUMP && dump_decode) {
               idump(stderr, 
@@ -131,6 +132,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 /* I'm ok with having a counter variable external to the vmstate
                    and storing it when we Halt, because it saves a dereference
                    every time, and we only Halt once. */
+                // fprintf(stderr, "Total instructions run: %zu", total_instructions);
                 VMLOAD();
                 return;
             case Print:

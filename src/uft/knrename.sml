@@ -1,6 +1,5 @@
 (* In K-normal form, convert string names to register names *)
 
-(* You'll write this file *)
 
 structure KNRename :> sig
   val regOfName : string -> ObjectCode.reg Error.error
@@ -40,8 +39,8 @@ struct
       | K.VMOP (p, ns) => curry K.VMOP <$> (succeed p) <*> errorList (map f ns)
       | K.VMOPLIT (p, ns, l) => curry3 K.VMOPLIT <$> succeed p <*> 
                                             errorList (map f ns) <*> succeed l
-      (* | K.VMOPINT (p, n, n', i) => curry4 K.VMOPINT <$> succeed p <*> 
-                                        f n <*> f n' <*> succeed i                                *)
+      | K.VMOPINT (p, n, i) => curry3 K.VMOPINT <$> succeed p <*> 
+                                        f n <*> succeed i                               
       | K.FUNCALL (n, ns) => curry K.FUNCALL <$> f n <*> errorList (map f ns)
       | K.IFX (n, e1, e2) => curry3 K.IFX <$> f n <*> mapx f e1 <*> mapx f e2
       | K.LETX (n, e1, e2) => curry3 K.LETX <$> f n <*> mapx f e1 <*> mapx f e2

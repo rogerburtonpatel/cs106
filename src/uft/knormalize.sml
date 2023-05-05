@@ -121,8 +121,11 @@ struct
             nbRegs bindAnyReg A [e] (curry K.VMOP P.gt0)
             | ("+", es as [e,  C.LITERAL (C.INT n)]) => 
               if n < 128 andalso n >= ~128 then 
-                nbRegs bindAnyReg A [e] (fn y =>
-                                              K.VMOP (P.plusimm, y @ [n + 128]))
+                (* let val t = List.hd y *)
+                    let val int_i = Word8.fromInt (n + 128)
+                in nbRegs bindAnyReg A [e] (fn y =>
+                                              K.VMOPINT (P.plusimm, List.hd y, int_i))
+                end 
               else 
                 nbRegs bindAnyReg A es (curry K.VMOP p)
             | ("-", [e,  C.LITERAL (C.INT n)]) => 

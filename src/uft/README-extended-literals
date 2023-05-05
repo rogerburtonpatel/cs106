@@ -1,4 +1,51 @@
-countdown.scm before extension:
+For depth point 12 in k-normalization, I implemented some better literal 
+instructions. These were focused on numerical values: I did +imm and an
+is-greater-than-zero? instruction. 
+
+The real money of implementation is in knormalize.sml:127-140. You can more or
+less just delete this code and you'll be back to the old primitive system. 
+
+If you're interested in details of implementation...
+
+To facilitate this, I added a K.VMOPINT format to my KNF, largely for +imm 
+(though since submitting version this I've expanded it to other operations). 
+This was so I could take better advantage of the REGINT instruction format, 
+which I felt was perfect for this task. 
+
+
+This can best be seen in knf.sml:18, with ripples in codegen.sml:164-171, 
+209-217, and 258, knrename.sml:42-43, knormalize.sml:135, where we introduce
+the type, and in knembed, where part of our payoff is: we get nice 'kn' 
+unparsing of +imm thanks to knembed.sml:61-62. If we just use K.VMOP, our 
+unparsing looks like this: 
+
+... (+imm r0 r127)
+
+which is wrong- we want the 2nd operand to be just '127'. We could have used 
+VMOPLIT, but I think being more explicit helps us line up better with the 
+parseR2U8/parseR2I8 functions down the line in the loader. 
+
+I had to change asmparse.sml to move +imm to asmparse.sml:559-565 so that it 
+could be recognized as a REGINT instruction. 
+
+There's also some boring additions to primitives.sml and asmutil. Nothing 
+that warrants any description. Similar boring additions in instructions.c and
+opcode.h. 
+
+I also added support for 'gt0' in my SVM at vmrun.c:406-410. 
+
+Here's some evidence of functionality. There's a shell script at the end. 
+
+I made a file countdown.scm:
+
+(set i 10)
+(while (> i 0)
+  (begin
+    (println i)
+    (set i (- i 1))))
+
+
+Here's `uft ho-vs countdown.scm` before the gt0 extension:
 r0 := 10
 _G[ "i" ] := r0
 goto L1
@@ -15,7 +62,7 @@ r1 := 0
 r0 := r0 > r1
 if r0 goto L2
 
-countdown.scm after extension:
+And here's after the gt0 extension:
 
 r0 := 10
 _G[ "i" ] := r0
@@ -32,7 +79,23 @@ r0 := _G[ "i" ]
 r0 := r0 > 0
 if r0 goto L2
 
-before gt0:
+Here's with both +imm and gt0 optimizations: 
+
+r0 := 10
+_G[ "i" ] := r0
+goto L1
+L2:
+r0 := _G[ "i" ]
+println r0
+r0 := _G[ "i" ]
+r0 := r0 - 1
+_G[ "i" ] := r0
+L1:
+r0 := _G[ "i" ]
+r0 := r0 > 0
+if r0 goto L2
+
+With an instruction counter in the SVM, here's runtime before gt0:
 10
 9
 8
@@ -45,7 +108,7 @@ before gt0:
 1
 Total instructions run: 118
 
-after gt0: 
+and after gt0: 
 10
 9
 8
@@ -58,16 +121,31 @@ after gt0:
 1
 Total instructions run: 107
 
+And finally, here's with both:
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+Total instructions run: 97
 
-before both:
+Let's test on something more sizeable. Here's blodo01/div2.scm from benchmarks.
+
+(I also used `time` to get a sense of time save for the before/after, 
+though in this case it didn't add up to much. 
+In derivative.scm, though, we saved 2.5 seconds, as discussed on slack!)
+
+
+-------
+Total instructions run before both optimizations:
 150207009
 
-% uft ho-vo ../svm/div2.scm| time svm ../../build/predef-ho.vo - 
-Total instructions run: 183
-Total instructions run: 150195807
-Both tests passed.
-svm ../../build/predef-ho.vo -  0.90s user 0.00s system 97% cpu 0.924 total
-%
+Proof:
 
 % uft ho-vo ../svm/div2.scm| time svm ../../build/predef-ho.vo -
 Total instructions run: 183
@@ -76,12 +154,15 @@ Both tests passed.
 svm ../../build/predef-ho.vo -  0.90s user 0.00s system 97% cpu 0.926 total
 %
 
-% uft ho-vo div2.scm | svm ../../build/predef-ho.vo -
+And here's after both optimizations: 
+% uft ho-vo ../svm/div2.scm| time svm ../../build/predef-ho.vo - 
 Total instructions run: 183
-Total instructions run: 150207009
+Total instructions run: 150195807
 Both tests passed.
+svm ../../build/predef-ho.vo -  0.90s user 0.00s system 97% cpu 0.924 total
+%
 
-with gt0 only:
+Counting instruction save with gt0 only:
 
 % uft ho-vo ../svm/div2.scm | svm ../../build/predef-ho.vo -
 Total instructions run: 183
@@ -110,6 +191,7 @@ Total instructions run: 150195807
 Both tests passed.
 %
 
+To make sure these numbers lined up, I used my system to run some quick maths!
 
 % echo '(println (- 150207009 150195807))' | uft ho-vo | svm
 11202
@@ -118,3 +200,12 @@ Both tests passed.
 % echo '(check-expect (- 150207009 150195807) (+ 10600 602))' | uft ho-vo | svm
 The only test passed.
 %
+
+Here's a shell script to verify improved .vs output of countdown.scm and 
+div2.scm, as well as functionality: it's called verify-literal-improvement, 
+and it lives in svm/. 
+
+If you want to run the instruction-counting tests, uncomment vmrun.c:114, 117, 
+135. 
+
+Thanks so much!

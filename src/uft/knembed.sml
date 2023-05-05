@@ -48,8 +48,8 @@ struct
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
     | exp (K.NAME x)       = S.VAR x
     | exp (K.VMOP (p, ns)) = 
-    (* (case P.name p 
-      of "+imm" => S.APPLY (S.VAR ("+imm"), [S.VAR (hd ns), S.LITERAL (S.SYM (List.last ns))])
+    (* case (P.name p, AsmLex.registerNum 
+      of "+imm" => S.APPLY (S.VAR "+imm", [S.VAR (hd ns), S.LITERAL (S.INT (List.last ns))])
       | _ => *)
     S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
     | exp (K.VMOPLIT (p, ns, v)) = 
@@ -59,6 +59,8 @@ struct
          | ("check-assert", [n], msg) => S.APPLY (S.VAR "check-assert", [S.VAR n])
          | (pn, names, v)       => S.APPLY (S.VAR pn, (List.map S.VAR names)
                                                        @ [S.LITERAL (value v)]))
+    | exp (K.VMOPINT (p, r, i)) =  
+        S.APPLY (S.VAR (P.name p), [S.VAR r, S.LITERAL (S.INT (Word8.toInt i))])
     | exp (K.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)
 
     | exp (K.IFX (a, e1, e2)) = S.IFX (S.VAR a, exp e1, exp e2)

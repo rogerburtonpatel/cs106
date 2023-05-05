@@ -26,11 +26,13 @@ structure AsmGen :> sig
   val copyreg   : reg -> reg -> instruction   (* assignment/copy/move *)
   val setreg    : reg -> vmop -> reg list -> instruction
   val setregLit : reg -> vmop -> reg list -> literal -> instruction
+  val setregInt : reg -> vmop -> reg -> int -> instruction 
 
   (* effects like setglobal, check, and expect *)
   val effect    : vmop -> reg list -> instruction
   val effectLit : vmop -> reg list -> literal -> instruction
-    
+  val effectInt : vmop -> reg -> int -> instruction 
+
   (* control-flow instructions *)
   val goto     : label -> instruction
   val ifgoto   : reg -> label -> instruction
@@ -117,9 +119,10 @@ struct
 
   fun setreg    dest operator args   = i O.REGS    (asValue operator, dest::args)
   fun setregLit dest operator args v = i O.REGSLIT (asValue operator, dest::args, v)
-  (* fun setregInt dest operator r1 r2 v = i O.REGINT  (asValue operator, , v) *)
+  fun setregInt dest operator r v    = i O.REGINT  (asValue operator, dest, r, v)
   fun effect         operator args   = i O.REGS    (asEffect operator, args)
   fun effectLit      operator args v = i O.REGSLIT (asEffect operator, args, v)
+  fun effectInt      operator r  v   = i O.REGINT  (asValue operator, 0, r, v)
 
   fun goto label = A.GOTO_LABEL label
   fun deflabel l = A.DEFLABEL l
