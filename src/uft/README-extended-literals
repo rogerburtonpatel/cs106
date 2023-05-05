@@ -203,7 +203,8 @@ The only test passed.
 
 Here's a shell script to verify improved .vs output of countdown.scm and 
 div2.scm, as well as functionality: it's called verify-literal-improvement, 
-and it lives in svm/. 
+and it lives in svm/. It dumps a lot of output; feel free to comment out
+verify-literal-improvement:12-15 if you want just the improvements to be seen.
 
 If you want to run the instruction-counting tests, uncomment vmrun.c:114, 117, 
 135. 

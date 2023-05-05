@@ -1,5 +1,5 @@
 #! /bin/bash
-
+# verifies (gasp) improved literals. Dumps a fair amount of output. 
 
 # this pathing could be safer. 
 make 
