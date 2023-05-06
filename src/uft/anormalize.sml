@@ -15,6 +15,7 @@ struct
   structure C  = ClosedScheme
   structure E  = Env
   structure P  = Primitive
+  structure S  = Set
 
   structure MC = MatchCompiler(type register = int
                                fun regString r = "$r" ^ Int.toString r
@@ -28,6 +29,7 @@ struct
   val op <+> = Env.<+>
 
   fun fst (x, y) = x
+  fun snd (x, y) = y
   fun member x = List.exists (fn y => x = y)
 
 
@@ -59,18 +61,188 @@ struct
   type policy = regset -> exp -> (reg -> exp) -> exp
     (* puts the expression in an register, continues *)
 
-  fun normalizeLet t (A.SIMPLE e) k = A.LETX (t, e, k t)
-    | normalizeLet _ _ _ = Impossible.exercise "anormalize let! you wrote it! :)"
+  fun simp con e = A.SIMPLE (con e)
+
+
+  fun freeVars expr = 
+    let fun free (A.SIMPLE se) = 
+        (case se 
+          of A.LITERAL _ => S.empty
+          | A.NAME x => S.insert (x, S.empty)
+          (* TODO: are all these names free? *)
+          | A.VMOP(_, xs) => S.ofList xs
+          | A.VMOPLIT(_, xs, _) => S.ofList xs
+          | A.FUNCALL(x, xs) => S.ofList (x::xs)
+          | A.FUNCODE(xs, e) => S.diff (free e, S.ofList xs)
+          | A.CAPTURED _ => S.empty
+          | A.CLOSURE ((names, body), captured) => 
+               S.union' [S.diff (free body, S.ofList names), S.ofList captured]
+          | A.BLOCK xs => S.ofList xs
+          | A.SWITCH_VCON (_, branches, default) => 
+            let val exps = map snd branches
+            in S.union' (free default :: freeSets exps)
+            end)
+      | free (A.IFX (_, e1, e2)) = S.union' [free e1, free e2]
+      | free (A.LETX (x, se, e)) = 
+          S.union' [S.diff (free e, S.singleton x), free (A.SIMPLE se)]
+      | free (A.BEGIN (e1, e2)) = S.union' [free e1, free e2]
+      | free (A.WHILEX (_, e1, e2)) = S.union' [free (A.SIMPLE e1), free e2]
+      | free (A.SET (_, e)) = free e
+      | free (A.LETREC (bindings, body)) = 
+        let val (names, cls) = ListPair.unzip bindings
+            val closures = map (simp A.CLOSURE) cls
+          in S.diff (S.union' (free body :: freeSets closures), S.ofList names)
+          end
+    and freeSets es = foldl (fn (e, set) => (free e)::set) nil es
+    in S.elems (free expr)
+    end
+
+  fun freshName badnames = 
+    let fun max(x, y) = if x > y then x else y
+        fun goodMax [] = 0
+          | goodMax [x] = x
+          | goodMax(x::xs) = let val y = goodMax xs in max(x, y) end
+     in 1 + goodMax badnames
+     end 
+  fun rename (from_x, for_y) =
+    let fun substIfEq name = if name = from_x then for_y else name
+        fun renameList n1 n2 [] = []
+                             | renameList n1 n2 (x::xs) = 
+                                (if x = n1 then n2 else x) :: renameList n1 n2 xs
+        fun substitutor (s as (A.SIMPLE se)) =
+              let val simp = 
+                (case se 
+                  of A.LITERAL l => A.LITERAL l
+                    | A.NAME n    => A.NAME (substIfEq n)
+                    | A.VMOP (v, names) => A.VMOP (v, map substIfEq names)
+                    | A.VMOPLIT (v, names, l) => 
+                                           A.VMOPLIT (v, map substIfEq names, l)
+                    | A.FUNCALL (funname, args) => 
+                               A.FUNCALL (substIfEq funname, map substIfEq args)
+                    (* interestingly, naming fc 'fun' will annahilate millet *)
+                    | fc as A.FUNCODE (params, body) => 
+                       if member from_x params then
+                            fc 
+                           else if not (member for_y params) then 
+                            A.FUNCODE (params, substitutor body)
+                           else 
+                            let val fresh = (freshName (freeVars (A.SIMPLE fc)))
+                                val renamedParameters = 
+                                                renameList fresh for_y params
+                                val freshBody = rename (for_y, fresh) body
+                                val substBody = rename (from_x, for_y) freshBody
+                            in A.FUNCODE (renamedParameters, substBody)
+                            end
+                    | A.CAPTURED i => A.CAPTURED i
+                    | cl as A.CLOSURE ((params, body), captured) =>
+                           if member from_x params then
+                            cl 
+                           else if not (member for_y params) then 
+                            A.CLOSURE ((params, substitutor body), renameList from_x for_y captured)
+                           else 
+                            let val fresh = (freshName (freeVars (A.SIMPLE cl)))
+                                val renamedParameters = 
+                                                renameList fresh for_y params
+                                (* we don't have to rename in the captured bc
+                                   we know neither from_x nor for_y are 
+                                   captured in this expression *)
+                                val freshBody = rename (for_y, fresh) body
+                                val substBody = substitutor freshBody
+                            in A.CLOSURE ((renamedParameters, substBody), captured)
+                            end
+                    | A.BLOCK names => A.BLOCK (map substIfEq names)
+                    | A.SWITCH_VCON (n, branches, default) => 
+                        A.SWITCH_VCON (substIfEq n, 
+                                       map (fn (match, e) => 
+                                            (match, substitutor e)) 
+                                           branches, 
+                                      substitutor default))
+              in A.SIMPLE simp
+              end 
+          | substitutor (A.IFX (n, e1, e2)) = 
+            A.IFX (substIfEq n, substitutor e1, substitutor e2)
+          | substitutor (A.LETX (n, e1, e2)) =
+            if from_x = n then 
+              normalizeLet n (substitutor (A.SIMPLE e1)) e2
+            else 
+              normalizeLet n (substitutor (A.SIMPLE e1)) (substitutor e2)
+          | substitutor (A.WHILEX (n, e, e')) = 
+              Impossible.impossible "no while in ANF!"
+              (* if from_x = n then 
+                  normalizeWhile n (substitutor (A.SIMPLE e)) e'
+                else 
+                  normalizeWhile n (substitutor (A.SIMPLE e)) (substitutor e') *)
+          | substitutor (A.SET (n, e)) = A.SET (substIfEq n, substitutor e)
+          | substitutor (A.BEGIN (e1, e2)) = A.BEGIN (substitutor e1, substitutor e2)
+          | substitutor (A.LETREC (bindings, body)) = Impossible.exercise 
+                                                        "substitute in a letrec"
+    in substitutor 
+    end 
+
+    and normalizeLet x (A.LETX (y, e1, e2)) e3 = 
+                      if x = y then
+                         A.LETX (x, e1, normalizeLet x e2 e3)
+                      else 
+                        (* x != y *)
+                        let val e3free = freeVars e3
+                        in if not (member y e3free) then 
+                              A.LETX (y, e1, normalizeLet x e2 e3)
+                           else 
+                            (* x != y and y is free in e3 *)
+                            let val e2free = freeVars e2
+                            in if not (member x e2free) then 
+                                A.LETX (x, e1, normalizeLet x e2 e3)
+                                        (* TODO subst e2[x/y] *)
+                               else 
+                                (* x != y and y is free in e3 and x is free in e2 *)
+                                A.LETX (freshName (x::(e2free @ e3free)), e1, normalizeLet x e2 e3)
+                                                                                  (* TODO subst e2 [z/y] *)
+                              end
+                        end
+  (* todo letrec! *)
+  (* TODO needs freein check *)
+    | normalizeLet x (A.IFX (y, e1, e2)) ex' = 
+                     A.IFX (y, (normalizeLet x e1 ex'), (normalizeLet x e2 ex'))
+
+  (* TODO needs freein check *)
+    | normalizeLet x (A.WHILEX (y, e, e')) ex' = 
+            Impossible.impossible "no whiles in ANF at normalizeLet"
+            (* A.BEGIN ((normalizeWhile y (A.SIMPLE e) e'),
+                          (normalizeLet x 
+                                        (A.SIMPLE (A.LITERAL (A.BOOL false))))
+                                        ex') *)
+                    
+    | normalizeLet x (A.BEGIN (e1, e2)) ex' = 
+                A.BEGIN( e1, (normalizeLet x e2 ex'))
+    | normalizeLet x (A.SET (n, e)) ex' = 
+                A.BEGIN ((A.SET (n,  e)), 
+                        (normalizeLet x (A.SIMPLE (A.NAME n)) ex'))
+
+    | normalizeLet x (A.LETREC (bindings, body)) ex' = Impossible.exercise 
+                                                       "normalize let on Letrec"
+    (* A.LETX (x, (A.LETREC (bindings, body)), ex')  *)
+    (* TODO ^^^ Letrec *)
+    | normalizeLet x (A.SIMPLE e) e'  = A.LETX (x, e, e')   
+  and normalizeIf x e1 e2   = A.IFX (x, e1, e2)
+  and normalizeSet x e      = A.SET (x, e)
+  and normalizeBegin (A.BEGIN (e1, e2)) e3 = normalizeBegin e1 (normalizeBegin e2 e3)
+    | normalizeBegin e1 e2 = A.BEGIN (e1, e2)
+  and normalizeWhile x e e' = Impossible.impossible 
+                                      "don't even try to normalize a while loop"
+
+
+  fun normalizeLet' t (A.SIMPLE e) k = A.LETX (t, e, k t)
+    | normalizeLet' t e k = normalizeLet t e (k t)
 
   fun bindAnyReg rset (A.SIMPLE (A.NAME y)) k = k y
     | bindAnyReg rset e          k = 
       let val t = smallest rset
-      in  normalizeLet t e k
+      in  normalizeLet' t e k
       end
 
   fun bindSmallest rset e k = 
       let val t = smallest rset
-      in  normalizeLet t e k
+      in  normalizeLet' t e k
       end
 
   val _ = bindAnyReg   : regset -> exp -> (reg -> exp) -> exp
@@ -114,9 +286,9 @@ struct
   | map' f' (x :: xs) k =
       f' x (fn y => map' f' xs (fn ys => k (y :: ys)))
   
-  fun simp con e = A.SIMPLE (con e)
 
   (* WEIGHTLIFTERS *)
+
 
   fun exp rho A ex = 
     let val exp : reg Env.env -> regset -> ClosedScheme.exp -> exp = exp
