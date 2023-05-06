@@ -130,7 +130,6 @@ struct
     | def (X.CHECK_ERROR _) = error "check-error not allowed when projecting \
                                                               \to K-Normal Form"                                                              
     | def (X.DEFINE (f, (xs, e))) = 
-    (* TODO change this r100 nonsense *)
       exp e >>= (fn e' => succeed (K.LETX ("$r0", e', 
                                 K.VMOPLIT (P.setglobal, ["$r0"], K.STRING f))))
 

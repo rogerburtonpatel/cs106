@@ -2,7 +2,7 @@
 
 
 structure ANEmbed :> sig
-  val def   : 'a ANormalForm.exp -> 'a KNormalForm.exp
+  val def   : int ANormalForm.exp -> int KNormalForm.exp
 end 
   = 
 struct
@@ -28,9 +28,23 @@ struct
       (case se 
        of A.LITERAL v => K.LITERAL v
         | A.NAME x       => K.NAME x
-        | A.VMOP (p, ns) => K.VMOP (p, ns)
-        | A.VMOPLIT (p, ns, l) => K.VMOPLIT (p, ns, l)
-        | A.FUNCALL (name, args) => K.FUNCALL (name, args)
+        | A.VMOP (p, ns) => 
+          if not (AsmGen.areConsecutive ns) then
+            Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
+                                  P.name p)
+          else K.VMOP (p, ns)
+        | A.VMOPLIT (p, ns, l) => 
+          if not (AsmGen.areConsecutive ns) then
+            Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
+                                  P.name p)
+          else 
+            K.VMOPLIT (p, ns, l)
+        | A.FUNCALL (name, args) =>           
+           if not (AsmGen.areConsecutive args) then
+            Impossible.impossible ("non-consecutive registers in AN->KN func " ^
+                                  "in register r" ^ Int.toString name)
+          else 
+            K.FUNCALL (name, args)
         | A.FUNCODE (params, body) => K.FUNCODE (params, exp body)
         | A.CAPTURED i => K.CAPTURED i
         | A.CLOSURE cl => K.CLOSURE (embedClosure cl)

@@ -57,7 +57,7 @@
 ;  definitions of predefined uScheme functions [[and]], [[or]], and [[not]] 97a 
 (define and (b c) (if b  c  b))
 (define or  (b c) (if b  b  c))
-(define not (b)   (if b #f #t))
+; (define not (b)   (if b #f #t))
 ;  predefined uScheme functions 102c 
 (define atom? (x) (or (symbol? x) (or (number? x) (or (boolean? x) (null? x)))))
 ;  predefined uScheme functions 103b 
@@ -137,15 +137,15 @@
                         (val left-square   91)
                         (val right-square  93)
 ;  predefined uScheme functions S150d 
-(define <= (x y) (not (> x y)))
-(define >= (x y) (not (< x y)))
+; (define <= (x y) (not (> x y)))
+; (define >= (x y) (not (< x y)))
 (define != (x y) (not (= x y)))
 ;  predefined uScheme functions S150e 
 (define max (x y) (if (> x y) x y))
 (define min (x y) (if (< x y) x y))
 ;  predefined uScheme functions S151a 
 (define negated (n) (- 0 n))
-(define mod (m n) (- m (* n (idiv m n))))
+; (define mod (m n) (- m (* n (idiv m n))))
 (define gcd (m n) (if (= n 0) m (gcd n (mod m n))))
 (define lcm (m n) (if (= m 0) 0 (* m (idiv n (gcd m n)))))
 ;  predefined uScheme functions S151e 
@@ -204,9 +204,9 @@
             (check-sublist (cdr xs) (cdr ys)))
         #f))
 
-        (check-assert (check-sublist '(1) '(1 2 3)))
-        (check-assert (check-sublist '(1 2) '(1 2 3)))
-        (check-assert (not (check-sublist '(2 2) '(1 2 3))))
+        (check-expect #t (check-sublist '(1) '(1 2 3)))
+        (check-expect #t (check-sublist '(1 2) '(1 2 3)))
+        (check-expect #t (not (check-sublist '(2 2) '(1 2 3))))
 
 
 
@@ -235,14 +235,13 @@
                 #t
                 (contig-sublist? xs (cdr ys))))))
     
-
-        (check-assert (contig-sublist? '() '()))
-        (check-assert (contig-sublist? '() '(1)))
-        (check-assert (not (contig-sublist? '(1) '())))
-        (check-assert (contig-sublist? '(1) '(0 1 2 3 4)))
-        (check-assert (contig-sublist? '(1 2 3) '(0 1 2 3 4)))
-        (check-assert (not (contig-sublist? '(1 2 5) '(0 1 2 4 4))))
-        (check-assert (not (contig-sublist? '(1 2 5) '(0 1 2 4 5))))
+        (check-expect #t (contig-sublist? '() '()))
+        (check-expect #t (contig-sublist? '() '(1)))
+        (check-expect #t (not (contig-sublist? '(1) '())))
+        (check-expect #t (contig-sublist? '(1) '(0 1 2 3 4)))
+        (check-expect #t (contig-sublist? '(1 2 3) '(0 1 2 3 4)))
+        (check-expect #t (not (contig-sublist? '(1 2 5) '(0 1 2 4 4))))
+        (check-expect #t (not (contig-sublist? '(1 2 5) '(0 1 2 4 5))))
 
 
 
