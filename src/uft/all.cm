@@ -101,7 +101,6 @@ group is
 
   anembed.sml      
   (* anproject.sml *)
-  (* anrename.sml *)
 
 
   (********* CLOSURE CONVERSION: Module 10 *****)

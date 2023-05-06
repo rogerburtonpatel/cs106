@@ -13,13 +13,6 @@ struct
   fun fst (x, y) = x
   fun snd (x, y) = y
 
-  (* fun value (A.INT i)    = K.INT i
-    | value (A.REAL r)   = K.REAL r
-    | value (A. s) = K.SYM s
-    | value (A.BOOL b)   = K.BOOLV b
-    | value  A.EMPTYLIST = K.EMPTYLIST
-    | value  A.NIL       = K.NIL *)
-
   fun nameFrom (A.STRING s) = s
     | nameFrom _          = Impossible.impossible "misused function"
 
@@ -29,21 +22,22 @@ struct
        of A.LITERAL v => K.LITERAL v
         | A.NAME x       => K.NAME x
         | A.VMOP (p, ns) => 
-          if not (AsmGen.areConsecutive ns) then
+          (* if not (AsmGen.areConsecutive ns) then
             Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
                                   P.name p)
-          else K.VMOP (p, ns)
+          else *)
+          K.VMOP (p, ns)
         | A.VMOPLIT (p, ns, l) => 
-          if not (AsmGen.areConsecutive ns) then
+          (* if not (AsmGen.areConsecutive ns) then
             Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
                                   P.name p)
-          else 
+          else  *)
             K.VMOPLIT (p, ns, l)
         | A.FUNCALL (name, args) =>           
-           if not (AsmGen.areConsecutive args) then
+           (* if not (AsmGen.areConsecutive args) then
             Impossible.impossible ("non-consecutive registers in AN->KN func " ^
                                   "in register r" ^ Int.toString name)
-          else 
+          else  *)
             K.FUNCALL (name, args)
         | A.FUNCODE (params, body) => K.FUNCODE (params, exp body)
         | A.CAPTURED i => K.CAPTURED i
@@ -62,29 +56,6 @@ struct
     | exp (A.LETREC (bindings, body)) = 
         K.LETREC (map (fn (n, cl) => (n, embedClosure cl)) bindings, exp body)
     and embedClosure ((names, body), captured) = ((names, exp body), captured)
-
-  (*  | exp (A.VMOP (p, ns)) = S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
-    | exp (A.VMOPLIT (p, ns, v)) = 
-      (case (P.name p, ns, v)
-        of ("getglobal", [], A.STRING s)  => S.VAR s
-         | ("setglobal", [n], A.STRING s) => S.SET (s, S.VAR n)
-                              (* want to ask about this one *)
-         | (pn, names, v)       => S.APPLY (S.VAR pn, (List.map S.VAR names)
-                                                       @ [S.LITERAL (value v)]))
-    | exp (A.FUNCALL (n, ns)) = S.APPLY (S.VAR n, List.map S.VAR ns)
-
-    | exp (A.IFX (a, e1, e2)) = S.IFX (S.VAR a, exp e1, exp e2)
-    | exp (A.LETX (n, e, A.NAME n')) = 
-          if n = n'
-          then exp e 
-          else lt' n (exp e) (exp (A.NAME n'))
-          (* 𝓔⟦let x = e in x⟧ = 𝓔⟦e⟧ *)
-    | exp (A.LETX (n, e1, e2)) = lt' n (exp e1) (exp e2)
-    | exp (A.BEGIN (e1, e2)) = S.BEGIN [exp e1, exp e2]
-    | exp (A.SET (n, e)) = S.SET (n, exp e)
-    | exp (A.WHILEX (n, e1, e2)) = S.WHILEX (lt' n (exp e1) (S.VAR n), exp e2)
-    | exp (A.FUNCODE (ns, e)) = S.LAMBDA (ns, exp e)
-  val _ = exp : VScheme.name ANormalForm.exp -> VScheme.exp  *)
 
   fun def e = exp e
 end

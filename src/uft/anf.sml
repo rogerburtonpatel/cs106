@@ -45,13 +45,6 @@ structure ANormalUtil :> sig
   val setglobal : name * 'a -> 'a ANormalForm.exp
   val getglobal : name -> 'a ANormalForm.exp
 
-   (* create these @(x,...x, v) forms:
-         setglobal(register, name-of-global)
-         getglobal(name-of-global)
-    *)
-
-  (* you could consider adding similar functions for `check`, `expect`,
-     and `check-assert` *)
 end
   =
 struct
@@ -64,16 +57,3 @@ struct
                                                      [], A.STRING x))
 
 end
-
-
-    (* = LITERAL of literal
-    | NAME of 'a
-    | VMOP of vmop * 'a list
-    | VMOPLIT of vmop * 'a list * literal
-    | FUNCALL of 'a * 'a list 
-    | IFX     of 'a * 'a exp * 'a exp 
-    | LETX    of 'a * 'a exp * 'a exp
-    | BEGIN   of 'a exp * 'a exp 
-    | SET     of 'a * 'a exp
-    | WHILEX  of 'a * 'a exp * 'a exp 
-    | FUNCODE of 'a list * 'a exp *)

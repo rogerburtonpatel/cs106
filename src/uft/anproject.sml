@@ -2,8 +2,6 @@
     Note that this can fail if the disambiguated VScheme is not already 
     written in ANormal-form. *)
 
-(* You'll complete this file *)
-
 structure ANProject :> sig
   val value : UnambiguousVScheme.value -> ANormalForm.literal
   val def   : UnambiguousVScheme.def -> string ANormalForm.exp Error.error
@@ -92,35 +90,16 @@ struct
          else  mkVmop p es
         | _ => mkVmop p es)
       end
-    
     | exp (X.LAMBDA (ns, e)) = curry A.FUNCODE <$> (succeed ns) <*> exp e
-        | exp (X.CASE _) = Impossible.exercise "knproject case"
-    | exp (X.CONSTRUCTED _) = Impossible.exercise "knproject constructed"
-    (* error "no non-global functions in projection to \
-                                                              \A-Normal form!" *)
-  (* val fundef : string ANormalForm.exp -> string ANormalForm.exp = 
-  fn e => curry3 A.LETX <$> (succeed t) 
-                        <*> (curry A.FUNCODE <$> (succeed xs) <*> exp e)
-                        <*> (curry AU.setglobal <$> (succeed f) <*> asName t') *)
+        | exp (X.CASE _) = Impossible.exercise "anproject case"
+    | exp (X.CONSTRUCTED _) = Impossible.exercise "anproject constructed"
+   
   fun list nil     = succeed nil 
   | list (p::ps) = curry op :: <$> p <*> list ps
 
-  (* val lt' : 'a parser list -> 'b parser -> ('a list * 'b) parser
-  val lambda' : 'a parser -> (name list * exp) parser
-  val setglobal : (name * exp) parser
-
-  lt' [bind (lambda' exp)] [setglobal exp] *)
 
   fun def (X.EXP e) = exp e
-          (* (case e 
-          of (X.LETX (X.LET, [(t, X.LAMBDA (xs, e))], (X.SETGLOBAL (f, t')))) =>
-          if eqnames t (asName t')
-          then 
-          curry3 A.LETX <$> (succeed t) 
-                        <*> (curry A.FUNCODE <$> (succeed xs) <*> exp e)
-                        <*> (curry AU.setglobal <$> (succeed f) <*> asName t')
-          else exp e
-          | _ => exp e) *)
+         
     | def (X.VAL _) = error "val not allowed when projecting to A-Normal Form"
     | def (X.CHECK_ASSERT _) = error "check-assert not allowed when projecting \
                                                               \to A-Normal Form"
@@ -129,7 +108,6 @@ struct
     | def (X.CHECK_ERROR _) = error "check-error not allowed when projecting \
                                                               \to A-Normal Form"
     | def (X.DEFINE (f, (xs, e))) = 
-    (* TODO change this r100 nonsense *)
       exp e >>= (fn e' => succeed (A.LETX ("$r0", e', 
                                 A.VMOPLIT (P.setglobal, ["$r100"], A.STRING f))))
 

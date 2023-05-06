@@ -69,7 +69,6 @@ struct
         (case se 
           of A.LITERAL _ => S.empty
           | A.NAME x => S.insert (x, S.empty)
-          (* TODO: are all these names free? *)
           | A.VMOP(_, xs) => S.ofList xs
           | A.VMOPLIT(_, xs, _) => S.ofList xs
           | A.FUNCALL(x, xs) => S.ofList (x::xs)
@@ -109,7 +108,7 @@ struct
         fun renameList n1 n2 [] = []
                              | renameList n1 n2 (x::xs) = 
                                 (if x = n1 then n2 else x) :: renameList n1 n2 xs
-        fun substitutor (s as (A.SIMPLE se)) =
+        fun substitutor (A.SIMPLE se) =
               let val simp = 
                 (case se 
                   of A.LITERAL l => A.LITERAL l
@@ -138,7 +137,8 @@ struct
                            if member from_x params then
                             cl 
                            else if not (member for_y params) then 
-                            A.CLOSURE ((params, substitutor body), renameList from_x for_y captured)
+                            A.CLOSURE ((params, substitutor body), 
+                                        renameList from_x for_y captured)
                            else 
                             let val fresh = (freshName (freeVars (A.SIMPLE cl)))
                                 val renamedParameters = 
@@ -148,7 +148,8 @@ struct
                                    captured in this expression *)
                                 val freshBody = rename (for_y, fresh) body
                                 val substBody = substitutor freshBody
-                            in A.CLOSURE ((renamedParameters, substBody), captured)
+                            in A.CLOSURE ((renamedParameters, substBody), 
+                                          captured)
                             end
                     | A.BLOCK names => A.BLOCK (map substIfEq names)
                     | A.SWITCH_VCON (n, branches, default) => 
@@ -168,12 +169,9 @@ struct
               normalizeLet n (substitutor (A.SIMPLE e1)) (substitutor e2)
           | substitutor (A.WHILEX (n, e, e')) = 
               Impossible.impossible "no while in ANF!"
-              (* if from_x = n then 
-                  normalizeWhile n (substitutor (A.SIMPLE e)) e'
-                else 
-                  normalizeWhile n (substitutor (A.SIMPLE e)) (substitutor e') *)
           | substitutor (A.SET (n, e)) = A.SET (substIfEq n, substitutor e)
-          | substitutor (A.BEGIN (e1, e2)) = A.BEGIN (substitutor e1, substitutor e2)
+          | substitutor (A.BEGIN (e1, e2)) = A.BEGIN (substitutor e1, 
+                                                      substitutor e2)
           | substitutor (A.LETREC (bindings, body)) = Impossible.exercise 
                                                         "substitute in a letrec"
     in substitutor 
@@ -191,41 +189,38 @@ struct
                             (* x != y and y is free in e3 *)
                             let val e2free = freeVars e2
                             in if not (member x e2free) then 
-                                A.LETX (x, e1, normalizeLet x e2 e3)
-                                        (* TODO subst e2[x/y] *)
+                                let val subst = rename (y, x)
+                                in A.LETX (x, e1, 
+                                              normalizeLet x (subst e2) e3)
+                                end
                                else 
-                                (* x != y and y is free in e3 and x is free in e2 *)
-                                A.LETX (freshName (x::(e2free @ e3free)), e1, normalizeLet x e2 e3)
-                                                                                  (* TODO subst e2 [z/y] *)
+                               let val z = freshName (x::(e2free @ e3free))
+                               val subst = rename (y, z)
+                                in
+                            (* x != y and y is free in e3 and x is free in e2 *)
+                                A.LETX (z, e1, normalizeLet x (subst e2) e3)
+                                end
                               end
                         end
-  (* todo letrec! *)
-  (* TODO needs freein check *)
     | normalizeLet x (A.IFX (y, e1, e2)) ex' = 
                      A.IFX (y, (normalizeLet x e1 ex'), (normalizeLet x e2 ex'))
 
-  (* TODO needs freein check *)
     | normalizeLet x (A.WHILEX (y, e, e')) ex' = 
-            Impossible.impossible "no whiles in ANF at normalizeLet"
-            (* A.BEGIN ((normalizeWhile y (A.SIMPLE e) e'),
-                          (normalizeLet x 
-                                        (A.SIMPLE (A.LITERAL (A.BOOL false))))
-                                        ex') *)
-                    
+            Impossible.impossible "no whiles in ANF at normalizeLet"                    
     | normalizeLet x (A.BEGIN (e1, e2)) ex' = 
-                A.BEGIN( e1, (normalizeLet x e2 ex'))
+                A.BEGIN(e1, (normalizeLet x e2 ex'))
     | normalizeLet x (A.SET (n, e)) ex' = 
                 A.BEGIN ((A.SET (n,  e)), 
                         (normalizeLet x (A.SIMPLE (A.NAME n)) ex'))
 
     | normalizeLet x (A.LETREC (bindings, body)) ex' = Impossible.exercise 
                                                        "normalize let on Letrec"
-    (* A.LETX (x, (A.LETREC (bindings, body)), ex')  *)
-    (* TODO ^^^ Letrec *)
     | normalizeLet x (A.SIMPLE e) e'  = A.LETX (x, e, e')   
+
   and normalizeIf x e1 e2   = A.IFX (x, e1, e2)
   and normalizeSet x e      = A.SET (x, e)
-  and normalizeBegin (A.BEGIN (e1, e2)) e3 = normalizeBegin e1 (normalizeBegin e2 e3)
+  and normalizeBegin (A.BEGIN (e1, e2)) e3 = normalizeBegin e1 
+                                             (normalizeBegin e2 e3)
     | normalizeBegin e1 e2 = A.BEGIN (e1, e2)
   and normalizeWhile x e e' = Impossible.impossible 
                                       "don't even try to normalize a while loop"
@@ -429,25 +424,6 @@ struct
                                             ANormalUtil.setglobal (n, 0)))
     end
 end
-(* TODO: fix this output from qsort: 
 
-(let* ([r0 append]
-       [r1 (let* ([r1 qsort]
-                  [r2 (let* ([r2 filter]
-                             [r3 left?]
-                             [r4 rest]) 
-                        (r2 r3 r4))]) 
-             (r1 r2))]
-       [r2 (let* ([r3 pivot]
-                  [r4 (let* ([r4 qsort]
-                             [r5 (let* ([r5 filter]
-                                        [r6 right?]
-                                        [r7 rest]) 
-                                   (r5 r6 r7))]) 
-                        (r4 r5))]) 
-             (cons r3 r4))]) 
-  (r0 r1 r2))
-  
-  how can we get our nice let* stack? (as fun as this snake shape is)
 
-   *)
+(* qsort is beautiful now!    *)

@@ -1,3 +1,92 @@
 At long last, ANF. There's a bit more to go before the presentation- 
 but here's what I have now. 
 
+File overview
+
+anf.sml:
+
+this is the ANF type. The fact that we can only have certain constructs on 
+the right-hand side of a let is enforced by the 'simple_exp' type. We literally
+can't have lets, ifs, whiles, sets, begins, or letrecs on the rhs. 
+
+uft.sml:
+We're going to eventually get to a place where we can switch between AN
+and KN, from which we'll generate vs. Right now, we can just generate AN, 
+and we're testing that by putting it into vscheme. There are bugs, some of which
+come from other parts of the compiler. But commands like this one work: 
+
+grep -Ev "check-assert|check-error" tests/105-hws-test-106/hofs.scm | uft ho-an | vscheme
+
+And uft ho-an generates beautiful, assembly like output. 
+
+from scheme105.scm:
+... 
+(begin 
+   (let* ([r0 arg-max]
+          [r1 square]
+          [r2 8]
+          [r3 7]
+          [r4 9]
+          [r5 7]
+          [r6 7]
+          [r7 '()]
+          [r6 (cons r6 r7)]
+          [r5 (cons r5 r6)]
+          [r4 (cons r4 r5)]
+          [r3 (cons r3 r4)]
+          [r2 (cons r2 r3)]
+          [r0 (r0 r1 r2)]) 
+     (check r0 '(arg-max square '(8 7 9 7 7)))) 
+   (let ([r0 9]) 
+     (expect r0 '9)))
+
+anembed.sml:
+This is where we put AN back into KN, so we can go back to VScheme for 
+prettyprinting. 
+
+CURRENT BUG AND CURRENT FIXING PROCESS:
+We haven't yet fixed the invariant that registers need to be consecutive in 
+a call. In anembed.sml, part of my fixing process is checking to see if this 
+invariant is ever broken, and the compiler crashes if so. 
+Once we reallocate, we'll be able to remove these checks, though they might 
+stay for safety. 
+
+The checks are commented out for now so that we can see the principle of 
+the output. 
+
+anproject.sml:
+I'm not sure if I want to let people read ANF off disk yet. So this file is 
+unused. It's here if I decide that I want this functionality. 
+
+anormalize.sml:
+
+Where the magic happens. Highlighted functions are freeVars, freshName, rename,
+and normalizeLet. This took many hours, and was very rewarding. 
+
+In anormalize.sml:232-241, we bind registers with our smart let constructor, 
+which calls normalizeLet after applying the continuation. 
+
+CURRENT TODOS:
+Letrec isn't fully implemented yet. This will be done for the presentation; 
+I'd like a little help with it, but I'll try to figure it out on my own. 
+
+Register allocation also isn't done. Some assistance here would be very
+much appreciated. 
+
+NOT A TODO, BUT A CHOICE:
+There are no while loops in anf. With renaming, things get too hairy as we 
+re-access earlier scope. 
+If ANF is a speedier alternative to KNF, the user will have the option 
+between the two (eventually) and can use KNF if their code has the 
+imperative 'while', and can use ANF if it's more functionally 'pure'. 
+
+Some test commands: 
+
+In `uft/`:
+uft ho-an qsort.scm | vscheme
+
+In `tests/`:
+grep -Ev "check-assert|check-error" 105-hws-test-106/hofs.scm | uft ho-an | vscheme
+
+There's more to be done, but this felt so, so good! Thank you for all your help
+in this process. 
