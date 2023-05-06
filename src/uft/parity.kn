@@ -1,0 +1,27 @@
+(let ([r0 (lambda (r1) 
+             (letrec  ([r3 
+                   (let ([r4 (let ([r4 0]) (= r1 r4))]) 
+                     (if r4 
+                        #f 
+                        (let* ([r4 (CAPTURED-IN 0 $closure)]
+                               [r5 (+imm r1 r127)]) 
+                          (begin (println r4) (r4 r5)))))] 
+                [r2 
+                   (let ([r4 (let ([r4 0]) (= r1 r4))]) 
+                     (if r4 
+                        #t 
+                        (let* ([r4 (CAPTURED-IN 0 $closure)]
+                               [r5 (+imm r1 r127)]) 
+                          (begin (println r4) (r4 r5)))))]) 
+                (let ([r4 (let* ([r4 r3]
+                                 [r5 r1]) 
+                            (begin (println r4) (r4 r5)))]) 
+                  (if r4 'odd 'even))))]) 
+  (set parity r0))
+(begin 
+   (let ([r0 (let* ([r0 parity]
+                    [r1 0]) 
+               (r0 r1))]) 
+     (check r0 '(parity 0))) 
+   (let ([r0 'even]) 
+     (expect r0 ''even)))
