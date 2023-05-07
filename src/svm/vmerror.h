@@ -14,9 +14,13 @@
 #include "vmstate.h"
 #include "value.h"
 
-
+/* 
+ * INVARIANT: ONLY safe to change mode with set_error_mode() in the backend, 
+ * and clients may ONLY affect these values with enter_check_error() and 
+ * exit_check_error. Never change this flag manually in client code. 
+ * You may always read the global mode. 
+ */  
 typedef enum ErrorMode { NORMAL, TESTING } ErrorMode;
-
 
 extern void typeerror(VMState state, const char *expected, Value got,
                                 const char *file, int line);
@@ -25,9 +29,10 @@ extern void runerror(VMState state, const char *format, ...);
 extern void runerror_p(VMState state, const char *format, ...);
   // takes arguments as for `print`, not `printf`
 
-/* call only for compiler bugs or uncatchable errors */
 extern _Noreturn void fatal_error(const char *msg, const char *file, int line);
+// call only for compiler bugs or uncatchable errors
 
+// Thank you to nr for these ideas!
 void enter_check_error(void); // start running within the dynamic extent 
                               // of an active check-error test
 void exit_check_error(void); // leave the dynamic extent 

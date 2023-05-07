@@ -14,7 +14,12 @@
 #include "vmerror.h"
 
 
-// TODO DOCUMENT
+/* 
+ * INVARIANT: ONLY safe to change mode with set_error_mode() in the backend, 
+ * and clients may ONLY affect these values with enter_check_error() and 
+ * exit_check_error. Never change this flag manually in client code. 
+ * You may always read the global mode. 
+ */  
 static ErrorMode mode = NORMAL;
 
 void set_error_mode(ErrorMode new_mode) {
@@ -24,7 +29,7 @@ void set_error_mode(ErrorMode new_mode) {
 
 /* Only after writing these did I realize norman did it first. */
 
-jmp_buf testjmp;
+jmp_buf check_error_jmp;
 
 void enter_check_error(void)
 {
@@ -33,7 +38,8 @@ void enter_check_error(void)
 void exit_check_error(void)
 {
     if (mode != TESTING) {
-        fatal_error("called exit_check_error while not in error mode", __FILE__, __LINE__);
+        fatal_error("called exit_check_error while not in error mode",
+                     __FILE__, __LINE__);
     }
     set_error_mode(NORMAL);
 }
@@ -43,7 +49,6 @@ ErrorMode error_mode(void)
     return mode;
 }
 
-/* rewind the stack */
 
 void fatal_error(const char *msg, const char *file, int line)
 {
@@ -52,6 +57,7 @@ void fatal_error(const char *msg, const char *file, int line)
     abort();
 }
 
+/* rewind the stack. needed to get frames in the right place. */
 void stackunwind(VMState state)
 {
     Activation *Stack = state->Stack;
@@ -75,7 +81,7 @@ void runerror(VMState state, const char *format, ...)
         abort(); /* we can change this to a longjmp to errorbuf 
                     if we don't want errors to crash our vm */
     } else {
-        longjmp(testjmp, 1);
+        longjmp(check_error_jmp, 1);
     }
 }
 
@@ -94,7 +100,7 @@ void runerror_p(VMState state, const char *format, ...)
         abort(); /* we can change this to a longjmp to errorbuf 
                     if we don't want errors to crash our vm */
     } else {
-        longjmp(testjmp, 1);
+        longjmp(check_error_jmp, 1);
     }
 }
 
@@ -110,7 +116,7 @@ void typeerror(VMState state, const char *expected, Value got,
         abort(); /* we can change this to a longjmp to errorbuf 
                     if we don't want errors to crash our vm */
     } else {
-        longjmp(testjmp, 1);
+        longjmp(check_error_jmp, 1);
     }
 
 }

@@ -54,7 +54,7 @@
 #define GC() (VMSAVE(), gc(vm), VMLOAD())
 
 extern int ntests, npassed;
-extern jmp_buf testjmp;
+extern jmp_buf check_error_jmp;
 
 
 
