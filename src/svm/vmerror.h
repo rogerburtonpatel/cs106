@@ -29,7 +29,8 @@ typedef enum ErrorMode { NORMAL, TESTING } ErrorMode;
  *  is in 'TESTING', and only functions in the vmerror module should jump to it. 
  *  INVARIANT: The buffer is refreshed after each jump. 
  */
-jmp_buf check_error_jmp;
+
+extern jmp_buf check_error_jmp;
 
 extern void typeerror(VMState state, const char *expected, Value got,
                                 const char *file, int line);

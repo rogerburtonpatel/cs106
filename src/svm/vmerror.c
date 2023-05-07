@@ -27,6 +27,8 @@ void set_error_mode(ErrorMode new_mode) {
   mode = new_mode;
 }
 
+jmp_buf check_error_jmp;
+
 /* Only after writing these did I realize norman did it first. */
 
 /* these are how clients control and read the global error state. */
