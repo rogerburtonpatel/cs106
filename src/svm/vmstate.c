@@ -1,7 +1,4 @@
-// Memory management and literal addition for VMState
-
-// You'll complete this file as part of module 1
-
+// Memory management and literal/global addition for VMState
 
 #define _POSIX_C_SOURCE 200809L
 
@@ -22,37 +19,33 @@
 unsigned STARTING_LITS = 1000;
 unsigned STARTING_GLOBALS = 1000;
 
-// seperately need to free the program!
+// seperately need to free the program 'fun'!
 void freestatep(VMState *sp) {
     assert(sp && *sp);
     free(*sp);
 }
 
 VMState newstate(void) {
-    /* allocation of instruction space has been done! 
-     * now, the instructions pointer becomes our 
-     * start of program and program counter*/
-    
-    VMState vms = malloc(sizeof(*vms));
+    /* allocation of instruction space has been done with 'fun'! */
+    VMState vms = calloc(1, sizeof(*vms));
     assert(vms != NULL);
-
-    vms->stackpointer = vms->R_window_start = 0;
-    vms->num_literals = vms->num_globals = 0;
-    vms->counter = 0;
     
-    /* registers are static memory-- we'll just init them to nils */
-    for (int i = 0; i < NUM_REGISTERS; ++i) {
-        vms->registers[i] = nilValue;
-    }
-    for (int i = 0; i < MAX_GLOBALS; ++i) {
-        vms->globals[i] = nilValue;
-    }
+    /* because of the magic of calloc, 
+       stackpointer, R_window_start, 
+       num_literals, num_globals,
+       counter,
+       all the registers,
+       all the literals,
+       all the globals, 
+       and awaiting_expect,
+       are all set to 0 (or nilValue),
+       as they should be. */
 
-    vms->awaiting_expect = nilValue;
     vms->cons_sym_slot = 
                         literal_slot(vms, mkStringValue(Vmstring_newc("cons")));
+    // for switch statements
     vms->globals[global_slot(vms, mkStringValue(Vmstring_newc("&gamma")))] =
-            mkNumberValue(10.0);
+            mkNumberValue(10.0); // for GC
         
     return vms;
 }
