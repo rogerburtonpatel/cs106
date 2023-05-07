@@ -1,8 +1,5 @@
 // Implementation of the VM heap
 
-// Modules 1 to 10: Nothing to see here.
-// Module 11: You'll reclaim and recycle heap pages.
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -677,7 +674,7 @@ static void scan_vmstate(struct VMState *vm) {
   // root: any other field of `struct VMState` that could lead to a `Value`
 
 }
-// gchere. Todo remove
+
 extern void gc(struct VMState *vm)
 {
     assert(vm);
@@ -906,9 +903,11 @@ void xsearch(const char *what, void *p) {
 }
 
 static Value global_gamma_value(VMState vm) {
-  (void)vm;
-  // WITHOUT allocating, return the value of the global variable &gamma
-  // assert(0 && vm && "Need to find the value of &gamma (nil if not set)");  
+    Name gam = strtoname("&gamma");
+    for (int slot = 0; slot < vm->num_globals; slot++) {
+      if (vm->global_names[slot] == gam)
+        return vm->globals[slot];
+    }
   return nilValue;
 }
 

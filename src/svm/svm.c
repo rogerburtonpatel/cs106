@@ -31,8 +31,6 @@
 #include "vmstring.h"
 #include "vmerror.h"
 
-extern jmp_buf check_error_jmp;
-
 static void dofile(struct VMState *vm, FILE *input) { 
   for ( struct VMFunction *module = loadmodule(vm, input)
       ; module

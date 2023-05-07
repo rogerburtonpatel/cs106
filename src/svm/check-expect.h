@@ -22,6 +22,8 @@ void check            (struct VMState *vm, const char *source, Value v);
 void expect           (struct VMState *vm, const char *source, Value v);
 void check_assert(const char *source, Value v);
 void fail_check_error (struct VMState *vm, const char *source);
+// use these when you know you've entered a check-error test, and to 
+//    pass said test, respectively. not to be used with other test types.
 void add_test();
 void pass_test(); /* SPEEDUP: you could make these macros if you're worried
                      about efficiency, or just expose the global test vars. */

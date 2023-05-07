@@ -23,10 +23,7 @@ static char *checks;
 static int ntests = 0;
 static int npassed = 0;
 
-extern jmp_buf testjmp;
-
-
-// TODO DOCUMENT
+/* use these two trampolines largely with check-error. */
 void add_test()
 {
     ntests++;
@@ -76,8 +73,8 @@ void check_assert(const char *source, Value v) {
   }
 }
 
-/* if we get here, the test has failed. 
-    gives a nice error msg and uninstalls handler so
+/* if we get here, the current check-error test has failed. 
+    gives a nice error msg and resets the error mode so
    subsequent errors will crash if they should. */
 void fail_check_error(struct VMState *vm, const char *source)
 {

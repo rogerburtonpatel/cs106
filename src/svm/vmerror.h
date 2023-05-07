@@ -22,6 +22,15 @@
  */  
 typedef enum ErrorMode { NORMAL, TESTING } ErrorMode;
 
+/* 
+ * This buffer is initialized by svm.c before calling vmrun(). 
+ *  INVARIANT: It is always safe to jump to it within vmrun(), though this 
+ *  should only be done if a run-time error occurs while the current error mode 
+ *  is in 'TESTING', and only functions in the vmerror module should jump to it. 
+ *  INVARIANT: The buffer is refreshed after each jump. 
+ */
+jmp_buf check_error_jmp;
+
 extern void typeerror(VMState state, const char *expected, Value got,
                                 const char *file, int line);
 extern void runerror(VMState state, const char *format, ...);

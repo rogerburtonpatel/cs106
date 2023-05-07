@@ -53,11 +53,6 @@
 
 #define GC() (VMSAVE(), gc(vm), VMLOAD())
 
-extern int ntests, npassed;
-extern jmp_buf check_error_jmp;
-
-
-
 extern int setjmp_proxy(jmp_buf t); /* see what a difference this makes! */
 void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     const char *dump_decode = svmdebug_value("decode");

@@ -1,9 +1,4 @@
-(* A parser for assembly language *)
-
-(* You'll get a partially complete version of this file, 
-  which you'll need to complete. *)
-
-(* TODO add comments and whitespace parsing around funcs *)
+(* A parser and unparser for assembly language *)
 
 structure AsmParse :>
   sig
@@ -100,6 +95,7 @@ struct
   val string    = P.maybe (fn (L.STRING s)   => SOME s  | _ => NONE) one
   val reg       = P.maybe (fn (L.REGISTER n) => SOME n  | _ => NONE) one
   
+  (* accept literals, producuce better types *)
   val string' : O.literal parser = O.STRING <$> string
   val int'    : O.literal parser = O.INT    <$> int
   val name'   : O.literal parser = O.STRING <$> name
@@ -115,6 +111,7 @@ struct
             | L.NAME "#f" => SOME (O.BOOL false)
             (* todo: add '() *)
             | L.NAME "emptylist" => SOME O.EMPTYLIST
+            | L.NAME "'()" => SOME O.EMPTYLIST
             | L.NAME "nil" => SOME O.NIL
             | L.STRING s => SOME (O.STRING s)
             | _ => NONE
@@ -122,7 +119,7 @@ struct
   val literal = P.maybe lit_of_token one
 
 
-  (* turn any single-token string into a parser for that token *)
+  (* turn any single- or multi-token string into a parser for that token *)
   fun the "\n" = eol
     | the s =
         let fun matchtokens toks = 
@@ -138,19 +135,20 @@ struct
 
   (***** instruction-building functions for parsers ****)
 
+  (* curried instruction builders *)
   fun regs operator operands = A.OBJECT_CODE (O.REGS (operator, operands))
-     (* curried instruction builder *)
-  fun regslit operator regs lit = A.OBJECT_CODE (O.REGSLIT (operator, regs, lit))
+  fun regslit operator regs lit   = A.OBJECT_CODE (O.REGSLIT (operator, regs, lit))
+  fun regsint operator reg reg' i = A.OBJECT_CODE (O.REGINT (operator, reg, reg', i))
 
 (* follow-ups: switch arguments, and labeler needing a string *)
 
   fun bracketed lb p rb = (the lb >> p) <~> the rb
-  fun labeler operator label = A.DEFLABEL label
-  fun gotoer operator label  = A.GOTO_LABEL label
-  fun ifgotoer operator r1 label  = A.IF_GOTO_LABEL (r1, label)
+  fun labeler    operator label      = A.DEFLABEL label
+  fun gotoer     operator label      = A.GOTO_LABEL label
+  fun ifgotoer   operator r1 label   = A.IF_GOTO_LABEL (r1, label)
   fun gotoVconer operator r1 choices = A.GOTO_VCON (r1, choices)
-  (* fun choicer operator = many1 ((many eol >> the "case" >> literal) <*> bracketed "(" int ")" <~> the "goto" <*> name) *)
 
+  (* baby wrappers that are used in the parsers bc they play nice w/ <$>  *)
   fun eR0 operator          = regs operator []
   fun eR1 operator r1       = regs operator [r1]
   fun eR2 operator r1 r2    = regs operator [r1, r2]
@@ -162,6 +160,7 @@ struct
   fun eR1to2 operator r1    = regs operator [r1, r1]
   fun eR2to3 operator r1 r2 = regs operator [r1, r2, r2]
 
+  (* call parsing syntax is complecated enough that we need this chonker *)
   fun eRCall operator r1 r2 rs = 
     let val regargs = 
       (case rs
@@ -170,7 +169,7 @@ struct
     in regs operator regargs
     end
     
-
+  (* literals? i hardly know 'em *)
   fun eRL  operator r1 lit      = regslit operator [r1] lit
   fun eLR  operator             = flip $ eRL operator
 
@@ -178,7 +177,7 @@ struct
   fun eRLR operator r1 lit r2   = regslit operator [r1, r2] lit
   fun eL operator lit = regslit operator [] lit
 
-  (***** Example parser for you to extend *****)
+  (***** Example parser; can be extended. *****)
 
   (* The example parser includes "passthrough" syntax and three
      demonstration instructions:
@@ -217,6 +216,7 @@ struct
   infixr 4 <$>!
   fun f <$>! p = P.check (f <$> p)
 
+  (* debugging power *)
   exception TypeCheat 
   (* Example parser: reads an instruction /without/ reading end of line *)
     fun list nil     = succeed nil 
@@ -226,7 +226,14 @@ struct
     val _ = list : 'a parser list -> 'a list parser
 
   val _ = succeed : 'a -> 'a parser
-    
+
+  (* needed specially for parsing switch statements, which are multi-line. *)
+   val switchstart : int parser = (the "switch" >> reg) <~> the "{" <~> many1 eol
+   val branch : (ObjectCode.literal * int * string) parser = 
+                  P.triple <$> (the "case" >> literal) 
+                           <*> bracketed "(" int ")" <~> the ":" <~> the "goto" 
+                           <*> name
+   val switchend : unit parser = the "}" <~> many1 eol
 
   (* these help make the code more legible, I think. *)
   fun oneParser    name = eR1 name <$> (the name >> reg) : A.instr parser
@@ -244,13 +251,13 @@ struct
                 "inc", "dec"]
 
 
-
-  (* val parseBinops = parseOps binopParser *)
-
+  (* PARSING *)
+  (* The parser speaks basic normanic: it recognizes things like "global"
+     and is quite fluent in a variety of call syntaxes. *)
   val one_line_instr : A.instr parser
      =  the "@" >> regs <$> name <*> many int  (* "passthrough" syntax *)
-    <|> eR3 "+imm" <$> reg <~> the ":=" <*> reg <~> the "+" <*> (offset_code <$>! int)
-    <|> eR3 "+imm" <$> reg <~> the ":=" <*>
+    <|> regsint "+imm" <$> reg <~> the ":=" <*> reg <~> the "+" <*> (offset_code <$>! int)
+    <|> regsint "+imm" <$> reg <~> the ":=" <*>
                        reg <~> the "-" <*> ((offset_code o ~) <$>! int)
                                            (* the ~ is ML's unary minus (negation) *)
     <|> P.check
@@ -264,18 +271,19 @@ struct
     <|> eRL "getglobal" <$> reg <~> the ":= _G" <*> bracketed "[" string' "]"
     <|> eRL "getglobal"  <$> reg <~> the ":=" <~> the "global" <*> name'
 
-
     <|> eLR "setglobal"  <$> (the "_G" >> bracketed "[" string' "]") <~> the ":=" <*> reg
     <|> eLR "setglobal" <$> (the "global" >> name') <~> the ":=" <*> reg
 
     <|> eLR "check" <$> (the "check" >> string') <~> optional (the ",") <*> reg
     <|> eLR "expect" <$> (the "expect" >> string') <~> optional (the ",") <*> reg
     <|> eLR "check-assert" <$> (the "check-assert" >> string')  <~> optional (the ",") <*> reg
-
     <|> eLR "check-error" <$> (the "check-error" >> string')  <~> optional (the ",") <*> reg
                             
+
     <|> eRL "loadliteral" <$> reg <~> the ":=" <*> literal
     <|> succeed (eR0 "halt") <~> the "halt"
+   
+    (* labels can be quoted, or not. *)
     <|> labeler "deflabel" <$> (the "deflabel" >> string)
     <|> labeler "deflabel" <$> name <~> the ":"
     <|> gotoer "goto" <$> (the "goto" >> name)
@@ -283,11 +291,11 @@ struct
     <|> ifgotoer "if-goto" <$> (the "if" >> reg) <*> (the "goto" >> name)
     <|> ifgotoer "if-goto" <$> (the "if" >> reg) <*> (the "goto" >> string)
     
+    (* this needs to come below the ones above it, for magical reasons *)
     <|> parseOps unopParser unops
 
     <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
 
-(* todo bracketed parser and 'the' improvement *)
     <|> eR2L "mkclosure" <$> reg <~> the ":=" <~> the "mkclosure" <*> reg <*> int'
     <|> eR2L "mkclosure" <$> reg <~> the ":=" <~> the "closure" <~> the "[" <*> reg <~> the "," <*> int' <~> the "]"
 
@@ -306,13 +314,12 @@ struct
     (* rX := call rY (rZ) *)
     (* rX := call rY () *)
     (* rX := call rY    *)
-    (* todo resuse bracketed producer here *)
     <|> eR3 "call" <$> reg <~> the ":= call" <*> reg 
             <*> bracketed "(" (reg >> the ", ... ," >> reg) ")"
     <|> eR3 "call" <$> reg <~> the ":=" <~> the "call" <*> reg 
             <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")"             
-    <|> eR3 "call" <$> reg <~> the ":= call" <*> reg <~> the "(" <*> reg <~> the ")" 
-    <|> eRCall "call" <$> reg <~> the ":= call" <*> reg <~> the "(" <*> many1 reg <~> the ")" 
+    <|> eR3 "call" <$> reg <~> the ":= call" <*> reg <*> bracketed "(" reg ")" 
+    <|> eRCall "call" <$> reg <~> the ":= call" <*> reg <*> bracketed "(" (many1 reg) ")" 
     <|> eR2to3 "call" <$> reg <~> the ":= call" <*> reg <~> the "(" <~> the ")" 
     <|> eR2to3 "call" <$> reg <~> the ":= call" <*> reg
 
@@ -329,22 +336,23 @@ struct
     <|> eR2 "tailcall" <$> (the "tailcall" >> reg)
             <~> the "(" <~> reg <~> the "-" <*> reg <~> the ")" 
     <|> eR2 "tailcall" <$> (the "tailcall" >> reg)
-            <~> the "(" <*> reg <~> the ")" 
+            <*> bracketed "(" reg ")" 
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
             <~> the "(" <~> the ")" 
     <|> eR1to2 "tailcall" <$> (the "tailcall" >> reg)
 
     (* switch statements *)
-     (* let fun choice (v, arity, lbl) =
-         spaceSep ["  case", unparse_lit v, "(" ^ int arity ^ "):", "goto", lbl]
-      in spaceSep ["switch", reg r, "{"] :: map choice choices @ "}" ::
-          unparse instructions *)
-          (* todo ask for help *)
-    <|> gotoVconer "switch" <$> reg <~> the "{" <~> many1 eol <*>
+    (* todo fix this- why does "switch r3 {" not work, but "switch r3 (" does? show with switch.vs *)
+    (* <|> succeed (eR0 "case") <~> the "case" <~> literal <~> bracketed "(" int ")" <~> the ":" <~> the "goto" <~> name *)
+    (* <|> succeed (eR0 "case") <~> switchstart *)
+    (* <|> succeed (eR0 "switch") <~> the "switch" <~> reg <~> the "{" <~> eol <~> the "}" *)
+    (* <|> succeed (eR0 "switch") <~> the "{" <~> many1 eol <~> the "}" <~> eol *)
+    <|> gotoVconer "switch" <$> switchstart <*> many1 branch <~> switchend
+    (* <|> gotoVconer "switch" <$> reg <~> the "{" <~> many1 eol <*>
                         (many1 (P.triple <$> (the "case" >> literal) 
                         <*> bracketed "(" int ")" <~> the ":" <~> the "goto" 
-                        <*> name <~> many1 eol)) 
-                       <~> the "}" <~> many1 eol
+                        <*> name <~> many1 eol)) <~> the
+                        "}" <~> many1 eol *)
 
     (* debuggers *)
 
@@ -354,8 +362,6 @@ struct
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence
       of zero or more p's separated by commas *)
-    
-
 
    (**** recursive parser that handles end-of-line and function loading ****)
 

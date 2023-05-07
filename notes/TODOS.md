@@ -6,7 +6,7 @@ TESTING- dress to impress
 
 setjmp comparison
 
-ask for help on asmparse.sml:343. tried many things. 
+ask for help on asmparse.sml:343. tried many things. look at switch.vs
 
 document check-error
 

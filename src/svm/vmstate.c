@@ -51,6 +51,8 @@ VMState newstate(void) {
     vms->awaiting_expect = nilValue;
     vms->cons_sym_slot = 
                         literal_slot(vms, mkStringValue(Vmstring_newc("cons")));
+    vms->globals[global_slot(vms, mkStringValue(Vmstring_newc("&gamma")))] =
+            mkNumberValue(10.0);
         
     return vms;
 }

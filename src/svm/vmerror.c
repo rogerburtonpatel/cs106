@@ -29,8 +29,7 @@ void set_error_mode(ErrorMode new_mode) {
 
 /* Only after writing these did I realize norman did it first. */
 
-jmp_buf check_error_jmp;
-
+/* these are how clients control and read the global error state. */
 void enter_check_error(void)
 {
     set_error_mode(TESTING);
@@ -49,7 +48,7 @@ ErrorMode error_mode(void)
     return mode;
 }
 
-
+/* used only for unrecoverable errors: compiler bugs, mostly. */
 void fatal_error(const char *msg, const char *file, int line)
 {
     fprintf(stderr, "Fatal error: %s\t(Internal source at %s, line %d)\n", 
