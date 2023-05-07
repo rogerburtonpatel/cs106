@@ -2,8 +2,8 @@
 
 // When you're thinking about new instructions, define them here first.
 // It's OK for an opcode to be defined here even if it is not implemented 
-// anywhere.  But if you want to *run* an instruction (module 1) or *load*
-// an instruction (module 2), the opcode has to be defined here first.
+// anywhere.  But if you want to *run* an instruction or *load*
+// an instruction, the opcode has to be defined here first.
 
 #ifndef OPCODE_INCLUDED
 #define OPCODE_INCLUDED

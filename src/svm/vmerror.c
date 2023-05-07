@@ -1,10 +1,5 @@
 // Implementations of the error functions
 
-// Modules < 7: Interesting only if you want to know how to write 
-// a function that acts like printf.
-
-// Module 7 onward: useful to extend with a stack trace.
-
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>

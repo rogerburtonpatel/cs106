@@ -39,7 +39,7 @@ static void dofile(struct VMState *vm, FILE *input) {
   int rc = 0;
   /* if we're initializing the buffer, continue. 
      if we've jumped, initialize the buffer, and continue, preserving rc. */
-  while (setjmp(check_error_jmp) &&  (rc = 1))
+  while (setjmp(check_error_jmp) && (rc = 1))
   ;
     vmrun(vm, module, rc == 0 ? INITIAL_CALL : ERROR_CALL);
   }

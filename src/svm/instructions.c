@@ -1,7 +1,6 @@
 // List of all opcodes, parsers, and unparsers
 
-// You'll develop this list from module 2 onward.  Every time
-// you add a new instruction, you'll add an entry here.
+// Every time you add a new instruction, you'll add an entry here.
 // You'll also define the opcode in file opcodes.h,
 // and you'll add a case to your `vmrun` function.
 

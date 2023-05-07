@@ -1,9 +1,5 @@
 // Heart of the VM: runs instructions until told to halt
 
-// You'll write a small `vmrun` function in module 1.  You'll pay
-// some attention to performance, but you'll implement only a few 
-// instructions.  You'll add other instructions as needed in future modules.
-
 #define _POSIX_C_SOURCE 200809L
 
 #include <assert.h>

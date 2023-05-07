@@ -10,7 +10,7 @@ ask for help on asmparse.sml:343. tried many things. look at switch.vs
 
 document check-error
 
-point 99?
+point 99? eh
 
 MEMORY TESTING
 
@@ -21,24 +21,11 @@ same with ho-kn | kn-vo
 
 see this in qsort-debug.kn, qsort.cl
 
-all values have forwarded pointers that point to pages on the current list
-
-while mutator runs, objects that have a payload allocated on the heap have a 
-forwarding pointer that's null. 
-
 INFRA
-make testing not j add error code so that negative error codes don't mess us up
-just offbranch bignums
 
 Office hours:
-GCVALIDATE: what do you mean by 'The reference is duplicated, 
-so use it only with a named variable or a reference to a field of a 
-named Value'? Can i use it on the raw result of AS_VMFUNCTION?
-iparsers.c:161- negative numbers
-vscheme parser for 'literals?
-anf confirm : directly to anf? not that hard ig
-free variables in a closure for freeIn
-Ask about setting globals to literals
+asmparse switch
+anf reallocation and functorization
 
 
 # Depth
@@ -147,13 +134,6 @@ instruction that the loader reads.
 If you want a rant on the topic, ask me. re: parsing. Maybe?
 
 # Old code
-            // case InitConsCell: {
-            //     struct VMBlock *vmb = vmalloc_raw(sizeof(*vmb));
-            //     vmb->nslots = 0;
-
-            // }
-            // }
-
 
 
 # # Quotes
