@@ -53,6 +53,14 @@ runtests ()
             update_failure $? "$vofile" "$out"
         done
 
+        for vsfile in $dir/*.vs; do
+            echo "$vsfile"
+            numtests=$((numtests + 1))
+            name=`basename $vsfile`
+            out=$(diff --color <(uft vs-vo $vsfile | svm 2>&1) <(cat "$dir/$name.1"))
+            update_failure $? "$vsfile" "$out"
+        done
+
         for knfile in $dir/*.kn; do
             echo "$knfile"
             numtests=$((numtests + 1))

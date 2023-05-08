@@ -31,4 +31,5 @@
 
     r1 := 5234872342343
     r0 := call r0 (r1)
-
+    check "collatz (5234872342343)" r0
+    expect "1" r0

@@ -279,8 +279,7 @@ r0 := function ( 2 arguments ) {
   r3 := r1 = r3
   if r3 goto L5
   r3 := _G[ "nth" ]
-  r4 := 1
-  r4 := r1 - r4
+  r4 := r1 - 1
   r5 := cdr r2
   tailcall r3 ( r5 )
   goto L6
@@ -292,8 +291,7 @@ r0 := function ( 2 arguments ) {
 _G[ "nth" ] := r0
 r0 := function ( 2 arguments ) {
   r3 := _G[ "nth" ]
-  r4 := 1
-  r4 := r1 + r4
+  r4 := r1 + 1
   r5 := r2
   tailcall r3 ( r5 )
 }
@@ -676,7 +674,7 @@ r0 := function ( 1 arguments ) {
 }
 _G[ "negated" ] := r0
 r0 := function ( 2 arguments ) {
-  an unknown register-based assembly-code instruction
+  r3 := r1 idiv r2
   r3 := r2 * r3
   r0 := r1 - r3
   return r0
@@ -704,7 +702,7 @@ r0 := function ( 2 arguments ) {
   r4 := r1
   r5 := r2
   r3 := call r3 ( r4 - r5 )
-  an unknown register-based assembly-code instruction
+  r3 := r2 idiv r3
   r0 := r1 * r3
   return r0
   goto L52
@@ -867,6 +865,261 @@ r0 := function ( 2 arguments ) {
   L62:
 }
 _G[ "check-sublist" ] := r0
+r0 := function ( 2 arguments ) {
+  r3 := null? r1
+  if r3 goto L65
+  r3 := null? r2
+  if r3 goto L67
+  r3 := _G[ "check-sublist" ]
+  r4 := r1
+  r5 := r2
+  r3 := call r3 ( r4 - r5 )
+  if r3 goto L69
+  r3 := _G[ "contig-sublist?" ]
+  r4 := r1
+  r5 := cdr r2
+  tailcall r3 ( r5 )
+  goto L70
+  L69:
+  r0 := #t
+  return r0
+  L70:
+  goto L68
+  L67:
+  r0 := #f
+  return r0
+  L68:
+  goto L66
+  L65:
+  r0 := #t
+  return r0
+  L66:
+}
+_G[ "contig-sublist?" ] := r0
+r0 := function ( 1 arguments ) {
+  r2 := null? r1
+  if r2 goto L71
+  r2 := car r1
+  r2 := null? r2
+  if r2 goto L73
+  r2 := _G[ "atom?" ]
+  r3 := car r1
+  r2 := call r2 ( r3 )
+  if r2 goto L75
+  r2 := _G[ "append" ]
+  r3 := _G[ "flatten" ]
+  r4 := car r1
+  r3 := call r3 ( r4 )
+  r4 := _G[ "flatten" ]
+  r5 := cdr r1
+  r4 := call r4 ( r5 )
+  tailcall r2 ( r4 )
+  goto L76
+  L75:
+  r2 := car r1
+  r3 := _G[ "flatten" ]
+  r4 := cdr r1
+  r3 := call r3 ( r4 )
+  r0 := r2 cons r3
+  return r0
+  L76:
+  goto L74
+  L73:
+  r2 := _G[ "flatten" ]
+  r3 := cdr r1
+  tailcall r2 ( r3 )
+  L74:
+  goto L72
+  L71:
+  return r1
+  L72:
+}
+_G[ "flatten" ] := r0
+r0 := function ( 2 arguments ) {
+  r3 := 0
+  r3 := r1 = r3
+  if r3 goto L77
+  r3 := null? r2
+  if r3 goto L79
+  r3 := car r2
+  r4 := _G[ "take" ]
+  r5 := r1 - 1
+  r6 := cdr r2
+  r4 := call r4 ( r5 - r6 )
+  r0 := r3 cons r4
+  return r0
+  goto L80
+  L79:
+  r0 := emptylist
+  return r0
+  L80:
+  goto L78
+  L77:
+  r0 := emptylist
+  return r0
+  L78:
+}
+_G[ "take" ] := r0
+r0 := function ( 2 arguments ) {
+  r3 := null? r2
+  if r3 goto L81
+  r3 := 0
+  r3 := r1 = r3
+  if r3 goto L83
+  r3 := _G[ "drop" ]
+  r4 := r1 - 1
+  r5 := cdr r2
+  tailcall r3 ( r5 )
+  goto L84
+  L83:
+  return r2
+  L84:
+  goto L82
+  L81:
+  r0 := emptylist
+  return r0
+  L82:
+}
+_G[ "drop" ] := r0
+r0 := function ( 2 arguments ) {
+  r3 := null? r1
+  if r3 goto L85
+  r3 := cdr r1
+  r3 := null? r3
+  if r3 goto L87
+  r3 := _G[ "list2" ]
+  r4 := car r1
+  r5 := car r2
+  r3 := call r3 ( r4 - r5 )
+  r4 := _G[ "zip" ]
+  r5 := cdr r1
+  r6 := cdr r2
+  r4 := call r4 ( r5 - r6 )
+  r0 := r3 cons r4
+  return r0
+  goto L88
+  L87:
+  r3 := _G[ "list2" ]
+  r4 := car r1
+  r5 := car r2
+  r3 := call r3 ( r4 - r5 )
+  r4 := emptylist
+  r0 := r3 cons r4
+  return r0
+  L88:
+  goto L86
+  L85:
+  r0 := emptylist
+  return r0
+  L86:
+}
+_G[ "zip" ] := r0
+r0 := function ( 3 arguments ) {
+  r4 := null? r2
+  if r4 goto L89
+  r4 := _G[ "unzip-half" ]
+  r5 := r1
+  r6 := cdr r2
+  r7 := r1
+  r8 := r2
+  r7 := call r7 ( r8 )
+  r7 := r7 cons r3
+  tailcall r4 ( r7 )
+  goto L90
+  L89:
+  r4 := _G[ "reverse" ]
+  r5 := r3
+  tailcall r4 ( r5 )
+  L90:
+}
+_G[ "unzip-half" ] := r0
+r0 := function ( 1 arguments ) {
+  r2 := null? r1
+  if r2 goto L91
+  r2 := _G[ "list2" ]
+  r3 := _G[ "unzip-half" ]
+  r4 := _G[ "caar" ]
+  r5 := r1
+  r6 := emptylist
+  r3 := call r3 ( r4 - r6 )
+  r4 := _G[ "unzip-half" ]
+  r5 := _G[ "cadar" ]
+  r6 := r1
+  r7 := emptylist
+  r4 := call r4 ( r5 - r7 )
+  tailcall r2 ( r4 )
+  goto L92
+  L91:
+  r0 := emptylist
+  return r0
+  L92:
+}
+_G[ "unzip" ] := r0
+r0 := function ( 1 arguments ) {
+  r0 := r1 * r1
+  return r0
+}
+_G[ "square" ] := r0
+r0 := function ( 3 arguments ) {
+  r4 := cdr r3
+  r4 := null? r4
+  if r4 goto L93
+  r4 := r1
+  r5 := car r3
+  r4 := call r4 ( r5 )
+  r5 := r1
+  r6 := r2
+  r5 := call r5 ( r6 )
+  r4 := r4 > r5
+  if r4 goto L95
+  r4 := _G[ "set-arg-max" ]
+  r5 := r1
+  r6 := r2
+  r7 := cdr r3
+  tailcall r4 ( r7 )
+  goto L96
+  L95:
+  r4 := _G[ "set-arg-max" ]
+  r5 := r1
+  r6 := car r3
+  r7 := cdr r3
+  tailcall r4 ( r7 )
+  L96:
+  goto L94
+  L93:
+  r4 := r1
+  r5 := car r3
+  r4 := call r4 ( r5 )
+  r5 := r1
+  r6 := r2
+  r5 := call r5 ( r6 )
+  r4 := r4 > r5
+  if r4 goto L97
+  return r2
+  goto L98
+  L97:
+  r0 := car r3
+  return r0
+  L98:
+  L94:
+}
+_G[ "set-arg-max" ] := r0
+r0 := function ( 2 arguments ) {
+  r3 := cdr r2
+  r3 := null? r3
+  if r3 goto L99
+  r3 := _G[ "set-arg-max" ]
+  r4 := r1
+  r5 := car r2
+  r6 := cdr r2
+  tailcall r3 ( r6 )
+  goto L100
+  L99:
+  r0 := car r2
+  return r0
+  L100:
+}
+_G[ "arg-max" ] := r0
 r0 := _G[ "check-sublist" ]
 r1 := 1
 r2 := emptylist
@@ -911,3 +1164,599 @@ r2 := r2 cons r3
 r0 := call r0 ( r1 - r2 )
 r0 := not r0
 check-assert "(not (check-sublist '(2 2) '(1 2 3)))" r0
+r0 := _G[ "contig-sublist?" ]
+r1 := emptylist
+r2 := emptylist
+r0 := call r0 ( r1 - r2 )
+check-assert "(contig-sublist? '() '())" r0
+r0 := _G[ "contig-sublist?" ]
+r1 := emptylist
+r2 := 1
+r3 := emptylist
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check-assert "(contig-sublist? '() '(1))" r0
+r0 := _G[ "contig-sublist?" ]
+r1 := 1
+r2 := emptylist
+r1 := r1 cons r2
+r2 := emptylist
+r0 := call r0 ( r1 - r2 )
+r0 := not r0
+check-assert "(not (contig-sublist? '(1) '()))" r0
+r0 := _G[ "contig-sublist?" ]
+r1 := 1
+r2 := emptylist
+r1 := r1 cons r2
+r2 := 0
+r3 := 1
+r4 := 2
+r5 := 3
+r6 := 4
+r7 := emptylist
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check-assert "(contig-sublist? '(1) '(0 1 2 3 4))" r0
+r0 := _G[ "contig-sublist?" ]
+r1 := 1
+r2 := 2
+r3 := 3
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := 0
+r3 := 1
+r4 := 2
+r5 := 3
+r6 := 4
+r7 := emptylist
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check-assert "(contig-sublist? '(1 2 3) '(0 1 2 3 4))" r0
+r0 := _G[ "contig-sublist?" ]
+r1 := 1
+r2 := 2
+r3 := 5
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := 0
+r3 := 1
+r4 := 2
+r5 := 4
+r6 := 4
+r7 := emptylist
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+r0 := not r0
+check-assert "(not (contig-sublist? '(1 2 5) '(0 1 2 4 4)))" r0
+r0 := _G[ "contig-sublist?" ]
+r1 := 1
+r2 := 2
+r3 := 5
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := 0
+r3 := 1
+r4 := 2
+r5 := 4
+r6 := 5
+r7 := emptylist
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+r0 := not r0
+check-assert "(not (contig-sublist? '(1 2 5) '(0 1 2 4 5)))" r0
+r0 := _G[ "flatten" ]
+r1 := emptylist
+r0 := call r0 ( r1 )
+check "(flatten '())" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "flatten" ]
+r1 := "a"
+r2 := emptylist
+r1 := r1 cons r2
+r2 := emptylist
+r1 := r1 cons r2
+r2 := emptylist
+r1 := r1 cons r2
+r2 := emptylist
+r1 := r1 cons r2
+r0 := call r0 ( r1 )
+check "(flatten '((((a)))))" r0
+r0 := "a"
+r1 := emptylist
+r0 := r0 cons r1
+expect "'(a)" r0
+r0 := _G[ "flatten" ]
+r1 := "I"
+r2 := "Ching"
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := "U"
+r3 := "Thant"
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r3 := "E"
+r4 := "Coli"
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := call r0 ( r1 )
+check "(flatten '((I Ching) (U Thant) (E Coli)))" r0
+r0 := "I"
+r1 := "Ching"
+r2 := "U"
+r3 := "Thant"
+r4 := "E"
+r5 := "Coli"
+r6 := emptylist
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(I Ching U Thant E Coli)" r0
+r0 := _G[ "flatten" ]
+r1 := "a"
+r2 := emptylist
+r1 := r1 cons r2
+r2 := emptylist
+r3 := "b"
+r4 := "c"
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r4 := "d"
+r5 := "e"
+r6 := emptylist
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := call r0 ( r1 )
+check "(flatten '((a) () ((b c) d e)))" r0
+r0 := "a"
+r1 := "b"
+r2 := "c"
+r3 := "d"
+r4 := "e"
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(a b c d e)" r0
+r0 := _G[ "take" ]
+r1 := 0
+r2 := emptylist
+r0 := call r0 ( r1 - r2 )
+check "(take 0 '())" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "take" ]
+r1 := 9
+r2 := emptylist
+r0 := call r0 ( r1 - r2 )
+check "(take 9 '())" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "take" ]
+r1 := 3
+r2 := 1
+r3 := 2
+r4 := 3
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(take 3 '(1 2 3))" r0
+r0 := 1
+r1 := 2
+r2 := 3
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(1 2 3)" r0
+r0 := _G[ "take" ]
+r1 := 2
+r2 := 1
+r3 := 2
+r4 := 3
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(take 2 '(1 2 3))" r0
+r0 := 1
+r1 := 2
+r2 := emptylist
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(1 2)" r0
+r0 := _G[ "take" ]
+r1 := 4
+r2 := 1
+r3 := 2
+r4 := 3
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(take 4 '(1 2 3))" r0
+r0 := 1
+r1 := 2
+r2 := 3
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(1 2 3)" r0
+r0 := _G[ "drop" ]
+r1 := 9
+r2 := emptylist
+r0 := call r0 ( r1 - r2 )
+check "(drop 9 '())" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "drop" ]
+r1 := 0
+r2 := 1
+r3 := 2
+r4 := 3
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(drop 0 '(1 2 3))" r0
+r0 := 1
+r1 := 2
+r2 := 3
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(1 2 3)" r0
+r0 := _G[ "drop" ]
+r1 := 3
+r2 := 1
+r3 := 2
+r4 := 3
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(drop 3 '(1 2 3))" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "drop" ]
+r1 := 2
+r2 := 1
+r3 := 2
+r4 := 3
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(drop 2 '(1 2 3))" r0
+r0 := 3
+r1 := emptylist
+r0 := r0 cons r1
+expect "'(3)" r0
+r0 := _G[ "drop" ]
+r1 := 4
+r2 := 1
+r3 := 2
+r4 := 3
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(drop 4 '(1 2 3))" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "zip" ]
+r1 := emptylist
+r2 := emptylist
+r0 := call r0 ( r1 - r2 )
+check "(zip '() '())" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "zip" ]
+r1 := 1
+r2 := emptylist
+r1 := r1 cons r2
+r2 := "a"
+r3 := emptylist
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(zip '(1) '(a))" r0
+r0 := 1
+r1 := "a"
+r2 := emptylist
+r1 := r1 cons r2
+r0 := r0 cons r1
+r1 := emptylist
+r0 := r0 cons r1
+expect "'((1 a))" r0
+r0 := _G[ "zip" ]
+r1 := 1
+r2 := 2
+r3 := 3
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := "a"
+r3 := "b"
+r4 := "c"
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(zip '(1 2 3) '(a b c))" r0
+r0 := 1
+r1 := "a"
+r2 := emptylist
+r1 := r1 cons r2
+r0 := r0 cons r1
+r1 := 2
+r2 := "b"
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := 3
+r3 := "c"
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'((1 a) (2 b) (3 c))" r0
+r0 := _G[ "unzip-half" ]
+r1 := function ( 1 arguments ) {
+  r0 := car r1
+  return r0
+}
+r2 := emptylist
+r3 := _G[ "reverse" ]
+r4 := 1
+r5 := 2
+r6 := emptylist
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := call r3 ( r4 )
+r0 := call r0 ( r1 - r3 )
+check "(unzip-half car '() (reverse '(1 2)))" r0
+r0 := 1
+r1 := 2
+r2 := emptylist
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(1 2)" r0
+r0 := _G[ "unzip-half" ]
+r1 := function ( 1 arguments ) {
+  r0 := car r1
+  return r0
+}
+r2 := 1
+r3 := 2
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r3 := 1
+r4 := 2
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r0 := call r0 ( r1 - r3 )
+check "(unzip-half car '(1 2) '(1 2))" r0
+r0 := 2
+r1 := 1
+r2 := 1
+r3 := 2
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'(2 1 1 2)" r0
+r0 := _G[ "unzip" ]
+r1 := emptylist
+r0 := call r0 ( r1 )
+check "(unzip '())" r0
+r0 := emptylist
+expect "'()" r0
+r0 := _G[ "unzip" ]
+r1 := 1
+r2 := 2
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := emptylist
+r1 := r1 cons r2
+r0 := call r0 ( r1 )
+check "(unzip '((1 2)))" r0
+r0 := 1
+r1 := emptylist
+r0 := r0 cons r1
+r1 := 2
+r2 := emptylist
+r1 := r1 cons r2
+r2 := emptylist
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'((1) (2))" r0
+r0 := _G[ "unzip" ]
+r1 := "I"
+r2 := "Magnin"
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := "U"
+r3 := "Thant"
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r3 := "E"
+r4 := "Coli"
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := call r0 ( r1 )
+check "(unzip '((I Magnin) (U Thant) (E Coli)))" r0
+r0 := "I"
+r1 := "U"
+r2 := "E"
+r3 := emptylist
+r2 := r2 cons r3
+r1 := r1 cons r2
+r0 := r0 cons r1
+r1 := "Magnin"
+r2 := "Thant"
+r3 := "Coli"
+r4 := emptylist
+r3 := r3 cons r4
+r2 := r2 cons r3
+r1 := r1 cons r2
+r2 := emptylist
+r1 := r1 cons r2
+r0 := r0 cons r1
+expect "'((I U E) (Magnin Thant Coli))" r0
+r0 := _G[ "set-arg-max" ]
+r1 := _G[ "square" ]
+r2 := 0
+r3 := 5
+r4 := emptylist
+r3 := r3 cons r4
+r0 := call r0 ( r1 - r3 )
+check "(set-arg-max square 0 '(5))" r0
+r0 := 5
+expect "5" r0
+r0 := _G[ "set-arg-max" ]
+r1 := _G[ "square" ]
+r2 := 9
+r3 := 8
+r4 := 7
+r5 := emptylist
+r4 := r4 cons r5
+r3 := r3 cons r4
+r0 := call r0 ( r1 - r3 )
+check "(set-arg-max square 9 '(8 7))" r0
+r0 := 9
+expect "9" r0
+r0 := _G[ "set-arg-max" ]
+r1 := _G[ "square" ]
+r2 := 10
+r3 := 0
+r4 := 10
+r5 := 0
+r6 := 0
+r7 := 0
+r8 := emptylist
+r7 := r7 cons r8
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r0 := call r0 ( r1 - r3 )
+check "(set-arg-max square 10 '(0 10 0 0 0))" r0
+r0 := 10
+expect "10" r0
+r0 := _G[ "arg-max" ]
+r1 := _G[ "square" ]
+r2 := 5
+r3 := 4
+r4 := 3
+r5 := 2
+r6 := 1
+r7 := emptylist
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(arg-max square '(5 4 3 2 1))" r0
+r0 := 5
+expect "5" r0
+r0 := _G[ "arg-max" ]
+r1 := _G[ "square" ]
+r2 := 8
+r3 := 7
+r4 := 9
+r5 := 7
+r6 := 7
+r7 := emptylist
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(arg-max square '(8 7 9 7 7))" r0
+r0 := 9
+expect "9" r0
+r0 := _G[ "arg-max" ]
+r1 := _G[ "square" ]
+r2 := 0
+r3 := 0
+r4 := 0
+r5 := 0
+r6 := 0
+r7 := emptylist
+r6 := r6 cons r7
+r5 := r5 cons r6
+r4 := r4 cons r5
+r3 := r3 cons r4
+r2 := r2 cons r3
+r0 := call r0 ( r1 - r2 )
+check "(arg-max square '(0 0 0 0 0))" r0
+r0 := 0
+expect "0" r0

@@ -124,6 +124,7 @@ struct
     | def (S.CHECK_ASSERT e) =
         X.CHECK_ASSERT (expString e, exp' (e, []))
     | def (S.CHECK_ERROR e) =
+    (* PRESENT ME: source line *)
         X.CHECK_ERROR (expString e, exp' (e, []))
 
   val disambiguate = def

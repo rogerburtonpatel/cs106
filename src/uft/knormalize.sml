@@ -254,6 +254,7 @@ struct
                       bindWithTranslateExp A rho e2 (vmopStringK P.expect s2))
        | C.CHECK_ASSERT (s, e) =>
           bindWithTranslateExp A rho e (vmopStringK P.check_assert s)
+          (* PRESENT ME: check-error becomes a lambda *)
        | C.CHECK_ERROR (s, e) => 
         bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
                           (fn reg => 

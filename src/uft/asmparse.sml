@@ -177,6 +177,9 @@ struct
   fun eRLR operator r1 lit r2   = regslit operator [r1, r2] lit
   fun eL operator lit = regslit operator [] lit
 
+  fun eR2I operator r1 r2 i = regsint operator r1 r2 i
+  fun eRIR operator r1 i r2 = regsint operator r1 r2 i
+
   (***** Example parser; can be extended. *****)
 
   (* The example parser includes "passthrough" syntax and three
@@ -243,8 +246,8 @@ struct
   fun parseOps psr []      = P.pzero
     | parseOps psr (x::xs) = psr x <|> parseOps psr xs
 
-  val binops = ["+", "-", "*", "/", "//", "mod", "cons", "<", ">", ">=", "<=", 
-                "="]
+  val binops = ["+", "-", "*", "/", "//", "idiv", "mod", "cons", 
+                "<", ">", ">=", "<=", "="]
   val unops = ["boolOf", "function?", "pair?", "symbol?", "number?", "boolean?", 
                 "null?", "nil?", "car", "cdr", "hash", "neg", "not", "gt0"]
   val oneops = ["print", "println", "printu", "error",
@@ -256,8 +259,8 @@ struct
      and is quite fluent in a variety of call syntaxes. *)
   val one_line_instr : A.instr parser
      =  the "@" >> regs <$> name <*> many int  (* "passthrough" syntax *)
-    <|> regsint "+imm" <$> reg <~> the ":=" <*> reg <~> the "+" <*> (offset_code <$>! int)
-    <|> regsint "+imm" <$> reg <~> the ":=" <*>
+    <|> eR2I "+imm" <$> reg <~> the ":=" <*> reg <~> the "+" <*> (offset_code <$>! int)
+    <|> eR2I "+imm" <$> reg <~> the ":=" <*>
                        reg <~> the "-" <*> ((offset_code o ~) <$>! int)
                                            (* the ~ is ML's unary minus (negation) *)
     <|> P.check
@@ -294,16 +297,14 @@ struct
     (* this needs to come below the ones above it, for magical reasons *)
     <|> parseOps unopParser unops
 
-    <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
+    <|> eR2I "mkclosure" <$> reg <~> the ":=" <~> the "mkclosure" <*> reg <*> int
+    <|> eR2I "mkclosure" <$> reg <~> the ":=" <~> the "closure" <~> the "[" <*> reg <~> the "," <*> int <~> the "]"
 
-    <|> eR2L "mkclosure" <$> reg <~> the ":=" <~> the "mkclosure" <*> reg <*> int'
-    <|> eR2L "mkclosure" <$> reg <~> the ":=" <~> the "closure" <~> the "[" <*> reg <~> the "," <*> int' <~> the "]"
+    <|> eR2I "getclslot" <$> reg <~> the ":=" <*> reg <*> bracketed "<" int ">"
+    <|> eR2I "getclslot" <$> reg <~> the ":=" <*> reg <~> the "." <*> int
 
-    <|> eR2L "setclslot" <$> reg <~> the ":=" <*> reg <*> bracketed "<" int' ">"
-    <|> eR2L "setclslot" <$> reg <~> the ":=" <*> reg <~> the "." <*> int'
-
-    <|> eRLR "getclslot" <$> reg <*> bracketed "<" int' ">" <~> the ":=" <*> reg
-    <|> eRLR "getclslot" <$> reg <~> the "." <*> int' <~> the ":=" <*> reg
+    <|> eRIR "setclslot" <$> reg <*> bracketed "<" int ">" <~> the ":=" <*> reg
+    <|> eRIR "setclslot" <$> reg <~> the "." <*> int <~> the ":=" <*> reg
 
 
     
@@ -358,6 +359,9 @@ struct
 
     <|> eL "printl"   <$> (the "printl"   >> string')
     <|> eL "printlnl" <$> (the "printlnl" >> string')
+
+    <|> eR2 "copy" <$> reg <~> the ":=" <*> reg
+
 
    fun commaSep p = curry (op ::) <$> p <*> many (the "," >> p) <|> succeed []
   (* `commaSep p` returns a parser that parser a sequence
@@ -438,6 +442,8 @@ struct
               spaceSep [reg x, ":=", reg y, "/", reg z]
             | ("//", [x, y, z]) =>
               spaceSep [reg x, ":=", reg y, "//", reg z]
+            | ("idiv", [x, y, z]) =>
+              spaceSep [reg x, ":=", reg y, "idiv", reg z]
             | ("mod", [x, y, z]) =>
               spaceSep [reg x, ":=", reg y, "mod", reg z]
             | ("inc", [x]) =>

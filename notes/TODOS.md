@@ -1,8 +1,11 @@
 # Actual todos
 
 TESTING- dress to impress
-1. vs, kn, fo idempotent testing on the backburner
-2. vscheme differential testing DONE
+1. UFT clean
+2. TESTING! Moving the vs files and so forth back out. 
+3. vs, kn, fo idempotent testing on the backburner
+
+
 
 setjmp comparison
 

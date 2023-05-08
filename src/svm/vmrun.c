@@ -187,13 +187,12 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                     (void)GCVALIDATE(func);
                     assert(func->arity == 0); /* this can NEVER have args */
                     /* push special frame */
-                    // TODO talk about this funky line- *pc instead of 
-                    // curr_instr so it fits under 80 cols!
                     Activation error_frame = 
                             {.fun = fun, 
                             .counter        = pc - fun->instructions, 
                             .R_window_start = vm->R_window_start, 
-                            .dest_reg_idx   = -(int)uYZ(*pc)};
+                    // PRESENT ME talk about this funky line
+                            .dest_reg_idx   = -(int)uYZ(curr_instr)};
 
                     vm->Stack[vm->stackpointer++] = error_frame;
                     vm->fun = fun = func;
