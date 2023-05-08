@@ -7,8 +7,6 @@
 
 #include "value.h"
 
-typedef enum CallStatus { INITIAL_CALL, ERROR_CALL } CallStatus;
-
-void vmrun(struct VMState *vm, struct VMFunction *fun,  CallStatus status);
+void vmrun(struct VMState *vm, struct VMFunction *fun);
 
 #endif /* VMRUN_INCLUDED */

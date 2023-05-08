@@ -26,11 +26,11 @@ int main(int argc, char **argv) {
     VMState vm = newstate();
 
     fprintf(stderr, "Test: halt\n");
-    vmrun(vm, haltfun(), INITIAL_CALL);
+    vmrun(vm, haltfun());
     fprintf(stderr, "Test: print $r0; halt\n");
-    vmrun(vm, print0fun(), INITIAL_CALL);
+    vmrun(vm, print0fun());
     fprintf(stderr, "Test: check $r0, ...; expect $r0, ...; halt\n");
-    vmrun(vm, ce0fun(vm), INITIAL_CALL);
+    vmrun(vm, ce0fun(vm));
     report_unit_tests();
 
     freestatep(&vm);

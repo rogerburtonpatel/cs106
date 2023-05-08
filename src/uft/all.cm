@@ -98,6 +98,7 @@ group is
 
   anf.sml      
   anormalize.sml
+  reallocate.sml
 
   anembed.sml      
   (* anproject.sml *)

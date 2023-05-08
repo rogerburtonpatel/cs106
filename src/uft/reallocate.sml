@@ -2,12 +2,11 @@
     This is where register allocation happens! *)
 
 
-structure ANormalize :> sig
+(* structure Realloc :> sig
   type reg = int  (* register *)
   type regset     (* set of registers *)
   val regname : reg -> string
-  val exp : reg Env.env -> regset -> ClosedScheme.exp -> reg ANormalForm.exp
-  val def :                          ClosedScheme.def -> reg ANormalForm.exp
+  val exp : reg Env.env -> regset -> reg ANormalForm.exp -> reg ANormalForm.exp
 end 
   =
 struct 
@@ -40,6 +39,8 @@ struct
 
   type reg = int
   fun regname r = "$r" ^ Int.toString r
+
+  (* datatype oldreg = OLD of reg *)
 
   datatype regset = RS of int (* RS n represents { r | r >= n } *)
 
@@ -240,8 +241,8 @@ struct
       in  normalizeLet' t e k
       end
 
-  val _ = bindAnyReg   : regset -> exp -> (reg -> exp) -> exp
-  val _ = bindSmallest : regset -> exp -> (reg -> exp) -> exp
+  (* val _ = bindAnyReg   : regset -> exp -> (reg -> exp) -> exp
+  val _ = bindSmallest : regset -> exp -> (reg -> exp) -> exp *)
 
   fun flip f (x, y) = f (y, x)
   infixr 0 $
@@ -273,8 +274,8 @@ struct
       List.foldr (fn (_, (A, regs)) => (A -- (smallest A), (smallest A)::regs)) 
                  (regset, []) es
   
-  val inLocalVar : regset -> (reg -> exp) -> exp =
-    fn rs => fn k => let val t = smallest rs in A.SET (t, k t) end
+  (* val inLocalVar : regset -> (reg -> exp) -> exp =
+    fn rs => fn k => let val t = smallest rs in A.SET (t, k t) end *)
 
   
   fun map' f' [] k = k []
@@ -284,13 +285,63 @@ struct
 
   (* WEIGHTLIFTERS *)
 
+  fun mkOld (A.SIMPLE se) = A.SIMPLE (mkOldSim se)
+    | mkOld (A.IFX (n, e1, e2)) = A.IFX (regname n, mkOld e1, mkOld e2)
+    | mkOld (A.LETX (n, e, e')) = A.LETX (regname n, mkOldSim e, mkOld e')
+    | mkOld (A.BEGIN (e1, e2))  = A.BEGIN (mkOld e1, mkOld e2)
+    | mkOld (A.WHILEX (n, cond, body)) = 
+            A.WHILEX (regname n, mkOldSim cond, mkOld body)
+    | mkOld (A.SET (n, e)) = A.SET (regname n, mkOld e)
+    | mkOld (A.LETREC (bindings, body)) = 
+        A.LETREC (map (fn (n, cl) => (regname n, embedClosure cl)) bindings, mkOld body)
+    and embedClosure ((names, body), captured) = ((map regname names, mkOld body), map regname captured)
+    and mkOldSim simple = 
+      (case simple 
+       of A.LITERAL v => A.LITERAL v
+        | A.NAME x       => A.NAME (regname x)
+        | A.VMOP (p, ns) => 
+          if not (AsmGen.areConsecutive ns) then
+            Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
+                                  P.name p)
+          else
+          A.VMOP (p, map regname ns)
+        | A.VMOPLIT (p, ns, l) => 
+          (* if not (AsmGen.areConsecutive ns) then
+            Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
+                                  P.name p)
+          else  *)
+            A.VMOPLIT (p, map regname ns, l)
+        | A.FUNCALL (name, args) =>           
+           if not (AsmGen.areConsecutive args) then
+            Impossible.impossible ("non-consecutive registers in AN->KN func " ^
+                                  "in register r" ^ Int.toString name)
+          else 
+            A.FUNCALL (regname name, map regname args)
+        | A.FUNCODE (params, body) => A.FUNCODE (map regname params, mkOld body)
+        | A.CAPTURED i => A.CAPTURED i
+        | A.CLOSURE cl => A.CLOSURE (embedClosure cl)
+        | A.BLOCK ns => A.BLOCK (map regname ns)
+        | A.SWITCH_VCON (n, branches, default) => 
+              A.SWITCH_VCON (regname n, map 
+                                (fn ((p, i), e) => ((p, i), mkOld e)) 
+                                branches, mkOld default))
 
   fun exp rho A ex = 
-    let val exp : reg Env.env -> regset -> ClosedScheme.exp -> exp = exp
+    let val exp : reg Env.env -> regset -> exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho) 
+        fun mkNew rstring = 
+              case AsmLex.registerNum rstring 
+                of Error.OK r => r 
+                 | _ => Impossible.impossible "something has gone horribly wrong in reallocation"
         (*  ^ normalize and bind in _this_ environment *)
-    in  (case ex
-          of C.PRIMCALL (p, es) => nbRegs bindAnyReg A es (simp (curry A.VMOP p))
+    in  (case mkOld ex
+          of A.SIMPLE se => 
+            (case se
+              of A.VMOP (p, ns) => nbRegs bindAnyReg A ns (simp (curry A.VMOP p))
+               | _ => Impossible.impossible "simple")
+          | _ => Impossible.impossible "nope")
+    end
+          (* of C.PRIMCALL (p, es) => nbRegs bindAnyReg A es (simp (curry A.VMOP p))
            | C.LITERAL v => simp A.LITERAL v
            | C.LOCAL n => 
              let val r = Env.find (n, rho)
@@ -384,11 +435,10 @@ struct
                       val A' = (A -- t)
                   in  treeGen A' (vizTree (MC.decisionTree (t, choices)))
                   end)
-             )
-    end
+             ) *)
 
 
-  and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
+  (* and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
   and translateBegin rho A []        =  A.SIMPLE (A.LITERAL (A.BOOL false))
     | translateBegin rho A [e]       = exp rho A e
     | translateBegin rho A (e::es)   = A.BEGIN (exp rho A e, 
@@ -401,10 +451,10 @@ struct
                                   ns)
         val availRegs = A -- List.length ns
     in (argregs, exp boundEnv availRegs e)
-    end
+    end *)
 
   (* val funcode : C.funcode -> reg Env.env -> regset -> reg A.funcode = funcode *)
-
+(* 
   fun def ex = 
     let val A   = RS 0
         val rho = Env.empty
@@ -423,8 +473,8 @@ struct
        | C.VAL valdef => exp rho A (C.SETGLOBAL valdef)
        | C.DEFINE (n, lambda) => A.LETX (0, A.FUNCODE (funcode lambda rho A), 
                                             ANormalUtil.setglobal (n, 0)))
-    end
+    end *)
 end
 
 
-(* qsort is beautiful now!    *)
+qsort is beautiful now!    *)

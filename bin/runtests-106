@@ -21,6 +21,20 @@ TESTDIR=$BASEDIR/tests
 numtests=0
 numfail=0
 
+build ()
+{
+    target="$1"
+    cd "$BASEDIR/src/$target"
+    echo "Compiling $target $2..."
+    output=`make $2 2>&1`
+    if [[ "$?" -ne "0" ]]; then
+        echo $output
+        echo "Exiting on $target compilation failure."
+        exit 1
+    fi
+
+}
+
 update_failure () { 
     failure=$1
     testname=$2
@@ -61,6 +75,9 @@ See above output for details."
 
 main ()
 {
+    build "svm"
+    build "uft"
+    build "vscheme" "predef"
     runtests
 }
 

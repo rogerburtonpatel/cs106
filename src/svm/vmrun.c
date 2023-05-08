@@ -50,7 +50,8 @@
 #define GC() (VMSAVE(), gc(vm), VMLOAD())
 
 extern int setjmp_proxy(jmp_buf t); /* see what a difference this makes! */
-void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
+void vmrun(VMState vm, struct VMFunction *fun) {
+    /* Thank you to Norman for this debugging infrastructure */
     const char *dump_decode = svmdebug_value("decode");
     const char *dump_call =  svmdebug_value("call");
     const char *dump_case = svmdebug_value("case");
@@ -74,31 +75,20 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
     // ^ restore me after GC 
     // (this is for pattern matching so we know what 'cons' is)
 
-    switch (status) {
-        case INITIAL_CALL:;
-            /* Thank you to Norman for this debugging infrastructure */
+    /* we always start in NORMAL error mode. if we enter from a check-error
+       test, we'll be in TESTING. this statement always ends us in NORMAL. */
+    switch (error_mode()) {
+        case NORMAL:;
             VMLOAD();
-            Activation base_record = 
-                {.fun = fun,
-                 .counter        = 0,
-                 .R_window_start = 0,
-                 .dest_reg_idx   = 0,};
-            vm->Stack[vm->stackpointer++] = base_record;
             break;
-        case ERROR_CALL:;
-            if (error_mode() == TESTING) {
-                pass_test();
-                exit_check_error();
-                Activation a = vm->Stack[--vm->stackpointer];
-                vm->R_window_start = a.R_window_start;
-                registers = vm->registers + a.R_window_start;
-                pc = &(a.fun->instructions[0]) + a.counter + 1;
-                break;
-            } else {
-                fprintf(stderr, "Stack trace: some day!\n");
-                /* we're done */
-                return;
-            }
+        case TESTING:;
+            pass_test();
+            exit_check_error();
+            Activation a = vm->Stack[--vm->stackpointer];
+            vm->R_window_start = a.R_window_start;
+            registers = vm->registers + a.R_window_start;
+            pc = &(a.fun->instructions[0]) + a.counter + 1;
+            break;
         default:
             assert(0);
     }
@@ -444,7 +434,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 }
                 break;
             }
-            // TODO pull out more error messaging into vmstate helper funs
+
             case Call: {
                 if (gc_needed)
                     GC();
@@ -496,8 +486,6 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                         " caused a Register Window Overflow", r0);
                 }
 
-
-
                 Activation new_record = 
                             {.fun = fun, 
                             .counter        = pc - fun->instructions, 
@@ -531,6 +519,7 @@ void vmrun(VMState vm, struct VMFunction *fun, CallStatus status) {
                 /* return will undo this based on the activation!  */
                 break;
             }
+
             case Tailcall: {
                 if (gc_needed)
                     GC();
