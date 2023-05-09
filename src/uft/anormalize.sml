@@ -102,10 +102,10 @@ struct
           | goodMax(x::xs) = let val y = goodMax xs in max(x, y) end
      in 1 + goodMax badnames
      end 
-    
-  (* PRESENT ME - capture-avoiding substitution *)
   fun rename (from_x, for_y) = 
     let fun substIfEq name = if name = from_x then for_y else name
+    val () = ()
+    (* print ( ("renaming " ^ regname from_x ^ " to " ^ regname for_y) ^ "\n") *)
         fun renameList n1 n2 [] = []
                              | renameList n1 n2 (x::xs) = 
                                 (if x = n1 then n2 else x) :: renameList n1 n2 xs
@@ -150,11 +150,11 @@ struct
                     (r, (lam, renameList from_x for_y caps))::renameCaptures bs
             in A.LETREC (renameCaptures bindings, substitutor body)
             end 
-    (* PRESENT ME: This matters with uft/sat-solve.scm *) 
+    (* PRESENT ME: This matters *) 
     (* fun substitutor e = e *)
     in substitutor 
     end 
-  
+
     and normalizeLet x (A.LETX (y, e1, e2)) e3 = 
                       if x = y then 
                          A.LETX (x, e1, normalizeLet x e2 e3)
@@ -460,11 +460,18 @@ struct
                           if (AsmGen.areConsecutive (mkNew name :: map mkNew args))
                           then simp A.FUNCALL (mkNew name, map mkNew args)
                           else
-                       
+                        let val () = ()
+                        (* print ("normalizing funcall of (" ^ name ^ foldr (fn (arg, acc) => acc ^ " " ^ arg) "" args  ^ ")\n") *)
+                        in 
                         bindSmallest' A (simp (A.NAME o mkNew) name)
                          (fn reg => nbRegs bindSmallest' (A -- reg) 
                                       (map (simp A.NAME o mkNew) args)
-                              (fn regs =>  simp A.FUNCALL (reg, regs)))
+                              (fn regs => 
+                              let val () = ()
+                              (* print ("normalized to funcall of (" ^ regname reg ^ foldr (fn (arg, acc) => acc ^ " " ^ regname arg) "" regs  ^ ")\n") *)
+                              in simp A.FUNCALL (reg, regs)
+                              end))
+                              end 
                               
                | A.FUNCODE (params, body) => simp A.FUNCODE (map mkNew params, exp' body)
                | A.LITERAL l => simp A.LITERAL l
@@ -487,7 +494,7 @@ struct
   in exp' (mkOld ex)
   end
 
-  fun realloc e = realloc' Env.empty (RS 0) (realloc' Env.empty (RS 0) e)
+  fun realloc e = realloc' Env.empty (RS 0) e
 
 end
 

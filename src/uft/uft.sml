@@ -104,7 +104,7 @@ struct
 
   val anUpAndDown = (List.map ANormalize.def)           (* cl -> int an *)
                       >>> (List.map ANormalize.realloc) (* int an -> int an *)
-                      >>> (List.map ANEmbed.def)        (* int an -> int kn *)
+                      >>> (List.map ANEmbed.exp)        (* int an -> int kn *)
                       >>> namesOfRegs                   (* int kn -> str kn *)
 
   (* val anWithRealloc = anUpAndDown                        (* cl -> str kn *)               

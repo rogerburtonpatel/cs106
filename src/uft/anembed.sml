@@ -2,7 +2,7 @@
 
 
 structure ANEmbed :> sig
-  val def   : int ANormalForm.exp -> int KNormalForm.exp
+  val exp   : int ANormalForm.exp -> int KNormalForm.exp
 end 
   = 
 struct
@@ -26,21 +26,16 @@ struct
        of A.LITERAL v => K.LITERAL v
         | A.NAME x       => K.NAME x
         | A.VMOP (p, ns) => 
-          (* if not (AsmGen.areConsecutive ns) then
-            Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
-                                  P.name p ^ ": " ^ (foldr bindRegNames "" ns))
-          else *)
           K.VMOP (p, ns)
         | A.VMOPLIT (p, ns, l) => 
-          (* if not (AsmGen.areConsecutive ns) then
-            Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
-                                  P.name p)
-          else  *)
             K.VMOPLIT (p, ns, l)
         | A.FUNCALL (name, args) =>           
-           (* if not (AsmGen.areConsecutive args) then
-            Impossible.impossible ("non-consecutive registers in AN->KN func " ^
-                                  "in register r" ^ Int.toString name)
+           (* if not (AsmGen.areConsecutive (name::args)) then
+            Impossible.impossible 
+            ("non-consecutive registers in AN->KN func " ^
+             "in (" ^ 
+              (foldr (fn (r, acc) => acc ^ " " ^ regname r) "" (name::args)) 
+              ^ ")")
           else  *)
             K.FUNCALL (name, args)
         | A.FUNCODE (params, body) => K.FUNCODE (params, exp body)
@@ -64,6 +59,4 @@ struct
   
   fun regname r = "$r" ^ Int.toString r
 
-
-  fun def e  = exp e
 end
