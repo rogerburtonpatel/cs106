@@ -191,3 +191,5 @@ same effect"
 "APIs tend to have a lot more complexity and variety than languages."
 
 "Always a good source of ideas, the shower..."
+
+Norman: “Programmers have a habit of naming things before they understand them” 
