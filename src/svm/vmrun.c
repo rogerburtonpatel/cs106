@@ -75,8 +75,10 @@ void vmrun(VMState vm, struct VMFunction *fun) {
     // ^ restore me after GC 
     // (this is for pattern matching so we know what 'cons' is)
 
-    /* we always start in NORMAL error mode. if we enter from a check-error
-       test, we'll be in TESTING. this statement always ends us in NORMAL. */
+    /* INVARIANT:
+       we always start in NORMAL error mode. 
+       if we enter from a check-error test, we'll be in TESTING. 
+       this statement always ends us in NORMAL. */
     switch (error_mode()) {
         case NORMAL:;
             VMLOAD();
