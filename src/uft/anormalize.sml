@@ -105,8 +105,6 @@ struct
      
   fun rename (from_x, for_y) = 
     let fun substIfEq name = if name = from_x then for_y else name
-    val () =
-    print ( ("renaming " ^ regname from_x ^ " to " ^ regname for_y) ^ "\n")
         fun renameList n1 n2 [] = []
                              | renameList n1 n2 (x::xs) = 
                                 (if x = n1 then n2 else x) :: renameList n1 n2 xs
@@ -461,18 +459,11 @@ struct
                           if (AsmGen.areConsecutive (mkNew name :: map mkNew args))
                           then simp A.FUNCALL (mkNew name, map mkNew args)
                           else
-                        let val () =
-                        print ("normalizing funcall of (" ^ name ^ foldr (fn (arg, acc) => acc ^ " " ^ arg) "" args  ^ ")\n")
-                        in 
+                       
                         bindSmallest' A (simp (A.NAME o mkNew) name)
                          (fn reg => nbRegs bindSmallest' (A -- reg) 
                                       (map (simp A.NAME o mkNew) args)
-                              (fn regs => 
-                              let val () =
-                              print ("normalized to funcall of (" ^ regname reg ^ foldr (fn (arg, acc) => acc ^ " " ^ regname arg) "" regs  ^ ")\n")
-                              in simp A.FUNCALL (reg, regs)
-                              end))
-                              end 
+                              (fn regs =>  simp A.FUNCALL (reg, regs)))
                               
                | A.FUNCODE (params, body) => simp A.FUNCODE (map mkNew params, exp' body)
                | A.LITERAL l => simp A.LITERAL l
