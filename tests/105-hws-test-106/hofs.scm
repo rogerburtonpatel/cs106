@@ -126,7 +126,7 @@
         ; given sanity checks- thanks!
         (check-assert (function? ordered-by?))
         (check-assert (function? (ordered-by? <)))
-        (check-error (ordered-by? < '(1 2 3)))  
+        (check-error (ordered-by? < (list3 1 2 3)))  
         ; self-defined tests
         (check-assert ((ordered-by? <) '()))
         (check-assert ((ordered-by? <) '(1)))

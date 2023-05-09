@@ -2121,6 +2121,7 @@ val primitiveBasis =
                                                                         ), rho))
               emptyEnv ((* primitives for \uscheme\ [[::]] 312b *)
                         ("+", arithOp op +  ) :: 
+                        ("+imm", arithOp (fn (x, y) => x + (y - 128.0))) :: 
                         ("-", arithOp op -  ) :: 
                         ("*", arithOp op *  ) :: 
                         ("/", arithOp op /  ) ::

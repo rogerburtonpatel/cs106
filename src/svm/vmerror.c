@@ -57,7 +57,7 @@ void fatal_error(const char *msg, const char *file, int line)
 void stackunwind(VMState state)
 {
     Activation *Stack = state->Stack;
-    while (state->stackpointer > 1 
+    while (state->stackpointer > 0 
            && Stack[state->stackpointer - 1].dest_reg_idx >= 0)  {
         state->stackpointer--;
     }

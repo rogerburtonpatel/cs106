@@ -1,13 +1,13 @@
 (* ANormalizer from Closed Scheme to ANormal-form Scheme. 
     This is where register allocation happens! *)
 
-
 structure ANormalize :> sig
   type reg = int  (* register *)
   type regset     (* set of registers *)
   val regname : reg -> string
   val exp : reg Env.env -> regset -> ClosedScheme.exp -> reg ANormalForm.exp
   val def :                          ClosedScheme.def -> reg ANormalForm.exp
+  val realloc :                   reg ANormalForm.exp -> reg ANormalForm.exp
 end 
   =
 struct 
@@ -102,8 +102,11 @@ struct
           | goodMax(x::xs) = let val y = goodMax xs in max(x, y) end
      in 1 + goodMax badnames
      end 
-  fun rename (from_x, for_y) =
+     
+  fun rename (from_x, for_y) = 
     let fun substIfEq name = if name = from_x then for_y else name
+    val () =
+    print ( ("renaming " ^ regname from_x ^ " to " ^ regname for_y) ^ "\n")
         fun renameList n1 n2 [] = []
                              | renameList n1 n2 (x::xs) = 
                                 (if x = n1 then n2 else x) :: renameList n1 n2 xs
@@ -148,16 +151,19 @@ struct
                     (r, (lam, renameList from_x for_y caps))::renameCaptures bs
             in A.LETREC (renameCaptures bindings, substitutor body)
             end 
+    (* PRESENT ME: This matters *) 
+    (* fun substitutor e = e *)
     in substitutor 
     end 
 
     and normalizeLet x (A.LETX (y, e1, e2)) e3 = 
-                      if x = y then
+                      if x = y then 
                          A.LETX (x, e1, normalizeLet x e2 e3)
                       else 
                         (* x != y *)
                         let val e3free = freeVars e3
                         in if not (member y e3free) then 
+
                               A.LETX (y, e1, normalizeLet x e2 e3)
                            else 
                             (* x != y and y is free in e3 *)
@@ -168,10 +174,10 @@ struct
                                               normalizeLet x (subst e2) e3)
                                 end
                                else 
+                            (* x != y and y is free in e3 and x is free in e2 *)
                                let val z = freshName (x::(e2free @ e3free))
                                val subst = rename (y, z)
                                 in
-                            (* x != y and y is free in e3 and x is free in e2 *)
                                 A.LETX (z, e1, normalizeLet x (subst e2) e3)
                                 end
                               end
@@ -218,6 +224,12 @@ struct
       let val t = smallest rset
       in  normalizeLet' t e k
       end
+  
+    fun bindSmallest' rset e k = 
+      let val t = smallest rset
+      in  case e of A.SIMPLE se => A.LETX (t, se, k t)
+                  | _ => Impossible.impossible "misused bindSmallest'"
+      end
 
   val _ = bindAnyReg   : regset -> exp -> (reg -> exp) -> exp
   val _ = bindSmallest : regset -> exp -> (reg -> exp) -> exp
@@ -262,7 +274,6 @@ struct
   
 
   (* WEIGHTLIFTERS *)
-
 
   fun exp rho A ex = 
     let val exp : reg Env.env -> regset -> ClosedScheme.exp -> exp = exp
@@ -398,7 +409,96 @@ struct
        | C.DEFINE (n, lambda) => A.LETX (0, A.FUNCODE (funcode lambda rho A), 
                                             ANormalUtil.setglobal (n, 0)))
     end
+
+  (************ Reallocation ************)
+
+
+  fun mkOld (A.SIMPLE se) = A.SIMPLE (mkOldSim se)
+    | mkOld (A.IFX (n, e1, e2)) = A.IFX (regname n, mkOld e1, mkOld e2)
+    | mkOld (A.LETX (n, e, e')) = A.LETX (regname n, mkOldSim e, mkOld e')
+    | mkOld (A.BEGIN (e1, e2))  = A.BEGIN (mkOld e1, mkOld e2)
+    | mkOld (A.SET (n, e)) = A.SET (regname n, mkOld e)
+    | mkOld (A.LETREC (bindings, body)) = 
+        A.LETREC (map (fn (n, cl) => (regname n, embedClosure cl)) 
+                      bindings, 
+                  mkOld body)
+    and embedClosure ((names, body), captured) = 
+                     ((map regname names, mkOld body), map regname captured)
+    and mkOldSim simple = 
+      (case simple 
+       of A.LITERAL v    => A.LITERAL v
+        | A.NAME x       => A.NAME (regname x)
+        | A.VMOP (p, ns) => A.VMOP (p, map regname ns)
+        | A.VMOPLIT (p, ns, l) => A.VMOPLIT (p, map regname ns, l)
+        | A.FUNCALL (name, args) => A.FUNCALL (regname name, map regname args)
+        | A.FUNCODE (params, body) => A.FUNCODE (map regname params, mkOld body)
+        | A.CAPTURED i => A.CAPTURED i
+        | A.CLOSURE cl => A.CLOSURE (embedClosure cl)
+        | A.BLOCK ns => A.BLOCK (map regname ns)
+        | A.SWITCH_VCON (n, branches, default) => 
+              A.SWITCH_VCON (regname n, map 
+                                (fn ((p, i), e) => ((p, i), mkOld e)) 
+                                branches, mkOld default))
+
+  fun realloc' rho A ex =
+    let val realloc' : reg Env.env -> regset -> exp -> exp = realloc'
+        val nbRegs = nbRegsWith (realloc' rho) 
+        (*  ^ normalize and reallocate in _this_ environment *)
+        fun mkNew rname = 
+        case AsmLex.registerNum rname 
+          of Error.OK r => r
+           | _ => Impossible.impossible 
+                      "A realloc rename bug that literally can never happen." 
+        fun exp' (A.SIMPLE se) = 
+            (case se
+              of A.VMOP (p, ns) => simp A.VMOP (p, map mkNew ns)
+               | A.VMOPLIT (p, ns, l) => simp A.VMOPLIT (p, map mkNew ns, l)
+               | A.BLOCK ns => simp A.BLOCK (map mkNew ns)
+               | A.CAPTURED i => simp A.CAPTURED i
+               | A.CLOSURE ((params, body), caps) => 
+                  simp A.CLOSURE ((map mkNew params, exp' body), map mkNew caps)
+               | A.FUNCALL (name, args) => 
+                          if (AsmGen.areConsecutive (mkNew name :: map mkNew args))
+                          then simp A.FUNCALL (mkNew name, map mkNew args)
+                          else
+                        let val () =
+                        print ("normalizing funcall of (" ^ name ^ foldr (fn (arg, acc) => acc ^ " " ^ arg) "" args  ^ ")\n")
+                        in 
+                        bindSmallest' A (simp (A.NAME o mkNew) name)
+                         (fn reg => nbRegs bindSmallest' (A -- reg) 
+                                      (map (simp A.NAME o mkNew) args)
+                              (fn regs => 
+                              let val () =
+                              print ("normalized to funcall of (" ^ regname reg ^ foldr (fn (arg, acc) => acc ^ " " ^ regname arg) "" regs  ^ ")\n")
+                              in simp A.FUNCALL (reg, regs)
+                              end))
+                              end 
+                              
+               | A.FUNCODE (params, body) => simp A.FUNCODE (map mkNew params, exp' body)
+               | A.LITERAL l => simp A.LITERAL l
+               | A.NAME n => simp A.NAME (mkNew n)
+               | A.SWITCH_VCON (name, branches, default) => 
+                  simp A.SWITCH_VCON (mkNew name, map (fn (p_a, expr) => 
+                                      (p_a, exp' expr)) branches, exp' default))
+  | exp' (A.BEGIN (e1, e2)) = A.BEGIN (exp' e1, exp' e2)
+  | exp' (A.IFX (n, e1, e2)) = A.IFX (mkNew n, exp' e1, exp' e2)
+  | exp' (A.LETREC (bindings, body)) = 
+            A.LETREC (map (fn (n, ((params, body), caps)) => 
+                              (mkNew n, 
+                              ((map mkNew params, exp' body), 
+                              map mkNew caps))) 
+                          bindings, 
+                      exp' body)
+  | exp' (A.LETX (x, e1, e2)) = 
+        normalizeLet (mkNew x) (exp' (A.SIMPLE e1)) (exp' e2)
+  | exp' (A.SET (x, e)) = A.SET (mkNew x, exp' e)
+  in exp' (mkOld ex)
+  end
+
+  fun realloc e = realloc' Env.empty (RS 0) (realloc' Env.empty (RS 0) e)
+
 end
+
 
 
 (* qsort is beautiful now!    *)

@@ -52,6 +52,9 @@ struct
                                 (fn ((p, i), e) => ((p, i), exp e)) 
                                 branches, exp default))
     | exp (A.IFX (n, e1, e2)) = K.IFX (n, exp e1, exp e2)
+    (* PRESENT ME: the birth of a peephole optimizer *)
+    | exp (A.LETX (n, (A.NAME n'), e')) = 
+      if n = n' then exp e' else  K.LETX (n, K.NAME n', exp e')
     | exp (A.LETX (n, e, e')) = K.LETX (n, exp (A.SIMPLE e), exp e')
     | exp (A.BEGIN (e1, e2))  = K.BEGIN (exp e1, exp e2)
     | exp (A.SET (n, e)) = K.SET (n, exp e)

@@ -256,7 +256,7 @@ struct
           bindWithTranslateExp A rho e (vmopStringK P.check_assert s)
           (* PRESENT ME: check-error becomes a lambda *)
        | C.CHECK_ERROR (s, e) => 
-        bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
+            bindAnyReg A (K.FUNCODE ([], exp rho A e)) 
                           (fn reg => 
                             K.VMOPLIT (P.check_error, [reg], K.STRING s))
        | C.VAL valdef => exp rho A (C.SETGLOBAL valdef)
@@ -264,7 +264,7 @@ struct
                                             KNormalUtil.setglobal (n, 0)))
     end
 end
-(* TODO: fix this output from qsort: 
+(* here's the knf output from qsort: 
 
 (let* ([r0 append]
        [r1 (let* ([r1 qsort]

@@ -7,22 +7,14 @@ structure Realloc :> sig
   type regset     (* set of registers *)
   val regname : reg -> string
   val exp : reg Env.env -> regset -> reg ANormalForm.exp -> reg ANormalForm.exp
+  val def :                          reg ANormalForm.exp -> reg ANormalForm.exp
 end 
   =
 struct 
   structure A  = ANormalForm
-  structure C  = ClosedScheme
   structure E  = Env
   structure P  = Primitive
   structure S  = Set
-
-  structure MC = MatchCompiler(type register = int
-                               fun regString r = "$r" ^ Int.toString r
-                              )
-
-  structure MV = MatchViz(structure Tree = MC)
-  val vizTree = MV.viz (WppScheme.expString o CSUtil.embedExp)
-
 
   infix 6 <+>
   val op <+> = Env.<+>
@@ -31,8 +23,6 @@ struct
   fun snd (x, y) = y
   fun member x = List.exists (fn y => x = y)
 
-
-
   fun eprint s = TextIO.output (TextIO.stdErr, s)
 
   (************ Register and regset operations ************)
@@ -40,12 +30,11 @@ struct
   type reg = int
   fun regname r = "$r" ^ Int.toString r
 
-  (* datatype oldreg = OLD of reg *)
+  datatype oldreg = OLD of reg
 
   datatype regset = RS of int (* RS n represents { r | r >= n } *)
 
   val smallest : regset -> reg = fn (RS r) => r
-
 
 
   val -- : regset * reg -> regset   (* remove a register *)
@@ -56,7 +45,7 @@ struct
   fun uncurry f (x, y) = f x y
   fun curry f x y = f (x, y)
 
-  (************ A-normalization ************)
+  (************ Register reallocation ************)
 
   type exp = reg A.exp
   type policy = regset -> exp -> (reg -> exp) -> exp
@@ -289,10 +278,10 @@ struct
        of A.LITERAL v => A.LITERAL v
         | A.NAME x       => A.NAME (regname x)
         | A.VMOP (p, ns) => 
-          if not (AsmGen.areConsecutive ns) then
+          (* if not (AsmGen.areConsecutive ns) then
             Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
                                   P.name p)
-          else
+          else *)
           A.VMOP (p, map regname ns)
         | A.VMOPLIT (p, ns, l) => 
           (* if not (AsmGen.areConsecutive ns) then
@@ -301,10 +290,10 @@ struct
           else  *)
             A.VMOPLIT (p, map regname ns, l)
         | A.FUNCALL (name, args) =>           
-           if not (AsmGen.areConsecutive args) then
+           (* if not (AsmGen.areConsecutive args) then
             Impossible.impossible ("non-consecutive registers in AN->KN func " ^
                                   "in register r" ^ Int.toString name)
-          else 
+          else  *)
             A.FUNCALL (regname name, map regname args)
         | A.FUNCODE (params, body) => A.FUNCODE (map regname params, mkOld body)
         | A.CAPTURED i => A.CAPTURED i
@@ -318,156 +307,43 @@ struct
   fun exp rho A ex = 
     let val exp : reg Env.env -> regset -> exp -> exp = exp
         val nbRegs = nbRegsWith (exp rho) 
-        fun mkNew rstring = 
-              case AsmLex.registerNum rstring 
-                of Error.OK r => r 
-                 | _ => Impossible.impossible 
-                            "something has gone horribly wrong in reallocation"
         (*  ^ normalize and bind in _this_ environment *)
-    in  (case mkOld ex
-          of A.SIMPLE se => 
+        fun mkNew rname = case AsmLex.registerNum rname 
+                            of Error.OK r => r
+                             | _ => Impossible.impossible "realloc rename bug." 
+        fun exp' (A.SIMPLE se) = 
             (case se
-              of 
-              (* A.VMOP (p, ns) => nbRegs bindAnyReg A ns (simp (curry A.VMOP p))
-               |  *)
-               _ => Impossible.impossible "simple")
-          | _ => Impossible.impossible "nope")
-    end
-end
-          (* of C.PRIMCALL (p, es) => nbRegs bindAnyReg A es (simp (curry A.VMOP p))
-           | C.LITERAL v => simp A.LITERAL v
-           | C.LOCAL n => 
-             let val r = Env.find (n, rho)
-             in simp A.NAME r
-             end
-           | C.SETLOCAL (n, e) => 
-             let val r = Env.find (n, rho)
-             in A.SET (r, exp rho A e)
-             end
-           | C.GLOBAL n => ANormalUtil.getglobal n
-           (* Note that in prettyprinting this you won't see the 'begin' *)
-           | C.SETGLOBAL (n, e) => 
-            bindWithTranslateExp A rho e 
-                (fn reg => A.BEGIN (ANormalUtil.setglobal (n, reg), simp A.NAME reg))
-           | C.BEGIN es  => translateBegin rho A es
-           | C.IFX (e, e1, e2) => 
-              bindWithTranslateExp A rho e 
-                             (fn reg => A.IFX (reg, exp rho A e1, exp rho A e2))
-           | C.WHILEX (e, e') => 
-              Impossible.impossible ("You can't A-Normalize a 'while' " ^
-                            "expression. You'll have to go through KN instead.")
-            (* let val t = smallest A
-            in A.WHILEX (t, exp rho A e, exp rho A e')
-            end *)
-           | C.FUNCALL (e, es) => 
-            bindSmallest A (exp rho A e) 
-                         (fn reg => nbRegs bindSmallest (A -- reg) es 
-                                  (fn regs => simp A.FUNCALL (reg, regs)))
-           | C.LET (bindings, body) => 
-             let val (names, rightSides) = ListPair.unzip bindings
-                 val bindNamestoRegs     = ListPair.foldr Env.bind rho
-             in nbRegs bindSmallest A rightSides 
-                      (fn regs => exp (bindNamestoRegs (names, regs)) 
-                                      (List.foldl (flip (op --)) A regs)
-                                      body)
-             end
-          | C.CLOSURE (lam, []) => simp A.FUNCODE (funcode lam rho A)
-          | C.CLOSURE (lambda, captured) =>
-                  inLocalVar A (fn t =>
-                    nbRegs bindAnyReg (A -- t) captured (fn regs => 
-                          simp A.CLOSURE (funcode lambda rho (A -- t), regs)))
-                                                    (* todo check this A -- t, and also if funcode needs these args in general
-                                                       or can capture them *)
-          | C.CAPTURED i => simp A.CAPTURED i
-          | C.LETREC (bindings, body) => 
-            let val (A', rs)     = allocAndRemoveRegs A bindings 
-                val (names, cls) = ListPair.unzip bindings 
-                val rho'         = ListPair.foldrEq Env.bind rho (names, rs)
-                fun closure ((xs, e'), []) k = k (funcode (xs, e') rho' A', [])
-                  | closure ((xs, e'), es) k = 
-                    nbRegsWith (exp rho') bindAnyReg A' es 
-                               (fn ts => k (funcode (xs, e') rho' A', ts))
-                in map' closure cls 
-                   (fn cs => A.LETREC (ListPair.zip (rs, cs), exp rho' A' body))
-                end
-          | C.CONSTRUCTED ("#t", []) => simp A.LITERAL (A.BOOL true)
-          | C.CONSTRUCTED ("#f", []) => simp A.LITERAL (A.BOOL false)
-          | C.CONSTRUCTED ("cons", [x, y]) => 
-            (* could have es instead of [x, y] but this is more explicit *)
-            inLocalVar A (fn t => nbRegs bindAnyReg (A -- t) [x, y] 
-                                         (simp (curry A.VMOP P.cons)))
-          | C.CONSTRUCTED ("'()", []) => simp A.LITERAL A.EMPTYLIST
-          | C.CONSTRUCTED (con, es) => 
-          (* TODO need inLocalVar *)
-            bindAnyReg A (simp A.LITERAL (A.STRING con)) 
-                       (fn reg => nbRegs bindAnyReg (A -- reg) es 
-                                         (fn regs => simp A.BLOCK (reg::regs)))
-          | C.CASE (e, choices) => bindWithTranslateExp A rho e 
-                (fn t =>
-                  let fun treeGen rset etree = 
-                    (case etree
-                      of MC.LET_CHILD ((r, slotnum), k) => 
-                            bindAnyReg rset (simp A.VMOP 
-                                              (P.getblockslot, [r, slotnum]))
-                                    (fn x => treeGen (rset -- x) (k x))
-                       | MC.MATCH (ex, env) => exp (rho <+> env) rset ex
-                       | MC.TEST (r, edges, maybetree) => 
-                          let val treeOfEdges = 
-                            map (fn (MC.E (lcon, subtree)) => 
-                                (lcon, treeGen rset subtree)) 
-                                edges
-                              val treeOrNoMatch = 
-                                case maybetree 
-                                  of SOME tree' => treeGen rset tree'
-                                  |  NONE       => simp A.VMOPLIT (P.error, [], 
-                                                    A.STRING "no-matching-case")
-                          in 
-                          simp A.SWITCH_VCON (r, treeOfEdges, treeOrNoMatch)
-                          end)
-                      val _ = treeGen : regset -> C.exp MC.tree -> reg A.exp
-                      val A' = (A -- t)
-                  in  treeGen A' (vizTree (MC.decisionTree (t, choices)))
-                  end)
-             ) *)
-
-
-  (* and bindWithTranslateExp A rho e k = bindAnyReg A (exp rho A e) k
-  and translateBegin rho A []        =  A.SIMPLE (A.LITERAL (A.BOOL false))
-    | translateBegin rho A [e]       = exp rho A e
-    | translateBegin rho A (e::es)   = A.BEGIN (exp rho A e, 
-                                                translateBegin rho A es)
-
-  and funcode (ns, e) rho A = 
-    let val (boundEnv, argregs, _) = (List.foldl (fn (n, (rho', rs, r)) => 
-                                  (Env.bind (n, r, rho'), rs @ [r], r + 1))
-                                  (rho, [], 1)
-                                  ns)
-        val availRegs = A -- List.length ns
-    in (argregs, exp boundEnv availRegs e)
+              of A.VMOP (p, ns) => simp A.VMOP (p, map mkNew ns)
+               | A.VMOPLIT (p, ns, l) => simp A.VMOPLIT (p, map mkNew ns, l)
+               | A.BLOCK ns => simp A.BLOCK (map mkNew ns)
+               | A.CAPTURED i => simp A.CAPTURED i
+               | A.CLOSURE ((params, body), caps) => simp A.CLOSURE ((map mkNew params, exp' body), map mkNew caps)
+               | A.FUNCALL (name, args) => if (AsmGen.areConsecutive (map mkNew args))
+                                           then simp A.FUNCALL (mkNew name, map mkNew args)
+                                           else
+                    bindSmallest A (simp (A.NAME o mkNew) name)
+                         (fn reg => nbRegs bindSmallest (A -- reg) (map (simp A.NAME o mkNew) args)
+                            (fn regs => simp A.FUNCALL (reg, regs)))
+               | A.FUNCODE (params, body) => simp A.FUNCODE (map mkNew params, exp' body)
+               | A.LITERAL l => simp A.LITERAL l
+               | A.NAME n => simp A.NAME (mkNew n)
+               | A.SWITCH_VCON (name, branches, default) => 
+                  simp A.SWITCH_VCON (mkNew name, map (fn (p_a, expr) => (p_a, exp' expr)) branches, exp' default))
+  | exp' (A.BEGIN (e1, e2)) = A.BEGIN (exp' e1, exp' e2)
+  | exp' (A.IFX (n, e1, e2)) = A.IFX (mkNew n, exp' e1, exp' e2)
+  | exp' (A.LETREC (bindings, body)) = 
+            A.LETREC (map (fn (n, ((params, body), caps)) => 
+                              (mkNew n, 
+                              ((map mkNew params, exp' body), 
+                              map mkNew caps))) 
+                          bindings, 
+                      exp' body)
+  | exp' (A.LETX (x, e1, e2)) = normalizeLet (mkNew x) (exp' (A.SIMPLE e1)) (exp' e2)
+  | exp' (A.SET (x, e)) = A.SET (mkNew x, exp' e)
+  in exp' (mkOld ex)
     end
 
-  (* val funcode : C.funcode -> reg Env.env -> regset -> reg A.funcode = funcode *)
-(* 
-  fun def ex = 
-    let val A   = RS 0
-        val rho = Env.empty
-    in 
-    (case ex
-      of C.EXP e => exp rho A e
-       | C.CHECK_EXPECT (s1, e1, s2, e2) =>
-          A.BEGIN (bindWithTranslateExp A rho e1 (simp (vmopStr P.check s1)), 
-                   bindWithTranslateExp A rho e2 (simp (vmopStr P.expect s2)))
-       | C.CHECK_ASSERT (s, e) =>
-          bindWithTranslateExp A rho e (simp (vmopStr P.check_assert s))
-       | C.CHECK_ERROR (s, e) => 
-        bindAnyReg A (simp A.FUNCODE ([], exp rho A e)) 
-                          (fn reg => 
-                            simp A.VMOPLIT (P.check_error, [reg], A.STRING s))
-       | C.VAL valdef => exp rho A (C.SETGLOBAL valdef)
-       | C.DEFINE (n, lambda) => A.LETX (0, A.FUNCODE (funcode lambda rho A), 
-                                            ANormalUtil.setglobal (n, 0)))
-    end *)
+fun def e = exp Env.empty (RS 0) e
+
 end
 
-
-qsort is beautiful now!    *)

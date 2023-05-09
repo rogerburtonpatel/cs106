@@ -267,17 +267,13 @@
         (check-assert (formula? (make-not 'y)))
         (check-assert (formula? (make-and (list2 'y 'x)))) 
         (check-assert (formula? (make-or (list3 'y 'x 'z))))
-        (check-assert (formula? 
-                          (make-or (list3 (make-not 'x) 'x 
-                                     (make-and (list2 'y 'z))))))
+        (check-assert (formula? (make-or (list3 (make-not 'x) 'x (make-and (list2 'y 'z))))))
         ; false cases for all
         (check-assert (not (formula? #t)))
         (check-assert (not (formula? (make-not #t))))
         (check-assert (not (formula? (make-and (list2 'y #f)))))
         (check-assert (not (formula? (make-or (list3 'y 'x #t)))))
-        (check-assert (not (formula? 
-                                (make-or (list3 (make-not 'x) 'x 
-                                            (make-and (list2 'y #t)))))))
+        (check-assert (not (formula? (make-or (list3 (make-not 'x) 'x (make-and (list2 'y #t)))))))
         
         
 
@@ -326,18 +322,12 @@
         (check-assert (eval-formula 'x test-env))
         (check-assert (not (eval-formula (make-not 'y) test-env)))
         (check-assert (eval-formula (make-and (list2 'y 'x)) test-env))
-        (check-assert (eval-formula 
-                        (make-or (list3 'y (make-not 'x) 'z)) test-env))
+        (check-assert (eval-formula (make-or (list3 'y (make-not 'x) 'z)) test-env))
 
-        (check-assert (not (eval-formula 
-                                    (make-or (list2 (make-not 'x) 
-                                              (make-and (list2 
-                                                         (make-not 'y) 'z)))) 
-                                                                   test-env)))
+        (check-assert (not (eval-formula (make-or (list2 (make-not 'x)  (make-and (list2 (make-not 'y) 'z)))) test-env)))
 
         (check-assert (eval-formula (make-and '()) test-env))
-        (check-assert (not (eval-formula 
-                                (make-or '()) test-env)))
+        (check-assert (not (eval-formula (make-or '()) test-env)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
