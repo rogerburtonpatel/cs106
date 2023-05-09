@@ -85,12 +85,11 @@ struct
       | free (A.LETX (x, se, e)) = 
           S.union' [S.diff (free e, S.singleton x), free (A.SIMPLE se)]
       | free (A.BEGIN (e1, e2)) = S.union' [free e1, free e2]
-      | free (A.WHILEX (_, e1, e2)) = S.union' [free (A.SIMPLE e1), free e2]
       | free (A.SET (_, e)) = free e
       | free (A.LETREC (bindings, body)) = 
         let val (names, cls) = ListPair.unzip bindings
             val closures = map (simp A.CLOSURE) cls
-          in S.diff (S.union' (free body :: freeSets closures), S.ofList names)
+          in S.diff (S.union' (free body :: freeSets closures), S.fromList names)
           end
     and freeSets es = foldl (fn (e, set) => (free e)::set) nil es
     in S.elems (free expr)
@@ -120,37 +119,10 @@ struct
                                A.FUNCALL (substIfEq funname, map substIfEq args)
                     (* interestingly, naming fc 'fun' will annahilate millet *)
                     | fc as A.FUNCODE (params, body) => fc
-                       (* if member from_x params then
-                            fc 
-                           else if not (member for_y params) then 
-                            A.FUNCODE (params, substitutor body)
-                           else 
-                            let val fresh = (freshName (freeVars (A.SIMPLE fc)))
-                                val renamedParameters = 
-                                                renameList fresh for_y params
-                                val freshBody = rename (for_y, fresh) body
-                                val substBody = rename (from_x, for_y) freshBody
-                            in A.FUNCODE (renamedParameters, substBody)
-                            end *)
                     | A.CAPTURED i => A.CAPTURED i
-                    | cl as A.CLOSURE ((params, body), captured) =>
-                           (* if member from_x params then *)
-                            A.CLOSURE ((params, body), renameList from_x for_y captured)
-                           (* else if not (member for_y params) then 
-                            A.CLOSURE ((params, substitutor body), 
+                    | A.CLOSURE ((params, body), captured) =>
+                            A.CLOSURE ((params, body), 
                                         renameList from_x for_y captured)
-                           else 
-                            let val fresh = (freshName (freeVars (A.SIMPLE cl)))
-                                val renamedParameters = 
-                                                renameList fresh for_y params
-                                (* we don't have to rename in the captured bc
-                                   we know neither from_x nor for_y are 
-                                   captured in this expression *)
-                                val freshBody = rename (for_y, fresh) body
-                                val substBody = substitutor freshBody
-                            in A.CLOSURE ((renamedParameters, substBody), 
-                                          captured)
-                            end *)
                     | A.BLOCK names => A.BLOCK (map substIfEq names)
                     | A.SWITCH_VCON (n, branches, default) => 
                         A.SWITCH_VCON (substIfEq n, 
@@ -167,13 +139,15 @@ struct
               normalizeLet n (substitutor (A.SIMPLE e1)) e2
             else 
               normalizeLet n (substitutor (A.SIMPLE e1)) (substitutor e2)
-          | substitutor (A.WHILEX (n, e, e')) = 
-              Impossible.impossible "no while in ANF!"
           | substitutor (A.SET (n, e)) = A.SET (substIfEq n, substitutor e)
           | substitutor (A.BEGIN (e1, e2)) = A.BEGIN (substitutor e1, 
                                                       substitutor e2)
-          | substitutor (A.LETREC (bindings, body)) = Impossible.exercise 
-                                                        "substitute in a letrec"
+          | substitutor (A.LETREC (bindings, body)) = 
+            let fun renameCaptures [] = []
+                  | renameCaptures ((r, (lam, caps))::bs) = 
+                    (r, (lam, renameList from_x for_y caps))::renameCaptures bs
+            in A.LETREC (renameCaptures bindings, substitutor body)
+            end 
     in substitutor 
     end 
 
@@ -205,25 +179,30 @@ struct
     | normalizeLet x (A.IFX (y, e1, e2)) ex' = 
                      A.IFX (y, (normalizeLet x e1 ex'), (normalizeLet x e2 ex'))
 
-    | normalizeLet x (A.WHILEX (y, e, e')) ex' = 
-            Impossible.impossible "no whiles in ANF at normalizeLet"                    
     | normalizeLet x (A.BEGIN (e1, e2)) ex' = 
                 A.BEGIN(e1, (normalizeLet x e2 ex'))
     | normalizeLet x (A.SET (n, e)) ex' = 
                 A.BEGIN ((A.SET (n,  e)), 
                         (normalizeLet x (A.SIMPLE (A.NAME n)) ex'))
 
-    | normalizeLet x (A.LETREC (bindings, body)) ex' = Impossible.exercise 
-                                                       "normalize let on Letrec"
+    | normalizeLet x (A.LETREC (bindings, body)) ex' = 
+        let val freeVarsE = freeVars ex'
+            val funNames = map fst bindings
+            val freeFunNames = 
+                List.filter (fn t => t <> x andalso member t freeVarsE) funNames
+            in if null freeFunNames
+            then A.LETREC (bindings, normalizeLet x body ex')
+            else Impossible.impossible "die"
+            end 
     | normalizeLet x (A.SIMPLE e) e'  = A.LETX (x, e, e')   
 
-  and normalizeIf x e1 e2   = A.IFX (x, e1, e2)
-  and normalizeSet x e      = A.SET (x, e)
+  and normalizeIf x e1 e2       = A.IFX (x, e1, e2)
+  and normalizeSet x e          = A.SET (x, e)
+  and normalizeLetrec lams body = A.LETREC (lams, body) (* this isn't needed. *)
   and normalizeBegin (A.BEGIN (e1, e2)) e3 = normalizeBegin e1 
                                              (normalizeBegin e2 e3)
     | normalizeBegin e1 e2 = A.BEGIN (e1, e2)
-  and normalizeWhile x e e' = Impossible.impossible 
-                                      "don't even try to normalize a while loop"
+ 
 
 
   fun normalizeLet' t (A.SIMPLE e) k = A.LETX (t, e, k t)
@@ -312,9 +291,6 @@ struct
            | C.WHILEX (e, e') => 
               Impossible.impossible ("You can't A-Normalize a 'while' " ^
                             "expression. You'll have to go through KN instead.")
-            (* let val t = smallest A
-            in A.WHILEX (t, exp rho A e, exp rho A e')
-            end *)
            | C.FUNCALL (e, es) => 
             bindSmallest A (exp rho A e) 
                          (fn reg => nbRegs bindSmallest (A -- reg) es 
@@ -332,8 +308,6 @@ struct
                   inLocalVar A (fn t =>
                     nbRegs bindAnyReg (A -- t) captured (fn regs => 
                           simp A.CLOSURE (funcode lambda rho (A -- t), regs)))
-                                                    (* todo check this A -- t, and also if funcode needs these args in general
-                                                       or can capture them *)
           | C.CAPTURED i => simp A.CAPTURED i
           | C.LETREC (bindings, body) => 
             let val (A', rs)     = allocAndRemoveRegs A bindings 
@@ -354,10 +328,10 @@ struct
                                          (simp (curry A.VMOP P.cons)))
           | C.CONSTRUCTED ("'()", []) => simp A.LITERAL A.EMPTYLIST
           | C.CONSTRUCTED (con, es) => 
-          (* TODO need inLocalVar *)
-            bindAnyReg A (simp A.LITERAL (A.STRING con)) 
-                       (fn reg => nbRegs bindAnyReg (A -- reg) es 
-                                         (fn regs => simp A.BLOCK (reg::regs)))
+                inLocalVar A (fn t => 
+                  bindAnyReg (A -- t) (simp A.LITERAL (A.STRING con)) 
+                       (fn reg => nbRegs bindAnyReg ((A -- t) -- reg) es 
+                                         (fn regs => simp A.BLOCK (reg::regs))))
           | C.CASE (e, choices) => bindWithTranslateExp A rho e 
                 (fn t =>
                   let fun treeGen rset etree = 

@@ -6,6 +6,9 @@ TESTING- dress to impress
 3. vs, kn, fo idempotent testing on the backburner
 
 
+finish presentation
+normalize letrec
+allocate registers
 
 setjmp comparison
 

@@ -2,7 +2,7 @@
     This is where register allocation happens! *)
 
 
-(* structure Realloc :> sig
+structure Realloc :> sig
   type reg = int  (* register *)
   type regset     (* set of registers *)
   val regname : reg -> string
@@ -86,7 +86,6 @@ struct
       | free (A.LETX (x, se, e)) = 
           S.union' [S.diff (free e, S.singleton x), free (A.SIMPLE se)]
       | free (A.BEGIN (e1, e2)) = S.union' [free e1, free e2]
-      | free (A.WHILEX (_, e1, e2)) = S.union' [free (A.SIMPLE e1), free e2]
       | free (A.SET (_, e)) = free e
       | free (A.LETREC (bindings, body)) = 
         let val (names, cls) = ListPair.unzip bindings
@@ -168,8 +167,6 @@ struct
               normalizeLet n (substitutor (A.SIMPLE e1)) e2
             else 
               normalizeLet n (substitutor (A.SIMPLE e1)) (substitutor e2)
-          | substitutor (A.WHILEX (n, e, e')) = 
-              Impossible.impossible "no while in ANF!"
           | substitutor (A.SET (n, e)) = A.SET (substIfEq n, substitutor e)
           | substitutor (A.BEGIN (e1, e2)) = A.BEGIN (substitutor e1, 
                                                       substitutor e2)
@@ -204,10 +201,7 @@ struct
                               end
                         end
     | normalizeLet x (A.IFX (y, e1, e2)) ex' = 
-                     A.IFX (y, (normalizeLet x e1 ex'), (normalizeLet x e2 ex'))
-
-    | normalizeLet x (A.WHILEX (y, e, e')) ex' = 
-            Impossible.impossible "no whiles in ANF at normalizeLet"                    
+                     A.IFX (y, (normalizeLet x e1 ex'), (normalizeLet x e2 ex'))           
     | normalizeLet x (A.BEGIN (e1, e2)) ex' = 
                 A.BEGIN(e1, (normalizeLet x e2 ex'))
     | normalizeLet x (A.SET (n, e)) ex' = 
@@ -223,9 +217,6 @@ struct
   and normalizeBegin (A.BEGIN (e1, e2)) e3 = normalizeBegin e1 
                                              (normalizeBegin e2 e3)
     | normalizeBegin e1 e2 = A.BEGIN (e1, e2)
-  and normalizeWhile x e e' = Impossible.impossible 
-                                      "don't even try to normalize a while loop"
-
 
   fun normalizeLet' t (A.SIMPLE e) k = A.LETX (t, e, k t)
     | normalizeLet' t e k = normalizeLet t e (k t)
@@ -289,8 +280,6 @@ struct
     | mkOld (A.IFX (n, e1, e2)) = A.IFX (regname n, mkOld e1, mkOld e2)
     | mkOld (A.LETX (n, e, e')) = A.LETX (regname n, mkOldSim e, mkOld e')
     | mkOld (A.BEGIN (e1, e2))  = A.BEGIN (mkOld e1, mkOld e2)
-    | mkOld (A.WHILEX (n, cond, body)) = 
-            A.WHILEX (regname n, mkOldSim cond, mkOld body)
     | mkOld (A.SET (n, e)) = A.SET (regname n, mkOld e)
     | mkOld (A.LETREC (bindings, body)) = 
         A.LETREC (map (fn (n, cl) => (regname n, embedClosure cl)) bindings, mkOld body)
@@ -332,15 +321,19 @@ struct
         fun mkNew rstring = 
               case AsmLex.registerNum rstring 
                 of Error.OK r => r 
-                 | _ => Impossible.impossible "something has gone horribly wrong in reallocation"
+                 | _ => Impossible.impossible 
+                            "something has gone horribly wrong in reallocation"
         (*  ^ normalize and bind in _this_ environment *)
     in  (case mkOld ex
           of A.SIMPLE se => 
             (case se
-              of A.VMOP (p, ns) => nbRegs bindAnyReg A ns (simp (curry A.VMOP p))
-               | _ => Impossible.impossible "simple")
+              of 
+              (* A.VMOP (p, ns) => nbRegs bindAnyReg A ns (simp (curry A.VMOP p))
+               |  *)
+               _ => Impossible.impossible "simple")
           | _ => Impossible.impossible "nope")
     end
+end
           (* of C.PRIMCALL (p, es) => nbRegs bindAnyReg A es (simp (curry A.VMOP p))
            | C.LITERAL v => simp A.LITERAL v
            | C.LOCAL n => 
@@ -451,7 +444,7 @@ struct
                                   ns)
         val availRegs = A -- List.length ns
     in (argregs, exp boundEnv availRegs e)
-    end *)
+    end
 
   (* val funcode : C.funcode -> reg Env.env -> regset -> reg A.funcode = funcode *)
 (* 

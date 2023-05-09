@@ -67,8 +67,8 @@ struct
           end)
         (* Thank you matt *)
     and clRename f ((formals, body), captured) = 
-      curryClBody <$> Error.mapList f formals <*> mapx f body <*> Error.mapList f captured
-
-(* TODO- fix this. Thanks matt! *)
+      curryClBody <$> Error.mapList f formals 
+                      <*> mapx f body 
+                      <*> Error.mapList f captured
 
 end

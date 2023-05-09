@@ -14,7 +14,6 @@ structure ANormalForm = struct
     = IFX     of 'a * 'a exp * 'a exp 
     | LETX    of 'a * 'a simple_exp * 'a exp
     | BEGIN   of 'a exp * 'a exp 
-    | WHILEX  of 'a * 'a simple_exp * 'a exp 
     | SET     of 'a * 'a exp
     | LETREC of ('a * 'a closure) list * 'a exp
     | SIMPLE  of 'a simple_exp

@@ -48,9 +48,10 @@ struct
   fun exp (K.LITERAL v)    = S.LITERAL (value v)
     | exp (K.NAME x)       = S.VAR x
     | exp (K.VMOP (p, ns)) = 
-    (* case (P.name p, AsmLex.registerNum 
-      of "+imm" => S.APPLY (S.VAR "+imm", [S.VAR (hd ns), S.LITERAL (S.INT (List.last ns))])
-      | _ => *)
+     (* if not (AsmGen.areConsecutive ns) then
+            Impossible.impossible ("non-consecutive registers in AN->KN vmop " ^
+                                  P.name p)
+          else *)
     S.APPLY (S.VAR (P.name p), List.map S.VAR ns)
     | exp (K.VMOPLIT (p, ns, v)) = 
       (case (P.name p, ns, v)

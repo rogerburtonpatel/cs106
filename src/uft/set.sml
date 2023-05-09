@@ -11,6 +11,7 @@ signature SET = sig
   val diff : ''a set * ''a set -> ''a set
   val elems : 'a set -> 'a list
   val ofList : ''a list -> ''a set
+  val fromList : ''a list -> ''a set
   val singleton : ''a -> ''a set
 
   val union' : ''a set list -> ''a set  (* union of a list of sets *)
@@ -36,6 +37,7 @@ struct
 
   fun elems xs = xs
   fun ofList xs = foldr insert empty xs
+  val fromList = ofList
 
   fun singleton x = [x]
 end

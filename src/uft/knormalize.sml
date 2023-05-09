@@ -192,10 +192,10 @@ struct
                                          (curry K.VMOP P.cons))
           | C.CONSTRUCTED ("'()", []) => K.LITERAL K.EMPTYLIST
           | C.CONSTRUCTED (con, es) => 
-            bindAnyReg A (K.LITERAL (K.STRING con)) 
-                       (fn reg => nbRegs bindAnyReg (A -- reg) es 
-                                         (fn regs => K.BLOCK (reg::regs)))
-                                         (* todo ask *)
+              inLocalVar A (fn t => 
+                      bindAnyReg (A -- t) (K.LITERAL (K.STRING con)) 
+                          (fn reg => nbRegs bindAnyReg ((A -- t) -- reg) es 
+                                            (fn regs => K.BLOCK (reg::regs))))
           | C.CASE (e, choices) => bindWithTranslateExp A rho e 
                 (fn t =>
                   let fun treeGen rset etree = 

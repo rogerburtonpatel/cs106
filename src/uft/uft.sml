@@ -102,9 +102,17 @@ struct
 
   val namesOfRegs = Error.mapList (KNRename.mapx KNRename.nameOfReg)
 
-  val anUpAndDown = (List.map ANormalize.def) 
-                      >>> (List.map ANEmbed.def) 
-                      >>> namesOfRegs
+  val anUpAndDown = (List.map ANormalize.def)         (* cl -> int an *)
+                      >>> (List.map ANEmbed.def)      (* int an -> int kn *)
+                      >>> namesOfRegs                 (* int kn -> str kn *)
+
+  val anWithRealloc = anUpAndDown                           (* cl -> str kn *)               
+                      >>> ! (List.map KNEmbed.def)          (* str kn -> vs *)
+                      >>> ! (map Disambiguate.disambiguate) (* vs -> us *)
+                      >=> Error.mapList Mutability.detect   (* us -> us *)
+                      >>> ! (map ClosureConvert.close)      (* us -> cl *)
+                      >>> ! anUpAndDown                     (* cl -> str kn *)
+                      >>> Error.join                        (* fix err type *)
 
   fun HO_of HO   = schemexOfFile >=> Error.mapList Mutability.detect
     | HO_of HOX  = Impossible.unimp "imperative features (HOX to HO)"
@@ -130,17 +138,17 @@ struct
 
   fun AN_reg_of inLang = CL_of inLang >>> ! (List.map ANormalize.def)
 
-
   fun KN_of KN = KN_of_file
-    | KN_of FO = KN_reg_of FO >=> Error.mapList (KNRename.mapx KNRename.nameOfReg)
+    | KN_of FO = KN_reg_of FO >=> namesOfRegs
     | KN_of CL = CL_of CL >>> ! (List.map KNormalize.def) >=> namesOfRegs
     | KN_of HO = CL_of HO >>> ! (List.map KNormalize.def) >=> namesOfRegs
     | KN_of ES = CL_of ES >>> ! (List.map KNormalize.def) >=> namesOfRegs
     | KN_of inLang = raise NoTranslationTo inLang
 
-fun AN_of CL = CL_of CL >=> anUpAndDown
-  | AN_of HO = CL_of HO >=> anUpAndDown
-  | AN_of ES = CL_of ES >=> anUpAndDown
+fun AN_of CL = CL_of CL >=> anWithRealloc
+  | AN_of HO = CL_of HO >=> anWithRealloc
+  | AN_of HOX = CL_of HOX >=> anWithRealloc
+  | AN_of ES = CL_of ES >=> anWithRealloc
   | AN_of inLang = raise NoTranslationTo AN
 
   fun VS_of VS   = VS_of_file

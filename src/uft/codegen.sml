@@ -184,13 +184,11 @@ fun letrec gen (bindings, body) =
                            o L (mapi 
                                   (fn (slotnum, blkreg) =>
                                     A.setblockslot dest (slotnum + 1) blkreg) 
-                                    (* todo ask *)
                                (tl rs))
            | K.SWITCH_VCON sv => 
               let val exitLabel = A.newlabel ()
               in switchVcon (toRegK' dest) (S (A.goto exitLabel)) sv
                  o S (A.deflabel exitLabel)
-                                    (* todo ask *)
               end)
   and forEffectK' (ex: reg KNormalForm.exp) : instruction hughes_list  =
     (case ex
@@ -234,7 +232,6 @@ fun letrec gen (bindings, body) =
         let val exitLabel = A.newlabel ()
               in switchVcon forEffectK' (S (A.goto exitLabel)) sv 
                  o S (A.deflabel exitLabel)
-                                    (* todo ask *)
               end)
   and toReturnK' (e:  reg KNormalForm.exp) : instruction hughes_list  =
         (* toRegK' 255 e o S (A.return 255) *)
@@ -260,7 +257,6 @@ fun letrec gen (bindings, body) =
            | block as K.BLOCK _ => toRegK' r0 block o S (A.return r0)
            | K.SWITCH_VCON sv => 
               switchVcon toReturnK' empty sv)
-                                    (* todo ask *)
   and funcode r (rs, e) = S (A.loadfunc r (List.length rs) (toReturnK' e []))
   and putClIntoReg r lambda captured = (funcode r lambda) 
                                   o S (A.mkclosure r r (List.length captured))
