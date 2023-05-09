@@ -102,7 +102,8 @@ struct
           | goodMax(x::xs) = let val y = goodMax xs in max(x, y) end
      in 1 + goodMax badnames
      end 
-     
+    
+  (* PRESENT ME - capture-avoiding substitution *)
   fun rename (from_x, for_y) = 
     let fun substIfEq name = if name = from_x then for_y else name
         fun renameList n1 n2 [] = []
@@ -149,11 +150,11 @@ struct
                     (r, (lam, renameList from_x for_y caps))::renameCaptures bs
             in A.LETREC (renameCaptures bindings, substitutor body)
             end 
-    (* PRESENT ME: This matters *) 
+    (* PRESENT ME: This matters with uft/sat-solve.scm *) 
     (* fun substitutor e = e *)
     in substitutor 
     end 
-
+  
     and normalizeLet x (A.LETX (y, e1, e2)) e3 = 
                       if x = y then 
                          A.LETX (x, e1, normalizeLet x e2 e3)
