@@ -196,3 +196,12 @@ same effect"
 "Always a good source of ideas, the shower..."
 
 Norman: “Programmers have a habit of naming things before they understand them” 
+
+“You’re a fully grown college student. You can this out” 
+Alex: “Why are there so many papers on prettyprinters in the 90s?” 
+nr: “Some people wanted tenure? I don’t know.” 
+
+“(I'm fascinated at the reinterpretation of the C standard.  
+  I am so glad that I do not have to work with the C standard.)”
+
+Shockingly, just as it says on the syllabus.
