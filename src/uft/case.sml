@@ -4,6 +4,7 @@ structure Pattern = struct
   datatype pat = APPLY of vcon * pat list
                | VAR   of name
                | WILDCARD
+               | ONEOF of pat list 
     (* N.B. a pattern for literal integer k is represented
        as APPLY (Int.toString k, [])  *)
 end
@@ -36,6 +37,7 @@ end
 struct
   structure P = Pattern
   fun addBound (P.APPLY (vcon, pats), vars) = foldr addBound vars pats
+    | addBound (P.ONEOF pats, vars) = foldr addBound vars pats
     | addBound (P.WILDCARD, vars) = vars
     | addBound (P.VAR x, vars) = x :: vars
   fun bound p = addBound (p, [])
@@ -50,6 +52,7 @@ structure Case :> CASE = struct
   fun fold f z (e, choices) = List.foldr (fn ((p, e), z) => f (e, z)) (f (e, z)) choices
 
   fun patBound (APPLY (_, ps)) = Set.union' (List.map patBound ps)
+    | patBound (ONEOF ps)      = Set.union' (List.map patBound ps)
     | patBound (VAR x) = Set.singleton x
     | patBound WILDCARD = Set.empty
 

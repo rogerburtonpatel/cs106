@@ -130,11 +130,16 @@ struct
 
   fun intpattern k = Pattern.APPLY (Int.toString k, [])
 
+  fun oneof s1 s2 ps = Pattern.ONEOF ps 
+
+(* instead of desugari *)
+
   val pattern = P.fix (fn pattern =>
                 Pattern.WILDCARD    <$ sat (curry op = "_") vvar
       <|>       Pattern.VAR        <$> vvar
       <|>       intpattern         <$> int
       <|> curry Pattern.APPLY      <$> vcon <*> succeed []
+      <|> (bracket "oneof" (Pattern.ONEOF <$> many pattern))
       <|> exactList "(C x1 x2 ...) in pattern"
                   (curry Pattern.APPLY <$> vcon <*> many pattern)
        )
@@ -165,6 +170,7 @@ struct
         and binds_y (Pattern.VAR x) = x = y
           | binds_y (Pattern.WILDCARD) = false
           | binds_y (Pattern.APPLY (_, pats)) = List.exists binds_y pats
+          | binds_y (Pattern.ONEOF pats) = List.exists binds_y pats
         and rhs_has_y (_, e) = has_y e
     in  has_y exp
     end

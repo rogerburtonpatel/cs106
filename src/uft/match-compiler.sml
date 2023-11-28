@@ -162,7 +162,7 @@ struct
        *)
 
 
-(* frontier is the part of the scruity you haven't matched yet *)
+(* frontier is the part of the scrutinee you haven't matched yet *)
 (* it was right! *)
   fun refineFrontier r labeled_con (F (rule, constraints)) = 
     let 

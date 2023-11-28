@@ -63,6 +63,7 @@ struct
     | pat (Pat.WILDCARD) = te "_"
     | pat (Pat.APPLY (vcon, [])) = te vcon
     | pat (Pat.APPLY (vcon, pats)) = nest 3 (wrap (te vcon :: map pat pats))
+    | pat (Pat.ONEOF pats) = nest 3 (wrap (te "oneof" :: map pat pats))
 
   fun exp e =
      let

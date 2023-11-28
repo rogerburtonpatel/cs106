@@ -119,15 +119,14 @@ struct
           (case (P.name p, es) 
             of (">", [e, C.LITERAL (C.INT 0)]) => 
             nbRegs bindAnyReg A [e] (curry K.VMOP P.gt0)
-            | ("+", es as [e,  C.LITERAL (C.INT n)]) => 
+            | ("+", exprs as [e,  C.LITERAL (C.INT n)]) => 
               if n < 128 andalso n >= ~128 then 
-                (* let val t = List.hd y *)
                     let val int_i = Word8.fromInt (n + 128)
                 in nbRegs bindAnyReg A [e] (fn y =>
                                               K.VMOPINT (P.plusimm, List.hd y, int_i))
                 end 
               else 
-                nbRegs bindAnyReg A es (curry K.VMOP p)
+                nbRegs bindAnyReg A exprs (curry K.VMOP p)
             | ("-", [e,  C.LITERAL (C.INT n)]) => 
               exp rho A (C.PRIMCALL (P.plus, [e, C.LITERAL (C.INT (~n))]))
             | _ => nbRegs bindAnyReg A es (curry K.VMOP p))
@@ -204,7 +203,7 @@ struct
                             bindAnyReg rset (K.VMOP 
                                               (P.getblockslot, [r, slotnum]))
                                     (fn x => treeGen (rset -- x) (k x))
-                       | MC.MATCH (ex, env) => exp (rho <+> env) rset ex
+                       | MC.MATCH (expr, env) => exp (rho <+> env) rset expr
                        | MC.TEST (r, edges, maybetree) => 
                           let val treeOfEdges = 
                             map (fn (MC.E (lcon, subtree)) => 
