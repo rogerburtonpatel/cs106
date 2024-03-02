@@ -14,6 +14,8 @@ structure Env :> sig
 
   val toString : ('a -> string) -> 'a env -> string
   val <+> : 'a env * 'a env -> 'a env  (* BPC, chap 5 *)
+  (* val merge : ('a -> 'a -> 'a) -> 'a env -> 'a env *)
+              (* resolver function *)
 end
   =
 struct
@@ -52,6 +54,12 @@ struct
 
   infix 6 <+>
   fun pairs <+> pairs' = pairs' @ pairs
+
+  (* fun merge resolver ([], []) = [] 
+    | merge resolver ((n1, x)::xs, rho) = 
+      if not (binds (rho, n1))
+      then (n1, x)::(merge resolver (xs, rho))
+      else (resolver (n1, find (n1, rho)))::(merge resolver (xs, rho)) *)
 
 end
   

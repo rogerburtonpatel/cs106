@@ -205,3 +205,8 @@ nr: “Some people wanted tenure? I don’t know.”
   I am so glad that I do not have to work with the C standard.)”
 
 Shockingly, just as it says on the syllabus.
+
+"Anything that needs to call itself a science is not a science" 
+
+"The department of Nothing’s Ever Easy seems to be working full time this week."
+
